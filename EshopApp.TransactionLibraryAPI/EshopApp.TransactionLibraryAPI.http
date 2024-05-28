@@ -1,0 +1,6 @@
+@EshopApp.TransactionLibraryAPI_HostAddress = http://localhost:5030
+
+GET {{EshopApp.TransactionLibraryAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
