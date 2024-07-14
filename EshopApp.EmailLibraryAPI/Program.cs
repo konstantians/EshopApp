@@ -1,12 +1,46 @@
-var builder = WebApplication.CreateBuilder(args);
+using EshopApp.EmailLibrary.DataAccessLogic;
+using EshopApp.EmailLibrary;
+using Microsoft.EntityFrameworkCore;
 
-// Add services to the container.
+var builder = WebApplication.CreateBuilder(args);
+IConfiguration configuration = builder.Configuration;
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("https://localhost:7255")
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+
+        builder.WithOrigins("https://eshopassignmentgatewayapi.azurewebsites.net/")
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
+if (configuration["DatabaseInUse"] is null || configuration["DatabaseInUse"] == "SqlServer")
+{
+    builder.Services.AddDbContext<SqlEmailDbContext>(options =>
+        options.UseSqlServer(configuration.GetConnectionString("SqlData"))
+    );
+
+    builder.Services.AddScoped<IEmailDataAccess, SqlEmailDataAccess>();
+}
+else
+{
+    builder.Services.AddCosmos<NoSqlEmailDbContext>(connectionString: configuration["CosmosDbConnectionString"]!,
+        databaseName: "GlobalDb");
+
+    builder.Services.AddScoped<IEmailDataAccess, NoSqlEmailDataAccess>();
+}
+
+builder.Services.AddSingleton<IEmailService, EmailService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
