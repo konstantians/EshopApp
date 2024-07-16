@@ -25,7 +25,7 @@ public class EmailsController : ControllerBase
     {
         try
         {
-            EmailResponseModel? emailResponseModel = await _emailDataAccess.GetEmailEntryAsync(id);
+            ApiEmailResponseModel? emailResponseModel = await _emailDataAccess.GetEmailEntryAsync(id);
             if (emailResponseModel is null)
                 return NotFound();
 
@@ -42,7 +42,7 @@ public class EmailsController : ControllerBase
     {
         try
         {
-            IEnumerable<EmailResponseModel> result = await _emailDataAccess.GetEmailEntriesAsync();
+            IEnumerable<ApiEmailResponseModel> result = await _emailDataAccess.GetEmailEntriesAsync();
 
             return Ok(result.ToList());
         }
@@ -53,7 +53,7 @@ public class EmailsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> SendEmailAndSaveEmailEntry([FromBody] EmailRequestModel emailRequestModel)
+    public async Task<IActionResult> SendEmailAndSaveEmailEntry([FromBody] ApiEmailRequestModel emailRequestModel)
     {
         try
         {

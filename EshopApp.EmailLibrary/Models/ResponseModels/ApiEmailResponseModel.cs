@@ -3,7 +3,7 @@ using EshopApp.EmailLibrary.Models.InternalModels.SqlModels;
 
 namespace EshopApp.EmailLibrary.Models.ResponseModels;
 
-public class EmailResponseModel
+public class ApiEmailResponseModel
 {
     public string? Id { get; set; }
     public DateTime SentAt { get; set; }
@@ -11,9 +11,9 @@ public class EmailResponseModel
     public string? Title { get; set; }
     public string? Message { get; set; }
 
-    public EmailResponseModel() { }
+    public ApiEmailResponseModel() { }
 
-    internal EmailResponseModel(SqlEmailModel sqlEmailModel)
+    internal ApiEmailResponseModel(SqlEmailModel sqlEmailModel)
     {
         Id = sqlEmailModel.Id;
         SentAt = sqlEmailModel.SentAt;
@@ -22,7 +22,7 @@ public class EmailResponseModel
         Message = sqlEmailModel.Message;
     }
 
-    internal EmailResponseModel(NoSqlEmailModel noSqlEmailModel)
+    internal ApiEmailResponseModel(NoSqlEmailModel noSqlEmailModel)
     {
         Id = noSqlEmailModel.Id;
         SentAt = noSqlEmailModel.SentAt;

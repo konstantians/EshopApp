@@ -15,7 +15,7 @@ internal class SqlEmailModel
 
     }
 
-    public SqlEmailModel(EmailRequestModel emailRequestModel)
+    public SqlEmailModel(ApiEmailRequestModel emailRequestModel)
     {
         Receiver = emailRequestModel.Receiver;
         Title = emailRequestModel.Title;

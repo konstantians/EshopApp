@@ -6,9 +6,9 @@ namespace EshopApp.EmailLibrary.DataAccessLogic;
 public interface IEmailDataAccess
 {
     Task<bool> DeleteEmailEntryAsync(string id);
-    Task<IEnumerable<EmailResponseModel>> GetEmailEntriesAsync();
-    Task<IEnumerable<EmailResponseModel>> GetEmailEntriesAsync(int amount);
-    Task<EmailResponseModel?> GetEmailEntryAsync(string id);
-    Task<IEnumerable<EmailResponseModel>> GetEmailsOfEmailReceiverAsync(string emailReceiver);
-    Task<string?> SaveEmailEntryAsync(EmailRequestModel createEmailModel);
+    Task<IEnumerable<ApiEmailResponseModel>> GetEmailEntriesAsync();
+    Task<IEnumerable<ApiEmailResponseModel>> GetEmailEntriesAsync(int amount);
+    Task<ApiEmailResponseModel?> GetEmailEntryAsync(string id);
+    Task<IEnumerable<ApiEmailResponseModel>> GetEmailsOfEmailReceiverAsync(string emailReceiver);
+    Task<string?> SaveEmailEntryAsync(ApiEmailRequestModel createEmailModel);
 }
