@@ -14,7 +14,7 @@ internal class NoSqlEmailModel
 
     }
 
-    public NoSqlEmailModel(EmailRequestModel emailRequestModel)
+    public NoSqlEmailModel(ApiEmailRequestModel emailRequestModel)
     {
         Receiver = emailRequestModel.Receiver;
         Title = emailRequestModel.Title;

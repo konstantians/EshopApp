@@ -20,14 +20,14 @@ public class NoSqlEmailDataAccess : IEmailDataAccess
         _logger = logger ?? NullLogger<NoSqlEmailDataAccess>.Instance;
     }
 
-    public async Task<IEnumerable<EmailResponseModel>> GetEmailEntriesAsync()
+    public async Task<IEnumerable<ApiEmailResponseModel>> GetEmailEntriesAsync()
     {
         try
         {
             List<NoSqlEmailModel> noSqlEmailModels = await _context.Emails.ToListAsync();
-            var emailResponseModels = new List<EmailResponseModel>();
+            var emailResponseModels = new List<ApiEmailResponseModel>();
             foreach (NoSqlEmailModel noSqlEmailModel in noSqlEmailModels)
-                emailResponseModels.Add(new EmailResponseModel(noSqlEmailModel));
+                emailResponseModels.Add(new ApiEmailResponseModel(noSqlEmailModel));
 
             return emailResponseModels;
         }
@@ -39,16 +39,16 @@ public class NoSqlEmailDataAccess : IEmailDataAccess
         }
     }
 
-    public async Task<IEnumerable<EmailResponseModel>> GetEmailEntriesAsync(int amount)
+    public async Task<IEnumerable<ApiEmailResponseModel>> GetEmailEntriesAsync(int amount)
     {
         try
         {
             List<NoSqlEmailModel> NoSqlEmailModels = await _context.Emails.OrderByDescending(email => email.SentAt)
                 .Take(amount).ToListAsync();
 
-            var emailResponseModels = new List<EmailResponseModel>();
+            var emailResponseModels = new List<ApiEmailResponseModel>();
             foreach (NoSqlEmailModel noSqlEmailModel in NoSqlEmailModels)
-                emailResponseModels.Add(new EmailResponseModel(noSqlEmailModel));
+                emailResponseModels.Add(new ApiEmailResponseModel(noSqlEmailModel));
 
             return emailResponseModels;
         }
@@ -61,12 +61,12 @@ public class NoSqlEmailDataAccess : IEmailDataAccess
         }
     }
 
-    public async Task<EmailResponseModel?> GetEmailEntryAsync(string id)
+    public async Task<ApiEmailResponseModel?> GetEmailEntryAsync(string id)
     {
         try
         {
             NoSqlEmailModel? noSqlEmailModel = await _context.Emails.FirstOrDefaultAsync(email => email.Id == id);
-            var emailResponseModel = noSqlEmailModel is not null ? new EmailResponseModel(noSqlEmailModel) : null;
+            var emailResponseModel = noSqlEmailModel is not null ? new ApiEmailResponseModel(noSqlEmailModel) : null;
 
             return emailResponseModel;
         }
@@ -78,14 +78,14 @@ public class NoSqlEmailDataAccess : IEmailDataAccess
         }
     }
 
-    public async Task<IEnumerable<EmailResponseModel>> GetEmailsOfEmailReceiverAsync(string emailReceiver)
+    public async Task<IEnumerable<ApiEmailResponseModel>> GetEmailsOfEmailReceiverAsync(string emailReceiver)
     {
         try
         {
             List<NoSqlEmailModel> noSqlEmailModels = await _context.Emails.Where(email => email.Receiver == emailReceiver).ToListAsync();
-            var emailResponseModels = new List<EmailResponseModel>();
+            var emailResponseModels = new List<ApiEmailResponseModel>();
             foreach (NoSqlEmailModel noSqlEmailModel in noSqlEmailModels)
-                emailResponseModels.Add(new EmailResponseModel(noSqlEmailModel));
+                emailResponseModels.Add(new ApiEmailResponseModel(noSqlEmailModel));
 
             return emailResponseModels;
         }
@@ -98,7 +98,7 @@ public class NoSqlEmailDataAccess : IEmailDataAccess
     }
 
 
-    public async Task<string?> SaveEmailEntryAsync(EmailRequestModel createEmailModel)
+    public async Task<string?> SaveEmailEntryAsync(ApiEmailRequestModel createEmailModel)
     {
         try
         {

@@ -1,6 +1,6 @@
-﻿namespace EshopApp.EmailLibrary.Models.RequestModels;
+﻿namespace EshopApp.EmailLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
 
-public class EmailRequestModel
+internal class TestEmailRequestModel
 {
     public string? Receiver { get; set; }
     public string? Title { get; set; }
