@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace EshopApp.AuthLibrary;
 
-internal class AppIdentityDbContext : IdentityDbContext
+public class AppIdentityDbContext : IdentityDbContext
 {
     private readonly IConfiguration? _configuration;
 
@@ -35,5 +35,4 @@ internal class AppIdentityDbContext : IdentityDbContext
                 options => options.EnableRetryOnFailure());
         }
     }
-
 }
