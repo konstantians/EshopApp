@@ -14,7 +14,7 @@ namespace EshopApp.AuthLibrary.UserLogic;
 
 //Logging Messages Start With 2 For Success/Information, 3 For Warning And 4 For Error(Almost like HTTP Status Codes). The range is 0-99, for example 1000. 
 //The range of codes for this class is is 200-299, for example 2200 or 2299.
-internal class AuthenticationProcedures : IAuthenticationProcedures
+public class AuthenticationProcedures : IAuthenticationProcedures
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ILogger _logger;
