@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using EshopApp.AuthLibrary.Models;
 
 namespace EshopApp.AuthLibrary;
 
-public class AppIdentityDbContext : IdentityDbContext
+public class AppIdentityDbContext : IdentityDbContext<AppUser>
 {
     private readonly IConfiguration? _configuration;
 

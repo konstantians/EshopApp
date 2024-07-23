@@ -5,6 +5,7 @@ using EshopApp.AuthLibraryAPI.Models.ResponseModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Net;
 
 namespace EshopApp.AuthLibraryAPI.Controllers;
@@ -15,26 +16,31 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationProcedures _authenticationProcedures;
     private readonly IConfiguration _configuration;
-    private readonly HttpClient httpClient;
 
-    public AuthenticationController(IAuthenticationProcedures authenticationProcedures, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public AuthenticationController(IAuthenticationProcedures authenticationProcedures, IConfiguration configuration)
     {
         _authenticationProcedures = authenticationProcedures;
         _configuration = configuration;
-        httpClient = httpClientFactory.CreateClient("EmailRestApiClient");
     }
 
 
     [HttpGet("TryGetCurrentUser")]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<IActionResult> TryGetCurrentUser()
     {
-        // Retrieve the Authorization header from the HTTP request
-        string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
-        string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        try
+        {
+            // Retrieve the Authorization header from the HTTP request
+            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
+            string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-        AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
-        return Ok(user);
+            AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
+            return Ok(user);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal Server");
+        }
     }
 
     [HttpPost("SignUp")]
@@ -105,7 +111,7 @@ public class AuthenticationController : ControllerBase
         try
         {
             string accessToken = await _authenticationProcedures.
-                SignInUserAsync(signInModel.Username!, signInModel.Password!, signInModel.RememberMe == "True");
+                SignInUserAsync(signInModel.Username!, signInModel.Password!, signInModel.RememberMe);
 
             if (accessToken is null)
                 return Unauthorized();
@@ -128,14 +134,14 @@ public class AuthenticationController : ControllerBase
             user = await _authenticationProcedures.FindByEmailAsync(forgotPasswordModel.Email!);
 
             if (user is null)
-                return BadRequest();
+                return BadRequest(new {ErrorMessage = "UnkownEmail"});
 
-            string resetToken = await _authenticationProcedures.CreateResetPasswordTokenAsync(user);
-            return Ok(new { ResetToken = resetToken });
+            string passwordResetToken = await _authenticationProcedures.CreateResetPasswordTokenAsync(user);
+            return Ok(new { PasswordResetToken = passwordResetToken });
 
             //TODO add this in the gateway API
             /*string message = "Click on the following link to reset your account password:";
-            string? link = $"{_configuration["WebClientOriginUrl"]}/Account/ResetPassword?userId={user.Id}&token={WebUtility.UrlEncode(resetToken)}";
+            string? link = $"{_configuration["WebClientOriginUrl"]}/Account/ResetPassword?userId={user.Id}&token={WebUtility.UrlEncode(passwordResetToken)}";
             string? confirmationLink = $"{message} {link}";
 
             var apiSendEmailModel = new Dictionary<string, string>
@@ -185,7 +191,7 @@ public class AuthenticationController : ControllerBase
                     resetPasswordModel.UserId!, resetPasswordModel.Token!, resetPasswordModel.Password!);
 
             if (accessToken == null)
-                return BadRequest();
+                return BadRequest(new {ErrorMessage = "InvalidResetTokenForUserId"});
 
             return Ok(new { AccessToken = accessToken });
         }
@@ -206,8 +212,11 @@ public class AuthenticationController : ControllerBase
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
+
+            //this is very unlikely to happen, but someone could craft a valid token without the user existing.
+            //This check is for a very edge case and will probably never happen.
             if (user is null)
-                return BadRequest();
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
 
             return Ok(user);
         }
@@ -217,6 +226,7 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    //TODO Skip Tests For This Method, because I am considering changing it
     [HttpPost("ChangeBasicAccountSettings")]
     [Authorize]
     public async Task<IActionResult> ChangeBasicAccountSettings([FromBody] ApiAccountBasicSettingsRequestModel accountBasicSettingsViewModel)
@@ -227,11 +237,15 @@ public class AuthenticationController : ControllerBase
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
+
+            //this is very unlikely to happen, but someone could craft a valid token without the user existing.
+            //This check is for a very edge case and will probably never happen.
             if (user is null)
-                return BadRequest(new { ErrorMessage = "InvalidToken" });
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
 
             user.PhoneNumber = accountBasicSettingsViewModel.PhoneNumber;
             bool result = await _authenticationProcedures.UpdateUserAccountAsync(user);
+            //I am not certain how this can happen, but 
             if (!result)
                 return BadRequest(new { ErrorMessage = "BasicInformationChangeError" });
 
@@ -254,7 +268,7 @@ public class AuthenticationController : ControllerBase
 
             AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
             if (user is null)
-                return BadRequest(new { ErrorMessage = "InvalidToken" });
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
 
             (bool result, string errorCode) = await _authenticationProcedures.ChangePasswordAsync(
                 user, changePasswordModel.OldPassword!, changePasswordModel.NewPassword!);
@@ -283,20 +297,20 @@ public class AuthenticationController : ControllerBase
 
             AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
             if (user is null)
-                return BadRequest(new { ErrorMessage = "InvalidToken" });
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
 
             AppUser? otherUser = await _authenticationProcedures.FindByEmailAsync(changeEmailModel.NewEmail!);
             if (otherUser is not null)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
 
-            string resetToken = await _authenticationProcedures.CreateChangeEmailTokenAsync(user, changeEmailModel.NewEmail!);
+            string changeEmailToken = await _authenticationProcedures.CreateChangeEmailTokenAsync(user, changeEmailModel.NewEmail!);
 
-            return Ok(new { ResetToken = resetToken });
+            return Ok(new { ChangeEmailToken = changeEmailToken });
 
             //TODO add this to the Gateway API
             /*string message = "Click on the following link to confirm your account's new email:";
             string? link =
-                $"{_configuration["WebClientOriginUrl"]}/Account/ConfirmChangeEmail?userId={user.Id}&newEmail={changeEmailModel.NewEmail}&token={WebUtility.UrlEncode(resetToken)}";
+                $"{_configuration["WebClientOriginUrl"]}/Account/ConfirmChangeEmail?userId={user.Id}&newEmail={changeEmailModel.NewEmail}&token={WebUtility.UrlEncode(passwordResetToken)}";
 
             string? confirmationLink = $"{message} {link}";
 
@@ -321,14 +335,14 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-
-    [HttpGet("ConfirmChangeEmail")]
+    [HttpPost("ConfirmChangeEmail")]
     [AllowAnonymous]
-    public async Task<IActionResult> ConfirmChangeEmail(string userId, string newEmail, string token)
+    public async Task<IActionResult> ConfirmChangeEmail([FromBody] ApiConfirmChangeEmailRequestModel apiConfirmChangeEmailRequestModel)
     {
         try
         {
-            string accessToken = await _authenticationProcedures.ChangeEmailAsync(userId, token, newEmail);
+            string accessToken = await _authenticationProcedures.ChangeEmailAsync(apiConfirmChangeEmailRequestModel.UserId!, 
+                apiConfirmChangeEmailRequestModel.ChangeEmailToken!, apiConfirmChangeEmailRequestModel.NewEmail!);
             if (accessToken is null)
                 return BadRequest();
             return Ok(new { AccessToken = accessToken });

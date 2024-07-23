@@ -1,6 +1,6 @@
-﻿namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
+﻿namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
 
-public class ApiSignInRequestModel
+internal class TestSignInRequestModel
 {
     public string? Username { get; set; }
     public string? Password { get; set; }
