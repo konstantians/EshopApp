@@ -23,7 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.DataLibraryAPI", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.DataLibrary", "EshopApp.DataLibrary\EshopApp.DataLibrary.csproj", "{875F61D1-B0D5-45B9-8BD5-DD4C2585F967}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EshopApp.EmailLibraryAPI.Tests", "EshopApp.EmailLibraryAPI.Tests\EshopApp.EmailLibraryAPI.Tests.csproj", "{F065F323-864D-4343-8DB5-30C9A1037666}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.EmailLibraryAPI.Tests", "EshopApp.EmailLibraryAPI.Tests\EshopApp.EmailLibraryAPI.Tests.csproj", "{F065F323-864D-4343-8DB5-30C9A1037666}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EshopApp.AuthLibraryAPI.Tests", "EshopApp.AuthLibraryAPI.Tests\EshopApp.AuthLibraryAPI.Tests.csproj", "{3B93652F-59AC-46A4-A0B4-43BEB0D51B49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{F065F323-864D-4343-8DB5-30C9A1037666}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F065F323-864D-4343-8DB5-30C9A1037666}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F065F323-864D-4343-8DB5-30C9A1037666}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B93652F-59AC-46A4-A0B4-43BEB0D51B49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B93652F-59AC-46A4-A0B4-43BEB0D51B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B93652F-59AC-46A4-A0B4-43BEB0D51B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B93652F-59AC-46A4-A0B4-43BEB0D51B49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

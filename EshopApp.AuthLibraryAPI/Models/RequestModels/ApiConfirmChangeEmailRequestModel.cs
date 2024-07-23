@@ -2,12 +2,13 @@
 
 namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
 
-public class ApiResetPasswordRequestModel
+public class ApiConfirmChangeEmailRequestModel
 {
     [Required]
     public string? UserId { get; set; }
     [Required]
-    public string? Token { get; set; }
+    [EmailAddress]
+    public string? NewEmail { get; set; }
     [Required]
-    public string? Password { get; set; }
+    public string? ChangeEmailToken { get; set; }
 }

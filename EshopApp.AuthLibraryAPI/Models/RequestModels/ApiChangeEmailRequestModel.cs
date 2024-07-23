@@ -1,7 +1,9 @@
-﻿namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
 
 public class ApiChangeEmailRequestModel
 {
-    public string? OldEmail { get; set; }
+    [Required]
     public string? NewEmail { get; set; }
 }

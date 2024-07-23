@@ -47,7 +47,6 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         {
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-
             string userId = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value!;
 
             return await _userManager.FindByIdAsync(userId);
@@ -89,8 +88,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    public async Task<(string, string)> SignUpUserAsync(AppUser appUser, string password,
-        bool isPersistent)
+    public async Task<(string, string)> SignUpUserAsync(AppUser appUser, string password, bool isPersistent)
     {
         try
         {
@@ -363,7 +361,9 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var result = await _userManager.ChangeEmailAsync(user, newEmail, changeEmailToken);
             if (!result.Succeeded)
             {
-                throw new Exception("Failed to change email.");
+                _logger.LogWarning(new EventId(3209, "UserEmailChangeFailureDueToInvalidTokenEmailCombination"), "Tried to change email of user, but the token and the new email combination seems to be invalid: " +
+                    "UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.", userId, changeEmailToken, newEmail);
+                return null!;
             }
 
             _logger.LogInformation(new EventId(2209, "UserEmailChangeSuccess"), "Successfully changed user's email account. " +
