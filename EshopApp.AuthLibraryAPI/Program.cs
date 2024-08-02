@@ -6,6 +6,8 @@ using EshopApp.AuthLibrary.UserLogic;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using EshopApp.AuthLibraryAPI.Middlewares;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EshopApp.AuthLibraryAPI;
 
@@ -23,19 +25,40 @@ public class Program()
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = 429;
+            options.AddFixedWindowLimiter("DefaultWindowLimiter", options =>
+            {
+                //test value
+                options.PermitLimit = 100;
+                options.Window = TimeSpan.FromMinutes(1);
+            });
+        });
+
+        List<string> apiKeys = new List<string>();
+        if (configuration["ApiKeys"] is not null)
+            apiKeys = configuration["ApiKeys"]!.Split(" ").ToList();
+
+        //Probably not needed since I have learned that Cors can only be triggered with AJAX or something else
+        /* List<string> excludedOrigins = new List<string>();
+        if (configuration["ExcludedCorsOrigins"] is not null)
+            excludedOrigins = configuration["ExcludedCorsOrigins"]!.Split(" ").ToList();
+
         builder.Services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>
-            {
-                builder.WithOrigins("https://localhost:7255")
-                       .AllowAnyHeader()
-                       .AllowAnyMethod();
+            {   
 
-                builder.WithOrigins("https://eshopassignmentgatewayapi.azurewebsites.net/")
+                foreach(string excludedOrigin in excludedOrigins)
+                {
+                    builder.WithOrigins(excludedOrigin)
                        .AllowAnyHeader()
                        .AllowAnyMethod();
+                }
             });
         });
+        */
 
         builder.Services.AddIdentity<AppUser, IdentityRole>()
             .AddEntityFrameworkStores<AppIdentityDbContext>()
@@ -82,6 +105,23 @@ public class Program()
 
         var app = builder.Build();
 
+        // Define a condition for applying rate limiting
+        app.UseWhen(
+            context =>
+            {
+                context.Request.Headers.TryGetValue("X-Bypass-Rate-Limiting", out var bypassRateLimitingCode);
+                if (configuration["RateLimitingBypassCode"] is null || bypassRateLimitingCode.IsNullOrEmpty())
+                    return true;
+
+                //if the header does not contain an accurate code for the bypassRateLimimit then use rate limiter
+                return !bypassRateLimitingCode.ToString().Equals(configuration["RateLimitingBypassCode"]);
+            },
+            appBuilder =>
+            {
+                appBuilder.UseRateLimiter();
+            }
+        );
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -94,6 +134,8 @@ public class Program()
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseMiddleware<ApiKeyProtectionMiddleware>(apiKeys);
+           
         app.MapControllers();
 
         app.Run();

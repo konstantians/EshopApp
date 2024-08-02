@@ -1,16 +1,17 @@
 ﻿using EshopApp.AuthLibrary.Models;
+using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.UserLogic;
 using EshopApp.AuthLibraryAPI.Models.RequestModels;
 using EshopApp.AuthLibraryAPI.Models.ResponseModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.Net;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Web;
 
 namespace EshopApp.AuthLibraryAPI.Controllers;
 
 [ApiController]
+[EnableRateLimiting("DefaultWindowLimiter")]
 [Route("api/[controller]")]
 public class AuthenticationController : ControllerBase
 {
@@ -23,7 +24,10 @@ public class AuthenticationController : ControllerBase
         _configuration = configuration;
     }
 
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("TryGetCurrentUser")]
     [Authorize]
     public async Task<IActionResult> TryGetCurrentUser()
@@ -35,6 +39,9 @@ public class AuthenticationController : ControllerBase
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
+            if (user is null)
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
+
             return Ok(user);
         }
         catch (Exception)
@@ -43,24 +50,25 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="signUpModel"></param>
+    /// <returns></returns>
     [HttpPost("SignUp")]
     [AllowAnonymous]
     public async Task<IActionResult> SignUp([FromBody] ApiSignUpRequestModel signUpModel)
     {
         try
         {
-            AppUser? user = await _authenticationProcedures.FindByEmailAsync(signUpModel.Username!);
-            if (user is not null)
+            LibSignUpResponseModel signUpResponseModel = await _authenticationProcedures.SignUpAsync(signUpModel.Email!, signUpModel.PhoneNumber!, signUpModel.Password!);
+
+            if (signUpResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
+            else if (signUpResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                return BadRequest(new { ErrorMessage = "UnknownError" });
 
-            user = new AppUser();
-            user.UserName = signUpModel.Username!;
-            user.PhoneNumber = signUpModel.PhoneNumber!;
-            user.Email = signUpModel.Username; //Email and username are the same for this app
-
-            (string userId, string confirmationToken) = await _authenticationProcedures.SignUpUserAsync(user, signUpModel.Password!, false);
-            
-            return Ok(new ApiSignUpResponseModel(userId, confirmationToken));
+            return Ok(new ApiSignUpResponseModel(signUpResponseModel.UserId!, signUpResponseModel.Token!));
 
             //The following needs to be done from the Gateway API
             /*string message = "Click on the following link to confirm your email:";
@@ -86,17 +94,46 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <param name="redirectUrl"></param>
+    /// <returns></returns>
+    //redirectUrl contains as a query parameter the returnUrl and thus what is sent is something like the following
+    //https://myapp/specificendpointthathandlesredirect?returnUrl=https://myapp/wherethewholethingwasstartedfrom
     [HttpGet("ConfirmEmail")]
     [AllowAnonymous]
-    public async Task<IActionResult> ConfirmEmail(string userId, string token)
+    public async Task<IActionResult> ConfirmEmail(string userId, string token, string? redirectUrl = null)
     {
         try
         {
-            string accessToken = await _authenticationProcedures.ConfirmEmailAsync(userId, token);
-            if (accessToken is null)
-                return BadRequest();
+            if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
+                return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
+            
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ConfirmEmailAsync(userId, token);
+            if (redirectUrl is not null)
+            {
+                var uribBuilder = new UriBuilder(redirectUrl);
+                var query = HttpUtility.ParseQueryString(uribBuilder.Query);
+                if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                    query["errorMessage"] = "UserNotFoundWithGivenUserId";
+                else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                    query["errorMessage"] = "UnknownError";
+                else
+                    query["accessToken"] = returnCodeAndTokenResponseModel.Token;
 
-            return Ok(new { AccessToken = accessToken });
+                uribBuilder.Query = query.ToString();
+                return Redirect(uribBuilder.ToString());
+            }
+
+            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenUserId" });
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                return BadRequest(new { ErrorMessage = "UnkownError" });
+
+            return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
         }
         catch
         {
@@ -110,13 +147,17 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            string accessToken = await _authenticationProcedures.
-                SignInUserAsync(signInModel.Username!, signInModel.Password!, signInModel.RememberMe);
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.SignInAsync(signInModel.Email!, signInModel.Password!, signInModel.RememberMe);
+            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenEmail)
+                return Unauthorized(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
+                return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
+                return Unauthorized(new { ErrorMessage = "UserAccountNotActivated"});
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidCredentials)
+                return Unauthorized(new { ErrorMessage = "InvalidCredentials" });
 
-            if (accessToken is null)
-                return Unauthorized();
-
-            return Ok(new { AccessToken = accessToken });
+            return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
         }
         catch
         {
@@ -124,20 +165,22 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="forgotPasswordModel"></param>
+    /// <returns></returns>
     [HttpPost("ForgotPassword")]
     [AllowAnonymous]
     public async Task<IActionResult> ForgotPassword([FromBody] ApiForgotPasswordRequestModel forgotPasswordModel)
     {
         try
         {
-            AppUser? user;
-            user = await _authenticationProcedures.FindByEmailAsync(forgotPasswordModel.Email!);
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponse = await _authenticationProcedures.CreateResetPasswordTokenAsync(forgotPasswordModel.Email!);
+            if (returnCodeAndTokenResponse.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenEmail)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
 
-            if (user is null)
-                return BadRequest(new {ErrorMessage = "UnkownEmail"});
-
-            string passwordResetToken = await _authenticationProcedures.CreateResetPasswordTokenAsync(user);
-            return Ok(new { PasswordResetToken = passwordResetToken });
+            return Ok(new { PasswordResetToken = returnCodeAndTokenResponse.Token });
 
             //TODO add this in the gateway API
             /*string message = "Click on the following link to reset your account password:";
@@ -163,37 +206,20 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpGet("ResetPassword")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ResetPassword(string userId)
-    {
-        try
-        {
-            AppUser? user = await _authenticationProcedures.FindByUserIdAsync(userId);
-            if (user is null)
-                return BadRequest();
-
-            return Ok(new { Username = user.UserName });
-        }
-        catch
-        {
-            return StatusCode(500, "Internal Server Error");
-        }
-    }
-
     [HttpPost("ResetPassword")]
     [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] ApiResetPasswordRequestModel resetPasswordModel)
     {
         try
         {
-            string accessToken = await _authenticationProcedures.ResetPasswordAsync(
-                    resetPasswordModel.UserId!, resetPasswordModel.Token!, resetPasswordModel.Password!);
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ResetPasswordAsync(resetPasswordModel.UserId!, resetPasswordModel.Token!, resetPasswordModel.Password!);
 
-            if (accessToken == null)
-                return BadRequest(new {ErrorMessage = "InvalidResetTokenForUserId"});
+            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new {ErrorMessage = "UserNotFoundWithGivenEmail" });
+            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                return BadRequest(new { ErrorMessage = "UnknownError" });
 
-            return Ok(new { AccessToken = accessToken });
+            return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
         }
         catch
         {
@@ -201,7 +227,8 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpGet("EditAccount")]
+    //This might need to go to the gateway api in some way, because here it does not make much sense. Considering that GetCurrentUser is literally the same this probably can go.
+    /*[HttpGet("EditAccount")]
     [Authorize]
     public async Task<IActionResult> EditAccount()
     {
@@ -224,10 +251,10 @@ public class AuthenticationController : ControllerBase
         {
             return StatusCode(500, "Internal Server Error");
         }
-    }
+    }*/
 
     //TODO Skip Tests For This Method, because I am considering changing it
-    [HttpPost("ChangeBasicAccountSettings")]
+    /*[HttpPost("ChangeBasicAccountSettings")]
     [Authorize]
     public async Task<IActionResult> ChangeBasicAccountSettings([FromBody] ApiAccountBasicSettingsRequestModel accountBasicSettingsViewModel)
     {
@@ -244,7 +271,7 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
 
             user.PhoneNumber = accountBasicSettingsViewModel.PhoneNumber;
-            bool result = await _authenticationProcedures.UpdateUserAccountAsync(user);
+            bool result = await _authenticationProcedures.UpdateAccountAsync(user);
             //I am not certain how this can happen, but 
             if (!result)
                 return BadRequest(new { ErrorMessage = "BasicInformationChangeError" });
@@ -255,8 +282,12 @@ public class AuthenticationController : ControllerBase
         {
             return StatusCode(500, "Internal Server Error");
         }
-    }
-
+    }*/
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="changePasswordModel"></param>
+    /// <returns></returns>
     [HttpPost("ChangePassword")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ApiChangePasswordRequestModel changePasswordModel)
@@ -266,19 +297,16 @@ public class AuthenticationController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
-            if (user is null)
+            LibraryReturnedCodes libraryReturnedCodes = await _authenticationProcedures.ChangePasswordAsync(token, changePasswordModel.OldPassword!, changePasswordModel.NewPassword!);
+
+            if(libraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
-
-            (bool result, string errorCode) = await _authenticationProcedures.ChangePasswordAsync(
-                user, changePasswordModel.OldPassword!, changePasswordModel.NewPassword!);
-
-            if (!result && errorCode == "passwordMismatch")
+            if (libraryReturnedCodes == LibraryReturnedCodes.PasswordMissmatch)
                 return BadRequest(new { ErrorMessage = "PasswordMismatchError" });
-            else if (!result)
-                return BadRequest(new { ErrorMessage = "PasswordChangeError" });
-
-            return Ok();
+            else if (libraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                return BadRequest(new { ErrorMessage = "UnknownError" });
+            
+            return NoContent();
         }
         catch
         {
@@ -286,6 +314,11 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="changeEmailModel"></param>
+    /// <returns></returns>
     [HttpPost("RequestChangeAccountEmail")]
     [Authorize]
     public async Task<IActionResult> RequestChangeAccountEmail([FromBody] ApiChangeEmailRequestModel changeEmailModel)
@@ -295,17 +328,14 @@ public class AuthenticationController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            AppUser? user = await _authenticationProcedures.GetCurrentUserByToken(token);
-            if (user is null)
-                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.CreateChangeEmailTokenAsync(token, changeEmailModel.NewEmail!);
 
-            AppUser? otherUser = await _authenticationProcedures.FindByEmailAsync(changeEmailModel.NewEmail!);
-            if (otherUser is not null)
+            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
+            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
 
-            string changeEmailToken = await _authenticationProcedures.CreateChangeEmailTokenAsync(user, changeEmailModel.NewEmail!);
-
-            return Ok(new { ChangeEmailToken = changeEmailToken });
+            return Ok(new { ChangeEmailToken = returnCodeAndTokenResponseModel.Token });
 
             //TODO add this to the Gateway API
             /*string message = "Click on the following link to confirm your account's new email:";
@@ -326,7 +356,7 @@ public class AuthenticationController : ControllerBase
                 return Ok(new { Warning = "EmailNotSent" });
 
             user.EmailConfirmed = false;
-            await _authenticationProcedures.UpdateUserAccountAsync(user);
+            await _authenticationProcedures.UpdateAccountAsync(user);
             return Ok(new { Warning = "None" });*/
         }
         catch
@@ -335,17 +365,46 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpPost("ConfirmChangeEmail")]
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="apiConfirmChangeEmailRequestModel"></param>
+    /// <returns></returns>
+    [HttpGet("ConfirmChangeEmail")]
     [AllowAnonymous]
-    public async Task<IActionResult> ConfirmChangeEmail([FromBody] ApiConfirmChangeEmailRequestModel apiConfirmChangeEmailRequestModel)
+    public async Task<IActionResult> ConfirmChangeEmail(string userId, string newEmail, string changeEmailToken, string? redirectUrl = null)
     {
         try
         {
-            string accessToken = await _authenticationProcedures.ChangeEmailAsync(apiConfirmChangeEmailRequestModel.UserId!, 
-                apiConfirmChangeEmailRequestModel.ChangeEmailToken!, apiConfirmChangeEmailRequestModel.NewEmail!);
-            if (accessToken is null)
-                return BadRequest();
-            return Ok(new { AccessToken = accessToken });
+            if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
+                return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
+
+            ReturnCodeAndTokenResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ChangeEmailAsync(userId, changeEmailToken, newEmail);
+            if (redirectUrl is not null)
+            {
+                var uribBuilder = new UriBuilder(redirectUrl);
+                var query = HttpUtility.ParseQueryString(uribBuilder.Query);
+                if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                    query["errorMessage"] = "UserNotFoundWithGivenUserId";
+                else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
+                    query["errorMessage"] = "DuplicateEmail";
+                else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidEmailAndEmailChangeTokenCombination)
+                    query["errorMessage"] = "InvalidEmailAndEmailChangeTokenCombination";
+                else
+                    query["accessToken"] = returnCodeAndTokenResponseModel.Token;
+
+                uribBuilder.Query = query.ToString();
+                return Redirect(uribBuilder.ToString());
+            }
+
+            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
+            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
+                return BadRequest(new { ErrorMessage = "DuplicateEmail" });
+            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidEmailAndEmailChangeTokenCombination)
+                return BadRequest(new { ErrorMessage = "InvalidEmailChangeEmailTokenCombination" });
+            
+            return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
         }
         catch
         {
@@ -353,4 +412,49 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    [HttpDelete("DeleteAccount")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount(string userId)
+    {
+        try
+        {
+            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
+            string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+            LibraryReturnedCodes returnedCode = await _authenticationProcedures.DeleteAccountAsync(userId, token);
+
+            if (returnedCode  == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
+                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
+            else if (returnedCode == LibraryReturnedCodes.UserDoesNotOwnGivenAccount)
+                return Unauthorized(new { ErrorMessage = "UserDoesNotOwnGivenAccount" });
+            else if (returnedCode == LibraryReturnedCodes.UnknownError)
+                return Unauthorized(new { ErrorMessage = "UnknownError" });
+
+            return NoContent();
+        }
+        catch
+        {
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
+
+    private bool CheckIfUrlIsTrusted(string redirectUrl)
+    {
+        List<string> trustedDomains = _configuration["ExcludedCorsOrigins"]!.Split(" ").ToList();
+        var redirectUri = new Uri(redirectUrl);
+        
+        foreach (string trustedDomain in trustedDomains)
+        {
+            var trustedUri = new Uri(trustedDomain);
+            if (Uri.Compare(redirectUri, trustedUri, UriComponents.SchemeAndServer, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) == 0)
+                return true;
+        }
+
+        return false;
+    }
 }

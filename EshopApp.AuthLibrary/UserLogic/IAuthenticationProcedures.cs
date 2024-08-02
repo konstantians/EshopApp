@@ -1,22 +1,21 @@
 ﻿using EshopApp.AuthLibrary.Models;
-using Microsoft.AspNetCore.Identity;
+using EshopApp.AuthLibrary.Models.ResponseModels;
 
 namespace EshopApp.AuthLibrary.UserLogic;
 
 public interface IAuthenticationProcedures
 {
-    Task<string> ChangeEmailAsync(string userId, string changeEmailToken, string newEmail);
-    Task<(bool, string)> ChangePasswordAsync(AppUser appUser, string currentPassword, string newPassword);
-    Task<string> ConfirmEmailAsync(string userId, string confirmationToken);
-    Task<string> CreateChangeEmailTokenAsync(AppUser appUser, string newEmail);
-    Task<string> CreateResetPasswordTokenAsync(AppUser appUser);
-    Task<bool> DeleteUserAccountAsync(AppUser appUser);
+    Task<ReturnCodeAndTokenResponseModel> ChangeEmailAsync(string userId, string changeEmailToken, string newEmail);
+    Task<LibraryReturnedCodes> ChangePasswordAsync(string accessToken, string currentPassword, string newPassword);
+    Task<ReturnCodeAndTokenResponseModel> ConfirmEmailAsync(string userId, string confirmationToken);
+    Task<ReturnCodeAndTokenResponseModel> CreateChangeEmailTokenAsync(string accessToken, string newEmail);
+    Task<ReturnCodeAndTokenResponseModel> CreateResetPasswordTokenAsync(string email);
+    Task<LibraryReturnedCodes> DeleteAccountAsync(string userId, string accessToken);
     Task<AppUser?> FindByEmailAsync(string email);
     Task<AppUser?> FindByUserIdAsync(string userId);
     Task<AppUser?> GetCurrentUserByToken(string token);
-    Task<List<AppUser>> GetUsersAsync();
-    Task<(string, string)> SignUpUserAsync(AppUser appUser, string password, bool isPersistent);
-    Task<string> ResetPasswordAsync(string userId, string resetPasswordToken, string newPassword);
-    Task<string> SignInUserAsync(string username, string password, bool isPersistent);
-    Task<bool> UpdateUserAccountAsync(AppUser appUser);
+    Task<LibSignUpResponseModel> SignUpAsync(string email, string phoneNumber, string password);
+    Task<ReturnCodeAndTokenResponseModel> ResetPasswordAsync(string userId, string resetPasswordToken, string newPassword);
+    Task<ReturnCodeAndTokenResponseModel> SignInAsync(string username, string password, bool isPersistent);
+    Task<bool> UpdateAccountAsync(AppUser appUser);
 }
