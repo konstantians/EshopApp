@@ -5,7 +5,8 @@ namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
 public class ApiSignUpRequestModel
 {
     [Required]
-    public string? Username { get; set; }
+    [EmailAddress]
+    public string? Email { get; set; } //in this app the username is the same as the email
     [Required]
     public string? Password { get; set; }
     [Phone]

@@ -16,7 +16,8 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        builder.Services.AddCors(options =>
+        //this might not be needed since I learned how Cors work and it does not affect requests from the gateway api.
+        /* builder.Services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>
             {
@@ -29,6 +30,7 @@ public class Program
                        .AllowAnyMethod();
             });
         });
+        */
 
         if (configuration["DatabaseInUse"] is null || configuration["DatabaseInUse"] == "SqlServer")
         {
