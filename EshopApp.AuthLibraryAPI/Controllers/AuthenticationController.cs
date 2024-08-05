@@ -209,7 +209,11 @@ public class AuthenticationController : ControllerBase
         try
         {
             IEnumerable<AuthenticationScheme> externalIdentityProviders = await _authenticationProcedures.GetExternalIdentityProvidersAsync();
-            return Ok(new {ExternalIdentityProviders = externalIdentityProviders}); 
+            List<string> externalIdentityProvidersNames = new List<string>();
+            foreach (AuthenticationScheme scheme in externalIdentityProviders) 
+                externalIdentityProvidersNames.Add(scheme.Name);
+
+            return Ok(externalIdentityProvidersNames); 
         }
         catch
         {

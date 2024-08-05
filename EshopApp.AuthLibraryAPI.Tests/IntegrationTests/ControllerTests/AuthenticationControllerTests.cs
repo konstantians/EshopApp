@@ -8,6 +8,7 @@ using System.Net;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
 using System.Net.Http.Headers;
 using System.Web;
+using Microsoft.AspNetCore.Authentication;
 
 namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.ControllerTests;
 
@@ -733,7 +734,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         string? userId = _chosenUserId;
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
-        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7255/handleRedirect?returnUrl=https://localhost:7255.com/home");
+        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7255/handleRedirect?returnUrl=https://localhost:7255/home");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}&redirectUrl={redirectUrl}");
@@ -796,9 +797,105 @@ internal class AuthenticationControllerTests
         WebUtility.UrlDecode(response.Headers.Location!.AbsoluteUri).Should().Contain(WebUtility.UrlDecode(redirectUrl));
         response.Headers.Location.Query.Should().Contain("accessToken");
     }
-    
-    //Rate Limit Test
+
+    //External Identity Tests
     [Test, Order(39)]
+    public async Task GetRegisteredExternalIdentityProviders_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/getregisteredexternalidentityproviders");
+        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        errorMessage.Should().NotBeNull();
+        errorMessage.Should().Contain("Invalid");
+    }
+
+    [Test, Order(40)]
+    public async Task GetRegisteredExternalIdentityProviders_ShouldReturnOkAndExternalIdentityProviders()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/getregisteredexternalidentityproviders");
+        string? responseBody = await response.Content.ReadAsStringAsync();
+        List<string>? externalIdentityProviders = JsonSerializer.Deserialize<List<string>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        externalIdentityProviders.Should().NotBeNull();
+        externalIdentityProviders.Should().Contain(identityProvider => identityProvider == "Twitter");
+        externalIdentityProviders.Should().Contain(identityProvider => identityProvider == "Google");
+    }
+
+    [Test, Order(41)]
+    public async Task ExternalSignIn_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
+        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
+        testExternalSignInRequestModel.IdentityProviderName = "Google";
+        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7255/home";
+
+        //Act
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
+        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        errorMessage.Should().NotBeNull();
+        errorMessage.Should().Contain("Invalid");
+    }
+
+    [Test, Order(42)]
+    public async Task ExternalSignIn_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
+        testExternalSignInRequestModel.IdentityProviderName = "Google";
+        testExternalSignInRequestModel.ReturnUrl = "https://evil.com/home";
+
+        //Act
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
+        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        errorMessage.Should().NotBeNull();
+        errorMessage.Should().Be("InvalidReturnUrl");
+    }
+
+    [Test, Order(43)]
+    public async Task ExternalSignIn_ShouldSucceedAndReturnRedirect()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
+        testExternalSignInRequestModel.IdentityProviderName = "Google";
+        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7255/home";
+
+        //Act
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Should().Contain(header => header.Key == "Set-Cookie");
+    }
+
+    //Rate Limit Test
+    [Test, Order(44)]
     public async Task SignIn_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
     {
         //Arrange
@@ -819,6 +916,7 @@ internal class AuthenticationControllerTests
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
     }
+
 
     [OneTimeTearDown]
     public void OneTimeTearDown()
