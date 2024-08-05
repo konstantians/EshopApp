@@ -8,6 +8,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using EshopApp.AuthLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Reflection;
 
 namespace EshopApp.AuthLibraryAPI;
 
@@ -23,7 +24,13 @@ public class Program()
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"; //Convoluted way of getting 'EshopApp.AuthLibraryAPI.xml', but more safe
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile); //Combine the otherpartofpath/bin/Debug/net8.0 with the EshopApp.AuthLibraryAPI.xml
+
+            options.IncludeXmlComments(xmlPath);
+        });
 
         builder.Services.AddRateLimiter(options =>
         {
@@ -99,6 +106,14 @@ public class Program()
                 ValidAudience = configuration["Jwt:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!))
             };
+        }).AddGoogle(options =>
+        {
+            options.ClientId = configuration.GetValue<string>("Authentication:Google:ClientId")!;
+            options.ClientSecret = configuration.GetValue<string>("Authentication:Google:ClientSecret")!;
+        }).AddTwitter(options =>
+        {
+            options.ConsumerKey = configuration.GetValue<string>("Authentication:Twitter:ClientId")!;
+            options.ConsumerSecret = configuration.GetValue<string>("Authentication:Twitter:ClientSecret")!;
         });
 
         builder.Services.AddScoped<IAuthenticationProcedures, AuthenticationProcedures>();
