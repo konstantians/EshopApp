@@ -60,13 +60,13 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4201, "CurrentUserCouldNotBeRetrieved"), ex, "An error occurred while retrieving logged in user. " +
+            _logger.LogError(new EventId(4200, "CurrentUserCouldNotBeRetrieved"), ex, "An error occurred while retrieving logged in user. " +
                 "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", ex.Message, ex.StackTrace);
             throw;
         }
     }
 
-    public async Task<AppUser?> FindByUserIdAsync(string userId)
+    private async Task<AppUser?> FindByUserIdAsync(string userId)
     {
         try
         {
@@ -75,13 +75,13 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         catch (Exception ex)
         {
 
-            _logger.LogError(new EventId(4202, "UserRetrievalByIdFailure"), ex, "An error occurred while retrieving user with id: {UserId}. " +
+            _logger.LogError(new EventId(4201, "UserRetrievalByIdFailure"), ex, "An error occurred while retrieving user with id: {UserId}. " +
                 "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", userId, ex.Message, ex.StackTrace);
             throw;
         }
     }
 
-    public async Task<AppUser?> FindByEmailAsync(string email)
+    private async Task<AppUser?> FindByEmailAsync(string email)
     {
         try
         {
@@ -89,7 +89,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4203, "UserRetrievalByEmailFailure"), ex, "An error occurred while retrieving user with email: {Email}. " +
+            _logger.LogError(new EventId(4202, "UserRetrievalByEmailFailure"), ex, "An error occurred while retrieving user with email: {Email}. " +
                 "ExceptionMessage {ExceptionMessage}. StackTrace: {StackTrace}.", email, ex.Message, ex.StackTrace);
             throw;
         }
@@ -102,7 +102,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             AppUser? appUser = await FindByEmailAsync(email);
             if (appUser is not null)
             {
-                _logger.LogWarning(new EventId(2208, "SignUpFailureDueToDuplicateEmail"), "Another user has the given email and thus the signup process can not proceed. Email={Email}.", email);
+                _logger.LogWarning(new EventId(3200, "SignUpFailureDueToDuplicateEmail"), "Another user has the given email and thus the signup process can not proceed. Email={Email}.", email);
                 return new LibSignUpResponseModel(null!, null!, LibraryReturnedCodes.DuplicateEmail);
             }
 
@@ -121,7 +121,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var result = await _userManager.CreateAsync(appUser, password);
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(2200, "UserRegistrationFailureUnkownError"), "An error occurred while creating user account, but an exception was not thrown. Email: {Email}, Errors: {Errors}.", 
+                _logger.LogWarning(new EventId(3201, "UserRegistrationFailureUnkownError"), "An error occurred while creating user account, but an exception was not thrown. Email: {Email}, Errors: {Errors}.", 
                     appUser.Email, result.Errors);
                 return new LibSignUpResponseModel(null!, null!, LibraryReturnedCodes.UnknownError);
             }
@@ -147,7 +147,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var user = await _userManager.FindByIdAsync(userId);
             if (user is null)
             {
-                _logger.LogWarning(new EventId(3200, "EmailConfirmationFailureDueToNullUser"), "Tried to confirm email of null user: " +
+                _logger.LogWarning(new EventId(3202, "EmailConfirmationFailureDueToNullUser"), "Tried to confirm email of null user: " +
                     "UserId={UserId}, ConfirmationToken={ConfirmationToken}.", userId, confirmationToken);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenId);
             }
@@ -155,7 +155,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var result = await _userManager.ConfirmEmailAsync(user, confirmationToken);
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3201, "EmailConfirmationFailureNoException"), "Email of user could not be confirmed: " +
+                _logger.LogWarning(new EventId(3203, "EmailConfirmationFailureNoException"), "Email of user could not be confirmed: " +
                     "UserId={UserId}, ConfirmationToken={ConfirmationToken}. Errors={Errors}.", userId, confirmationToken, result.Errors);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UnknownError);
             }
@@ -184,7 +184,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             AppUser? appUser = await GetCurrentUserByToken(accessToken);
             if (appUser is null)
             {
-                _logger.LogWarning(new EventId(2208, "EmailChangeTokenCreationFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of changing" +
+                _logger.LogWarning(new EventId(3204, "EmailChangeTokenCreationFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of changing" +
                     " password could not proceed. AccessToken={AccessToken}", accessToken);
                 return LibraryReturnedCodes.ValidTokenButUserNotInSystem;
             }
@@ -200,7 +200,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 return LibraryReturnedCodes.PasswordMissmatch;
             else if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3202, "PasswordChangeFailureNoException"), "Password could not be changed: " +
+                _logger.LogWarning(new EventId(3205, "PasswordChangeFailureNoException"), "Password could not be changed: " +
                     "UserId={UserId}, Email={Email}, Username={Username}. Errors={Errors}.", appUser.Id, appUser.Email, appUser.UserName, result.Errors);
                 return LibraryReturnedCodes.UnknownError;
             }
@@ -224,27 +224,27 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             AppUser? user = await FindByEmailAsync(email);
             if (user is null)
             {
-                _logger.LogWarning(new EventId(3200, "SignInFailureDueToNullUser"), "Tried to sign in null user: Email={Email}.", email);
+                _logger.LogWarning(new EventId(3206, "SignInFailureDueToNullUser"), "Tried to sign in null user: Email={Email}.", email);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenEmail);
             }
 
             bool isLockedOut = await _userManager.IsLockedOutAsync(user);
             if (isLockedOut)
             {
-                _logger.LogWarning(new EventId(3200, "SignInFailureDueToAccountLock"), "User with locked account tried to sign in: Email={Email}.", email);
+                _logger.LogWarning(new EventId(3207, "SignInFailureDueToAccountLock"), "User with locked account tried to sign in: Email={Email}.", email);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserAccountLocked);
             }
 
             if (!user.EmailConfirmed)
             {
-                _logger.LogWarning(new EventId(3200, "SignInFailureDueToUnconfirmedEmail"), "User with unconfirmed email tried to sign in: Email={Email}.", email);
+                _logger.LogWarning(new EventId(3208, "SignInFailureDueToUnconfirmedEmail"), "User with unconfirmed email tried to sign in: Email={Email}.", email);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
             }
 
             var result = await _userManager.CheckPasswordAsync(user!, password)!;
             if (!result)
             {
-                _logger.LogWarning(new EventId(3203, "UserSignInFailureDueToInvalidCredentials"), "User could not be signed in, because of invalid credentials. Email={Email}.", email);
+                _logger.LogWarning(new EventId(3209, "UserSignInFailureDueToInvalidCredentials"), "User could not be signed in, because of invalid credentials. Email={Email}.", email);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.InvalidCredentials);
             }
 
@@ -276,7 +276,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    public AuthenticationProperties GetExternalIdentityProvidersPropertiesAsync(string identityProviderName, string redirectUrl)
+    public AuthenticationProperties GetExternalIdentityProvidersProperties(string identityProviderName, string redirectUrl)
     {
         try
         {
@@ -292,7 +292,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    public async Task<ReturnCodeAndTokenResponseModel> ExternalSignInUserAsync()
+    public async Task<ReturnCodeAndTokenResponseModel> HandleExternalSignInCallbackAsync()
     {
         try
         {
@@ -300,7 +300,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             string? accessToken = null;
             if (loginInfo is null)
             {
-                _logger.LogWarning(new EventId(4207, "ExternalSignInFailureDueToNullLoginInfo"), "login info of external identity provider was not received.");
+                _logger.LogWarning(new EventId(3210, "ExternalSignInFailureDueToNullLoginInfo"), "login info of external identity provider was not received.");
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.LoginInfoNotReceivedFromIdentityProvider);
             }
 
@@ -309,7 +309,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             //if the returned information does not contain email give up
             if (email is null)
             {
-                _logger.LogWarning(new EventId(4207, "ExternalSignInFailureBecauseEmailClaimIsMissing"), "Sign in faulre, because the email claim of the user was not received from the external identity provider.");
+                _logger.LogWarning(new EventId(3211, "ExternalSignInFailureBecauseEmailClaimIsMissing"), "Sign in faulre, because the email claim of the user was not received from the external identity provider.");
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.EmailClaimNotReceivedFromIdentityProvider);
             }
 
@@ -354,72 +354,40 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4207, "ExternalUserSignFailure"), ex, "An error occurred while trying to sign in the user with external identity provider. " +
+            _logger.LogError(new EventId(4210, "ExternalUserSignFailure"), ex, "An error occurred while trying to sign in the user with external identity provider. " +
                 "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", ex.Message, ex.StackTrace);
             throw;
         }
     }
 
-    public async Task<bool> UpdateAccountAsync(AppUser appUser)
-    {
-        try
-        {
-            //here make sure that email and email are the same
-            var result = await _userManager.UpdateAsync(appUser);
-            if (!result.Succeeded)
-                _logger.LogWarning(new EventId(3204, "UserInformationUpdateFailureNoException"), "User account information could not be updated. " +
-                    "UserId={UserId}, Email={Email}. Errors={Errors}.", appUser.Id, appUser.Email, result.Errors);
-            else
-                _logger.LogInformation(new EventId(2204, "UserRetrievalError"), "Successfully updated user account information. UserId={UserId}, Email={Email}.",
-                    appUser.Id, appUser.Email);
-            return result.Succeeded;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(4208, "UserInformationUpdateFailure"), ex, "An error occurred while trying update the users account information. " +
-                "UserId: {UserId}, Email: {Email}, Username: {Username}. " +
-                "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}."
-                , appUser.Id, appUser.Email, appUser.UserName, ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<LibraryReturnedCodes> DeleteAccountAsync(string userId, string accessToken)
+    public async Task<LibraryReturnedCodes> DeleteAccountAsync(string accessToken)
     {
         try
         {
             AppUser? appUser = await GetCurrentUserByToken(accessToken);
             if (appUser is null)
             {
-                _logger.LogWarning(new EventId(2208, "DeleteAccountFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of deleting account. " +
-                    "UserId={UserId}, AccessToken={AccessToken}.", userId, accessToken);
+                _logger.LogWarning(new EventId(3212, "DeleteAccountFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of deleting account. " +
+                    "AccessToken={AccessToken}.", accessToken);
                 return LibraryReturnedCodes.ValidTokenButUserNotInSystem;
-            }
-
-            AppUser? user = await FindByUserIdAsync(userId);
-            if (user is null || appUser.Id != user.Id)
-            {
-                _logger.LogWarning(new EventId(2208, "DeleteAccountFailureDueToUserNotOwningTheAccountWithGivenId"),"The account could not be deleted, because the user, who sent the request, does not own the account with the given id. " +
-                    "UserId={UserId}, AccessToken={AccessToken}.", userId, accessToken);
-                return LibraryReturnedCodes.UserDoesNotOwnGivenAccount;
             }
 
             var result = await _userManager.DeleteAsync(appUser);
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3205, "UserDeletionFailureNoException"), "User account could not be deleted, but no exception was thrown. " +
-                "UserId={UserId}, AccessToken={AccessToken}, Email={Email}. Errors={Errors}.", userId, accessToken, appUser.Email, result.Errors);
+                _logger.LogWarning(new EventId(3213, "UserDeletionFailureNoException"), "User account could not be deleted, but no exception was thrown. " +
+                "AccessToken={AccessToken}, Email={Email}. Errors={Errors}.", accessToken, appUser.Email, result.Errors);
                 return LibraryReturnedCodes.UnknownError;
             }
 
-            _logger.LogInformation(new EventId(2205, "UserDeletionSuccess"), "Successfully deleted user account. UserId={UserId}, AccessToken={AccessToken}, Email={Email}", userId, accessToken, appUser.Email);
+            _logger.LogInformation(new EventId(2207, "UserDeletionSuccess"), "Successfully deleted user account. AccessToken={AccessToken}, Email={Email}", accessToken, appUser.Email);
 
             return LibraryReturnedCodes.NoError;
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4209, "UserDeletionFailure"), ex, "An error occurred while trying to delete the user account. " +
-                "UserId={UserId}, AccessToken={AccessToken}. ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", userId, accessToken, ex.Message, ex.StackTrace);
+            _logger.LogError(new EventId(4211, "UserDeletionFailure"), ex, "An error occurred while trying to delete the user account. " +
+                "AccessToken={AccessToken}. ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", accessToken, ex.Message, ex.StackTrace);
             throw;
         }
     }
@@ -432,12 +400,18 @@ public class AuthenticationProcedures : IAuthenticationProcedures
 
             if (appUser is null)
             {
-                _logger.LogWarning(new EventId(3200, "UserResetTokenCreationFailureDueToNullUser"), "Tried to create reset password token for null user: Email={Email}.", email);
+                _logger.LogWarning(new EventId(3214, "UserResetTokenCreationFailureDueToNullUser"), "Tried to create reset password token for null user: Email={Email}.", email);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenEmail);
             }
 
+            if (!appUser.EmailConfirmed)
+            {
+                _logger.LogWarning(new EventId(3215, "UserResetTokenFailureDueToUnconfirmedEmail"), "User with unconfirmed email tried to create reset token password: Email={Email}.", email);
+                return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
+            }
+
             string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(appUser);
-            _logger.LogInformation(new EventId(2206, "UserResetTokenCreationSuccess"), "Successfully created password reset token. " +
+            _logger.LogInformation(new EventId(2208, "UserResetTokenCreationSuccess"), "Successfully created password reset token. " +
                     "UserId={UserId}, Email={Email}, Username={Username}.",
                     appUser.Id, appUser.Email, appUser.UserName);
 
@@ -445,7 +419,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4210, "UserResetTokenCreationFailure"), ex, "An error occurred while trying to create reset account password token. " +
+            _logger.LogError(new EventId(4212, "UserResetTokenCreationFailure"), ex, "An error occurred while trying to create reset account password token. " +
                 "Email: {Email}. ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", email, ex.Message, ex.StackTrace);
             throw;
         }
@@ -458,23 +432,29 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var user = await _userManager.FindByIdAsync(userId);
             if (user is null)
             {
-                _logger.LogWarning(new EventId(3206, "UserPasswordResetFailureDueToNullUser"), "Tried to reset account password of null user: " +
+                _logger.LogWarning(new EventId(3216, "UserPasswordResetFailureDueToNullUser"), "Tried to reset account password of null user: " +
                     "UserId={UserId}, ResetPasswordToken={ResetPasswordToken}.", userId, resetPasswordToken);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenId);
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning(new EventId(3217, "ResetPasswordFailureDueToUnconfirmedEmail"), "User with unconfirmed email tried to reset their password: UserId={UserId}.", userId);
+                return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
             }
 
             var result = await _userManager.ResetPasswordAsync(user, resetPasswordToken, newPassword);
 
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3207, "UserPasswordResetFailureNoException"), "User account password could not be reset. " +
+                _logger.LogWarning(new EventId(3218, "UserPasswordResetFailureNoException"), "User account password could not be reset. " +
                     "UserId={UserId}, ResetPasswordToken={ResetPasswordToken}. " +
                     "Errors={Errors}.", userId, resetPasswordToken, result.Errors);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UnknownError);
             }
 
             string accessToken = GenerateToken(user);
-            _logger.LogInformation(new EventId(2207, "UserPasswordResetSuccess"), "Successfully reset account password. " +
+            _logger.LogInformation(new EventId(2209, "UserPasswordResetSuccess"), "Successfully reset account password. " +
                     "UserId={UserId}, ResetPasswordToken={ResetPasswordToken}.",
                     userId, resetPasswordToken);
 
@@ -482,7 +462,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4211, "UserPasswordResetFailure"), ex, "An error occurred while trying reset user's account password. " +
+            _logger.LogError(new EventId(4213, "UserPasswordResetFailure"), ex, "An error occurred while trying reset user's account password. " +
                 "UserId: {UserId}. ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}."
                 , userId, ex.Message, ex.StackTrace);
             throw;
@@ -496,7 +476,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             AppUser? appUser = await GetCurrentUserByToken(accessToken);
             if (appUser is null)
             { 
-                _logger.LogWarning(new EventId(2208, "EmailChangeTokenCreationFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of creating " +
+                _logger.LogWarning(new EventId(3219, "EmailChangeTokenCreationFailureDueToValidTokenButUserNotInSystem"), "The token was valid, but it does not correspond to any user in the system and thus the process of creating " +
                     "the email change token could not be completed. Token={Token}, NewEmail={NewEmail}.", accessToken, newEmail);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInSystem);
             }
@@ -504,13 +484,13 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             AppUser? otherUser = await FindByEmailAsync(newEmail!);
             if (otherUser is not null)
             {
-                _logger.LogWarning(new EventId(2208, "EmailChangeTokenCreationFailureDueToDuplicateEmail"), "Another user has the given new email and thus the process of creating email change token could not be completed. " +
+                _logger.LogWarning(new EventId(3220, "EmailChangeTokenCreationFailureDueToDuplicateEmail"), "Another user has the given new email and thus the process of creating email change token could not be completed. " +
                     "Token={Token}, NewEmail={NewEmail}.", accessToken, newEmail);
                 return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.DuplicateEmail);
             }
 
             string emailChangeToken = await _userManager.GenerateChangeEmailTokenAsync(appUser, newEmail);
-            _logger.LogInformation(new EventId(2208, "EmailChangeTokenCreationSuccess"), "Successfully created email change token. " +
+            _logger.LogInformation(new EventId(2210, "EmailChangeTokenCreationSuccess"), "Successfully created email change token. " +
                     "UserId={UserId}, Email={Email}, NewEmail={NewEmail}.",
                     appUser.Id, appUser.Email, newEmail);
 
@@ -518,7 +498,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
         catch (Exception ex)
         {
-            _logger.LogError(new EventId(4212, "EmailChangeTokenCreationFailure"), ex, "An error occurred while trying to create account email reset token. " +
+            _logger.LogError(new EventId(4214, "EmailChangeTokenCreationFailure"), ex, "An error occurred while trying to create account email reset token. " +
                 "Token:{token}. ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.", accessToken, ex.Message, ex.StackTrace);
             throw;
         }
@@ -537,7 +517,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user is null)
                 {
-                    _logger.LogWarning(new EventId(3208, "UserEmailChangeFailureDueToNullUser"),
+                    _logger.LogWarning(new EventId(3221, "UserEmailChangeFailureDueToNullUser"),
                         "Tried to change account email of null user: UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.",
                         userId, changeEmailToken, newEmail);
                     return new ReturnCodeAndTokenResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenId);
@@ -546,7 +526,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 AppUser? otherUser = await FindByEmailAsync(newEmail!);
                 if (otherUser is not null)
                 {
-                    _logger.LogWarning(new EventId(2208, "EmailChangeFailureDueToDuplicateEmail"),
+                    _logger.LogWarning(new EventId(3222, "EmailChangeFailureDueToDuplicateEmail"),
                         "Another user has the given new email and thus the process of changing the email of the account could not be completed. " +
                         "UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.",
                         userId, changeEmailToken, newEmail);
@@ -556,7 +536,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 var emailChangeResult = await _userManager.ChangeEmailAsync(user, newEmail, changeEmailToken);
                 if (!emailChangeResult.Succeeded)
                 {
-                    _logger.LogWarning(new EventId(3209, "UserEmailChangeFailureDueToInvalidTokenEmailCombination"),
+                    _logger.LogWarning(new EventId(3223, "UserEmailChangeFailureDueToInvalidTokenEmailCombination"),
                         "Tried to change email of user, but the token and the new email combination seems to be invalid: " +
                         "UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.",
                         userId, changeEmailToken, newEmail);
@@ -567,7 +547,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 var updateUsernameResult = await _userManager.UpdateAsync(user);
                 if (!updateUsernameResult.Succeeded)
                 {
-                    _logger.LogWarning(new EventId(3210, "UnknownError"),
+                    _logger.LogWarning(new EventId(3224, "UnknownError"),
                         "Tried to change username to much email field, but something went wrong, so there needs to be a rollback: " +
                         "UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.",
                         userId, changeEmailToken, newEmail);
@@ -578,7 +558,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 await _identityDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation(new EventId(2209, "UserEmailChangeSuccess"),
+                _logger.LogInformation(new EventId(2211, "UserEmailChangeSuccess"),
                     "Successfully changed user's email account. UserId={UserId}, ChangeEmailToken={ChangeEmailToken}, NewEmail={NewEmail}.",
                     userId, changeEmailToken, newEmail);
 
@@ -588,13 +568,38 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(new EventId(4213, "UserEmailChangeFailure"), ex,
+                _logger.LogError(new EventId(4215, "UserEmailChangeFailure"), ex,
                     "An error occurred while trying to change user email account. UserId: {UserId}, NewEmail: {NewEmail}. " +
                     "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}.",
                     userId, newEmail, ex.Message, ex.StackTrace);
                 throw;
             }
         });
+    }
+
+    //TODO Think about how to do this...
+    public async Task<bool> UpdateAccountAsync(AppUser appUser)
+    {
+        try
+        {
+            //here make sure that email and email are the same
+            var result = await _userManager.UpdateAsync(appUser);
+            if (!result.Succeeded)
+                _logger.LogWarning(new EventId(3225, "UserInformationUpdateFailureNoException"), "User account information could not be updated. " +
+                    "UserId={UserId}, Email={Email}. Errors={Errors}.", appUser.Id, appUser.Email, result.Errors);
+            else
+                _logger.LogInformation(new EventId(2212, "UserRetrievalError"), "Successfully updated user account information. UserId={UserId}, Email={Email}.",
+                    appUser.Id, appUser.Email);
+            return result.Succeeded;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(4216, "UserInformationUpdateFailure"), ex, "An error occurred while trying update the users account information. " +
+                "UserId: {UserId}, Email: {Email}, Username: {Username}. " +
+                "ExceptionMessage: {ExceptionMessage}. StackTrace: {StackTrace}."
+                , appUser.Id, appUser.Email, appUser.UserName, ex.Message, ex.StackTrace);
+            throw;
+        }
     }
 
     private string GenerateToken(AppUser user, bool isPersistent = false)

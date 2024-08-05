@@ -159,7 +159,7 @@ internal class AuthenticationControllerTests
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
         
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={bogusUserId}&token={emailConfirmationToken}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={bogusUserId}&confirmEmailToken={emailConfirmationToken}");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -175,7 +175,7 @@ internal class AuthenticationControllerTests
         string? bogusEmailConfirmationToken = "bogusEmailConfirmationToken";
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&token={bogusEmailConfirmationToken}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={bogusEmailConfirmationToken}");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -191,7 +191,7 @@ internal class AuthenticationControllerTests
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&token={emailConfirmationToken}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}");
         string? accessToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "accessToken");
 
         //Assert
@@ -201,7 +201,7 @@ internal class AuthenticationControllerTests
     }
 
     [Test, Order(9)]
-    public async Task TryGetCurrentUser_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
+    public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
@@ -209,7 +209,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/trygetcurrentuser");
+        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
         string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
@@ -219,7 +219,7 @@ internal class AuthenticationControllerTests
     }
 
     [Test, Order(10)]
-    public async Task TryGetCurrentUser_ShouldReturnUnauthorized_IfAccessTokenIsInvalid()
+    public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAccessTokenIsInvalid()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
@@ -227,14 +227,14 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/trygetcurrentuser");
+        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Test, Order(11)]
-    public async Task TryGetCurrentUser_ShouldReturnOkAndUser()
+    public async Task GetUserByAccessToken_ShouldReturnOkAndUser()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
@@ -242,7 +242,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/trygetcurrentuser");
+        HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
         string? responseBody = await response.Content.ReadAsStringAsync();
         TestAppUser? testAppUser = JsonSerializer.Deserialize<TestAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -655,7 +655,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
 
         //Act
-        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount?UserId={_chosenUserId}");
+        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
         string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
@@ -673,30 +673,13 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
         
         //Act
-        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount?UserId={_chosenUserId}");
+        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Test, Order(34)]
-    public async Task DeleteAccount_ShouldReturnUnauthorized_IfUserDoesNotOwnGivenEmailForDeletion()
-    {
-        //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-
-        //Act
-        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount?UserId={_otherUserId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
-
-        //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        errorMessage.Should().NotBeNull();
-    }
-
-    [Test, Order(35)]
     public async Task DeleteAccount_ShouldReturnNoContentAndSucceed()
     {
         //Arrange
@@ -705,14 +688,14 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
 
         //Act
-        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount?UserId={_chosenUserId}");
+        HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     //Redirect Testing Area
-    [Test, Order(36)]
+    [Test, Order(35)]
     public async Task ConfirmEmail_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
     {
         //Arrange
@@ -734,7 +717,7 @@ internal class AuthenticationControllerTests
         string? redirectUrl = WebUtility.UrlEncode("https://evil.com/handleRedirect?returnUrl=https://evil.com/home");
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&token={emailConfirmationToken}&redirectUrl={redirectUrl}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}&redirectUrl={redirectUrl}");
         string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
@@ -743,7 +726,7 @@ internal class AuthenticationControllerTests
         errorMessage.Should().Be("InvalidRedirectUrl");
     }
 
-    [Test, Order(37)]
+    [Test, Order(36)]
     public async Task ConfirmEmail_ShouldReturnRedirectConfirmEmailAndReturnAccessToken()
     {
         //Arrange
@@ -753,7 +736,7 @@ internal class AuthenticationControllerTests
         string? redirectUrl = WebUtility.UrlEncode("https://localhost:7255/handleRedirect?returnUrl=https://localhost:7255.com/home");
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&token={emailConfirmationToken}&redirectUrl={redirectUrl}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}&redirectUrl={redirectUrl}");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
@@ -765,7 +748,7 @@ internal class AuthenticationControllerTests
         _chosenAccessToken = query["accessToken"];
     }
 
-    [Test, Order(38)]
+    [Test, Order(37)]
     public async Task ConfirmChangeEmail_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
     {
         //Arrange
@@ -794,7 +777,7 @@ internal class AuthenticationControllerTests
         errorMessage.Should().Be("InvalidRedirectUrl");
     }
 
-    [Test, Order(39)]
+    [Test, Order(38)]
     public async Task ConfirmChangeEmail_ShouldReturnRedirectConfirmNewEmailAndReturnAccessToken()
     {
         //Arrange
@@ -815,7 +798,7 @@ internal class AuthenticationControllerTests
     }
     
     //Rate Limit Test
-    [Test, Order(40)]
+    [Test, Order(39)]
     public async Task SignIn_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
     {
         //Arrange
