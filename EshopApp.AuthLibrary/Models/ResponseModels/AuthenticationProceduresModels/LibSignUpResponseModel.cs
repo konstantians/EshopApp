@@ -1,6 +1,6 @@
-﻿namespace EshopApp.AuthLibrary.Models.ResponseModels;
+﻿namespace EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 
-public class LibSignUpResponseModel : ReturnCodeAndTokenResponseModel
+public class LibSignUpResponseModel : ReturnTokenAndCodeResponseModel
 {
     public string? UserId { get; set; }
 

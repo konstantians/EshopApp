@@ -1,10 +1,12 @@
-﻿namespace EshopApp.AuthLibrary.Models;
+﻿namespace EshopApp.AuthLibrary.Models.ResponseModels;
 
 public enum LibraryReturnedCodes
 {
     DuplicateEmail,
+    DuplicateRole,
     UserNotFoundWithGivenId,
     UserNotFoundWithGivenEmail,
+    RoleNotFoundWithGivenId,
     UserAccountLocked,
     UserAccountNotActivated,
     InvalidCredentials,
@@ -14,6 +16,7 @@ public enum LibraryReturnedCodes
     LoginInfoNotReceivedFromIdentityProvider,
     EmailClaimNotReceivedFromIdentityProvider,
     ValidTokenButUserNotInSystem,
+    ValidTokenButClaimNotInSystem,
     UnknownError,
     NoError
 }

@@ -4,6 +4,7 @@ using EshopApp.AuthLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.AuthLibrary.Migrations
 {
     [DbContext(typeof(AppIdentityDbContext))]
-    partial class AppIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240809193309_SeedingDatabaseForAuthorizationPurposes")]
+    partial class SeedingDatabaseForAuthorizationPurposes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,33 +24,6 @@ namespace EshopApp.AuthLibrary.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("EshopApp.AuthLibrary.Models.AppRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
-
-                    b.ToTable("AspNetRoles", (string)null);
-                });
 
             modelBuilder.Entity("EshopApp.AuthLibrary.Models.AppUser", b =>
                 {
@@ -116,17 +92,17 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "bc4e7fe5-6779-4531-9938-33514b7557db",
+                            Id = "7ceb06c1-fe10-4c72-9572-630d575eff4e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "375e514b-2da8-4ec6-abc6-9cedcf8eb2b8",
+                            ConcurrencyStamp = "7f74b2b7-97d3-4de3-93c5-27bf2166075c",
                             Email = "admin@hotmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@HOTMAIL.COM",
                             NormalizedUserName = "ADMIN@HOTMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEPvGdgzdbB/1BT0b4CFzkkwpNKnxPyCr0qq8BG5PL/QpQyri00lIZUUJXbORD/MjQw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAELh+lcQXOw2KZgKUJe9u1pZP0b/icFwJ2y198gcHk226MmwZWZ07ANnSIa9GLDEyIw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "5c8af473-7772-4deb-b338-b1b94d2a1b5a",
+                            SecurityStamp = "6eeeb2bc-fa2b-49b7-9d6f-43a847a1aa11",
                             TwoFactorEnabled = false,
                             UserName = "admin@hotmail.com"
                         });
@@ -138,37 +114,45 @@ namespace EshopApp.AuthLibrary.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("IdentityRole");
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
 
                     b.HasData(
                         new
                         {
-                            Id = "05888481-649e-46f9-96aa-2588ff5b00cb",
-                            ConcurrencyStamp = "92824b71-f797-4b82-a279-8b2655b77677",
+                            Id = "56748679-3c9a-4b6c-8286-0b09f3d0be9d",
+                            ConcurrencyStamp = "8b462f69-1846-4feb-8efd-1f47892371a2",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe",
-                            ConcurrencyStamp = "8f167eb5-134d-4046-85fa-f5ebfdc1f112",
+                            Id = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554",
+                            ConcurrencyStamp = "684ced1a-3bf9-4a59-a8c0-625b552227af",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = "66448807-40c5-4067-b60b-a0d9d48be760",
-                            ConcurrencyStamp = "5a48029f-e8b2-40db-aa4e-adec6deef27c",
+                            Id = "29837bc8-fa01-4665-9c99-011a7eb22ab9",
+                            ConcurrencyStamp = "77062b0f-cf46-41fd-86ff-3204d6bd97aa",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -204,98 +188,98 @@ namespace EshopApp.AuthLibrary.Migrations
                             Id = 1,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewUser",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 2,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditUser",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 3,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewAdmin",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 4,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditAdmin",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 5,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewUserRoles",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 6,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditUserRoles",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 7,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewAdminRoles",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 8,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditAdminRoles",
-                            RoleId = "66448807-40c5-4067-b60b-a0d9d48be760"
+                            RoleId = "29837bc8-fa01-4665-9c99-011a7eb22ab9"
                         },
                         new
                         {
                             Id = 9,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewUser",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         },
                         new
                         {
                             Id = 10,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditUser",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         },
                         new
                         {
                             Id = 11,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewAdmin",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         },
                         new
                         {
                             Id = 12,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewUserRoles",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         },
                         new
                         {
                             Id = 13,
                             ClaimType = "Permission",
                             ClaimValue = "CanEditUserRoles",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         },
                         new
                         {
                             Id = 14,
                             ClaimType = "Permission",
                             ClaimValue = "CanViewAdminRoles",
-                            RoleId = "83eb3f59-e27a-4ef5-ab46-10fe52772ffe"
+                            RoleId = "cfd9ee12-e7dd-40ce-8f83-eb77c4987554"
                         });
                 });
 
@@ -382,7 +366,7 @@ namespace EshopApp.AuthLibrary.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("EshopApp.AuthLibrary.Models.AppRole", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -409,7 +393,7 @@ namespace EshopApp.AuthLibrary.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("EshopApp.AuthLibrary.Models.AppRole", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
