@@ -2,13 +2,13 @@ using EshopApp.AuthLibrary;
 using EshopApp.AuthLibrary.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using EshopApp.AuthLibrary.UserLogic;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using EshopApp.AuthLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Reflection;
+using EshopApp.AuthLibrary.AuthLogic;
 
 namespace EshopApp.AuthLibraryAPI;
 
@@ -67,7 +67,7 @@ public class Program()
         });
         */
 
-        builder.Services.AddIdentity<AppUser, IdentityRole>()
+        builder.Services.AddIdentity<AppUser, AppRole>()
             .AddEntityFrameworkStores<AppIdentityDbContext>()
             .AddDefaultTokenProviders();
 
@@ -76,11 +76,9 @@ public class Program()
 
         builder.Services.Configure<IdentityOptions>(options =>
         {
-            options.SignIn.RequireConfirmedEmail = true;
-
-            options.Lockout.AllowedForNewUsers = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            //options.Lockout.AllowedForNewUsers = true;
+            //options.Lockout.MaxFailedAccessAttempts = 10;
+            //options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
 
             options.Password.RequireNonAlphanumeric = true;
             options.Password.RequireDigit = true;
@@ -117,6 +115,7 @@ public class Program()
         });
 
         builder.Services.AddScoped<IAuthenticationProcedures, AuthenticationProcedures>();
+        builder.Services.AddScoped<IHelperMethods, HelperMethods>();
 
         var app = builder.Build();
 

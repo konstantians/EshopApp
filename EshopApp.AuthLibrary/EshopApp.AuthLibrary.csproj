@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Models\RequestModels\" />
+    <Folder Include="Models\ResponseModels\AdminProceduresModels\" />
   </ItemGroup>
 
 </Project>
