@@ -11,7 +11,7 @@ namespace EshopApp.AuthLibrary.AuthLogic;
 //Logging Messages Start With 2 For Success/Information, 3 For Warning And 4 For Error(Almost like HTTP Status Codes). The range is 0-99, for example 1000. 
 //The range of codes for this class is is 300-399, for example 2300 or 2399.
 //TODO figure a better way to do logging ids
-public class AdminProcedures
+public class AdminProcedures : IAdminProcedures
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly ILogger<AuthenticationProcedures> _logger;
@@ -87,11 +87,11 @@ public class AdminProcedures
         }
     }
 
-    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string phoneNumber, string password)
+    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null)
     {
 
         var executionStrategy = _identityDbContext.Database.CreateExecutionStrategy();
-        
+
         return await executionStrategy.ExecuteAsync(async () =>
         {
             using (var transaction = await _identityDbContext.Database.BeginTransactionAsync())
@@ -103,7 +103,7 @@ public class AdminProcedures
                     if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                     {
                         await transaction.RollbackAsync();
-                        return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInSystem);
+                        return new ReturnUserAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
                     }
 
                     AppUser? otherUser = await _userManager.FindByEmailAsync(email);
@@ -136,7 +136,7 @@ public class AdminProcedures
                         _logger.LogWarning(new EventId(3321, "CreateUserAccountFailureUnknownError"), "An error occurred while creating user account, but an exception was not thrown. Email={Email}, Errors={Errors}.",
                             appUser.Email, result.Errors);
 
-                        return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UnknownError);                    
+                        return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UnknownError);
                     }
 
                     // Confirm the email
@@ -147,17 +147,17 @@ public class AdminProcedures
                         await transaction.RollbackAsync();
                         _logger.LogWarning(new EventId(3322, "CreateUserAccountFailureUnknownError"), "An error occurred while creating user account, but an exception was not thrown. Email={Email}, Errors={Errors}.",
                             appUser.Email, result.Errors);
-                     
+
                         return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UnknownError);
                     }
 
                     await _userManager.AddToRoleAsync(appUser, "User"); //for now just add the user in the role user
-                    
+
                     // If everything is successful, commit the transaction
                     await transaction.CommitAsync();
                     _logger.LogInformation(new EventId(2300, "CreateUserAccountSuccess"), "The user account with UserId={UserId} was sucessfully created.", appUser.Id);
-                
-                    
+
+
                     return new ReturnUserAndCodeResponseModel(appUser, LibraryReturnedCodes.NoError);
                 }
                 catch (Exception ex)
@@ -173,7 +173,7 @@ public class AdminProcedures
         });
     }
 
-    public async Task<LibraryReturnedCodes> UpdateUserAccountAsync(string accessToken, List<Claim> expectedClaims, AppUser updatedUser, string? password = null, bool activateEmail = true)
+    public async Task<LibraryReturnedCodes> UpdateUserAccountAsync(string accessToken, List<Claim> expectedClaims, AppUser updatedUser, bool activateEmail, string? password = null)
     {
         var executionStrategy = _identityDbContext.Database.CreateExecutionStrategy();
 
@@ -183,12 +183,12 @@ public class AdminProcedures
             {
                 try
                 {
-                    ReturnUserAndCodeResponseModel standardTokenProceduresTestModel = await _helperMethods.StandardTokenValidationAuthenticationAndAuthorizationProcedures(accessToken, 
+                    ReturnUserAndCodeResponseModel standardTokenProceduresTestModel = await _helperMethods.StandardTokenValidationAuthenticationAndAuthorizationProcedures(accessToken,
                         expectedClaims, new EventId(3323, "UpdateUserAccount"));
                     if (standardTokenProceduresTestModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                     {
                         await transaction.RollbackAsync();
-                        return LibraryReturnedCodes.ValidTokenButUserNotInSystem;
+                        return standardTokenProceduresTestModel.LibraryReturnedCodes;
                     }
 
                     //check if the user 

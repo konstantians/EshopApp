@@ -62,7 +62,7 @@ public class HelperMethods : IHelperMethods
 
         if(await IsAccountLockedOut(appUser, new EventId(templateEvent.Id + 2, templateEvent.Name + "FailureDueToAccountBeingLocked"), 
             "The account was locked out at the time of the process and thus the process could not proceed: Email={Email}."))
-            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
+            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountLocked);
 
         return new ReturnUserAndCodeResponseModel(appUser, LibraryReturnedCodes.NoError);
     }
@@ -88,7 +88,7 @@ public class HelperMethods : IHelperMethods
         {
             _logger.LogWarning(new EventId(templateEvent.Id + 2, templateEvent.Name + "FailureDueToRoleNotInUserRolesInSystem"),
                 "The role existed correctly in the access token, but the user is not connected to the role with RoleName={RoleName} in the database. AccessToken={AccessToken}.", roleName, accessToken);
-            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInSystem);
+            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem);
         }
 
         var userRoleClaimsInSystem = await _roleManager.GetClaimsAsync(userRole!);
@@ -99,7 +99,7 @@ public class HelperMethods : IHelperMethods
                 _logger.LogWarning(new EventId(templateEvent.Id + 3, templateEvent.Name + "FailureDueToClaimNotPartOfRoleInSystem"),
                     "The claims existed correctly in the access token, but the claim with ClaimType={ClaimType} and ClaimValue={ClaimValue} is not currently part of the role with RoleName={RoleName}. " +
                     "AccessToken={AccessToken}.", expectedClaim.Type, expectedClaim.Value, roleName, accessToken);
-                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInSystem);
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButClaimNotInSystem);
             }
         }
 
@@ -109,7 +109,7 @@ public class HelperMethods : IHelperMethods
 
         if (await IsAccountLockedOut(appUser, new EventId(templateEvent.Id + 5, templateEvent.Name + "FailureDueToAccountBeingLocked"),
             "The account was locked out at the time of the process and thus the process could not proceed: Email={Email}."))
-            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
+            return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountLocked);
 
         return new ReturnUserAndCodeResponseModel(appUser, LibraryReturnedCodes.NoError);
     }

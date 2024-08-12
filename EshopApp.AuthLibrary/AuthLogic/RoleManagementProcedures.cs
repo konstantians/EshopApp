@@ -29,7 +29,7 @@ public class RoleManagementProcedures : IRoleManagementProcedures
         _logger = logger ?? NullLogger<AuthenticationProcedures>.Instance;
     }
 
-    public async Task<ReturnRolesAndCodeResponseModel> GetRolesAsync(string accessToken, List<Claim> expectedClaims, string roleId)
+    public async Task<ReturnRolesAndCodeResponseModel> GetRolesAsync(string accessToken, List<Claim> expectedClaims)
     {
         try
         {

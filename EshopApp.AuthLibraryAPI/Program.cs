@@ -114,7 +114,17 @@ public class Program()
             options.ConsumerSecret = configuration.GetValue<string>("Authentication:Twitter:ClientSecret")!;
         });
 
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("CanViewUserPolicy", policy => policy.RequireClaim("Permission", "CanViewUsers"));
+            options.AddPolicy("CanEditUserPolicy", policy => policy.RequireClaim("Permission", "CanEditUsers"));
+            options.AddPolicy("CanViewUserRolesPolicy", policy => policy.RequireClaim("Permission", "CanViewUserRoles"));
+            options.AddPolicy("CanEditUserRolesPolicy", policy => policy.RequireClaim("Permission", "CanEditUserRoles"));
+        });
+
         builder.Services.AddScoped<IAuthenticationProcedures, AuthenticationProcedures>();
+        builder.Services.AddScoped<IAdminProcedures, AdminProcedures>();
+        builder.Services.AddScoped<IRoleManagementProcedures, RoleManagementProcedures>();
         builder.Services.AddScoped<IHelperMethods, HelperMethods>();
 
         var app = builder.Build();
