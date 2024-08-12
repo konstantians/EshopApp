@@ -1,6 +1,5 @@
 ﻿using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 using EshopApp.AuthLibrary.AuthLogic;
-using EshopApp.AuthLibraryAPI.Models.RequestModels;
 using EshopApp.AuthLibraryAPI.Models.ResponseModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Web;
 using EshopApp.AuthLibrary.Models.ResponseModels;
+using EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
 
 namespace EshopApp.AuthLibraryAPI.Controllers;
 

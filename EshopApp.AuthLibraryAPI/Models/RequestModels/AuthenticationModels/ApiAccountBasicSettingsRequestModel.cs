@@ -1,4 +1,4 @@
-﻿namespace EshopApp.AuthLibraryAPI.Models.RequestModels;
+﻿namespace EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
 
 public class ApiAccountBasicSettingsRequestModel
 {

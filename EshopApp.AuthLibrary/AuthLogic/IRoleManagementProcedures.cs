@@ -12,7 +12,7 @@ namespace EshopApp.AuthLibrary.AuthLogic
         Task<ReturnClaimsAndCodeResponseModel> GetAllUniqueClaimsInSystemAsync(string accessToken, List<Claim> expectedClaims);
         Task<ReturnRoleAndCodeResponseModel> GetRoleByIdAsync(string accessToken, List<Claim> expectedClaims, string roleId);
         Task<ReturnRoleAndCodeResponseModel> GetRoleByNameAsync(string accessToken, List<Claim> expectedClaims, string roleName);
-        Task<ReturnRolesAndCodeResponseModel> GetRolesAsync(string accessToken, List<Claim> expectedClaims, string roleId);
+        Task<ReturnRolesAndCodeResponseModel> GetRolesAsync(string accessToken, List<Claim> expectedClaims);
         Task<ReturnRolesAndCodeResponseModel> GetRolesOfUserAsync(string accessToken, List<Claim> expectedClaims, string userId);
         Task<ReturnUsersAndCodeResponseModel> GetUsersOfGivenRoleAsync(string accessToken, List<Claim> expectedClaims, string roleId);
         Task<LibraryReturnedCodes> RemoveRoleFromUserAsync(string accessToken, List<Claim> expectedClaims, string userId, string roleId);

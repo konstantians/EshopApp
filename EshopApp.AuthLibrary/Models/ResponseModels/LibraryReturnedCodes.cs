@@ -17,6 +17,7 @@ public enum LibraryReturnedCodes
     EmailClaimNotReceivedFromIdentityProvider,
     ValidTokenButUserNotInSystem,
     ValidTokenButClaimNotInSystem,
+    ValidTokenButUserNotInRoleInSystem,
     UnknownError,
     NoError
 }
