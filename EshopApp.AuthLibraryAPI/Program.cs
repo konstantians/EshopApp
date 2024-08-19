@@ -116,10 +116,8 @@ public class Program()
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy("CanViewUserPolicy", policy => policy.RequireClaim("Permission", "CanViewUsers"));
-            options.AddPolicy("CanEditUserPolicy", policy => policy.RequireClaim("Permission", "CanEditUsers"));
-            options.AddPolicy("CanViewUserRolesPolicy", policy => policy.RequireClaim("Permission", "CanViewUserRoles"));
-            options.AddPolicy("CanEditUserRolesPolicy", policy => policy.RequireClaim("Permission", "CanEditUserRoles"));
+            options.AddPolicy("CanManageUsersPolicy", policy => policy.RequireClaim("Permission", "CanManageUsers"));
+            options.AddPolicy("CanManageRolesPolicy", policy => policy.RequireClaim("Permission", "CanManageRoles"));
         });
 
         builder.Services.AddScoped<IAuthenticationProcedures, AuthenticationProcedures>();

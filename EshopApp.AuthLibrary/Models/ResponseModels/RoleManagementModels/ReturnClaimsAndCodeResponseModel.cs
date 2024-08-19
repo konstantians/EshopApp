@@ -1,15 +1,15 @@
-﻿using System.Security.Claims;
+﻿using EshopApp.AuthLibraryAPI.Models;
 
 namespace EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
 
 public class ReturnClaimsAndCodeResponseModel
 {
     public LibraryReturnedCodes LibraryReturnedCodes { get; set; }
-    public List<Claim> Claims { get; set; } = new List<Claim>();
+    public List<CustomClaim> Claims { get; set; } = new List<CustomClaim>();
 
-    public ReturnClaimsAndCodeResponseModel(List<Claim> claims, LibraryReturnedCodes libraryReturnedCodes)
+    public ReturnClaimsAndCodeResponseModel(List<CustomClaim> claims, LibraryReturnedCodes libraryReturnedCodes)
     {
-        foreach (var claim in claims)
+        foreach (var claim in claims ?? Enumerable.Empty<CustomClaim>())
             Claims.Add(claim);
         LibraryReturnedCodes = libraryReturnedCodes;
     }

@@ -14,16 +14,18 @@ namespace EshopApp.AuthLibrary.AuthLogic;
 public class AdminProcedures : IAdminProcedures
 {
     private readonly UserManager<AppUser> _userManager;
+    private readonly RoleManager<AppRole> _roleManager;
     private readonly ILogger<AuthenticationProcedures> _logger;
     private readonly IHelperMethods _helperMethods;
     private readonly AppIdentityDbContext _identityDbContext;
 
-    public AdminProcedures(UserManager<AppUser> userManager, AppIdentityDbContext appIdentityDbContext, IHelperMethods helperMethods, ILogger<AuthenticationProcedures> logger = null!)
+    public AdminProcedures(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, AppIdentityDbContext appIdentityDbContext, IHelperMethods helperMethods, ILogger<AuthenticationProcedures> logger = null!)
     {
-        _identityDbContext = appIdentityDbContext;
         _userManager = userManager;
-        _logger = logger ?? NullLogger<AuthenticationProcedures>.Instance;
+        _roleManager = roleManager;
+        _identityDbContext = appIdentityDbContext;
         _helperMethods = helperMethods;
+        _logger = logger ?? NullLogger<AuthenticationProcedures>.Instance;
     }
 
     public async Task<ReturnUsersAndCodeResponseModel> GetUsersAsync(string accessToken, List<Claim> expectedClaims)
@@ -35,8 +37,29 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return new ReturnUsersAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
 
-            var appUsers = await _userManager.Users.ToListAsync();
-            return new ReturnUsersAndCodeResponseModel(appUsers, LibraryReturnedCodes.NoError);
+            var foundUsers = await _userManager.Users.ToListAsync();
+
+            IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(returnCodeAndUserResponseModel.AppUser!);
+            AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames!.FirstOrDefault()!);
+            IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+            //if the user that called the endpoint has elevated access just return all users
+            if(editorUserClaims is not null && editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedUsers"))
+                return new ReturnUsersAndCodeResponseModel(foundUsers, LibraryReturnedCodes.NoError);
+
+            //otherwise just return users who do not have elevated protections
+            var filteredFoundUsers = new List<AppUser>();
+            foreach (AppUser foundUser in foundUsers)
+            {
+                IList<string> editedUserRoleNames = await _userManager.GetRolesAsync(foundUser);
+                AppRole? editedUserRole = editedUserRoleNames is null || editedUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editedUserRoleNames.FirstOrDefault()!);
+                IList<Claim>? editedUserClaims = editedUserRole is null ? null : await _roleManager.GetClaimsAsync(editedUserRole);
+
+                if (editedUserClaims is null || !editedUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
+                    filteredFoundUsers.Add(foundUser);
+            }
+            
+            return new ReturnUsersAndCodeResponseModel(filteredFoundUsers, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -55,8 +78,16 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return returnCodeAndUserResponseModel; //null and the error status code
 
-            AppUser? appUser = await _userManager.FindByIdAsync(userId);
-            return new ReturnUserAndCodeResponseModel(appUser!, LibraryReturnedCodes.NoError);
+            AppUser? foundUser = await _userManager.FindByIdAsync(userId);
+            if (foundUser is null)
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
+
+            //check if the user does not have the highest priviledges. If they dont check to see if they try to update a user with the highest priviledges
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificUser(returnCodeAndUserResponseModel.AppUser!, foundUser!);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser);
+
+            return new ReturnUserAndCodeResponseModel(foundUser!, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -75,9 +106,16 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return returnCodeAndUserResponseModel; //null and the error status code
 
+            AppUser? foundUser = await _userManager.FindByEmailAsync(email);
+            if (foundUser is null)
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
 
-            AppUser? appUser = await _userManager.FindByEmailAsync(email);
-            return new ReturnUserAndCodeResponseModel(appUser!, LibraryReturnedCodes.NoError);
+            //check if the user does not have the highest priviledges. If they dont check to see if they try to update a user with the highest priviledges
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificUser(returnCodeAndUserResponseModel.AppUser!, foundUser!);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser);
+
+            return new ReturnUserAndCodeResponseModel(foundUser!, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -129,7 +167,7 @@ public class AdminProcedures : IAdminProcedures
 
                     var result = await _userManager.CreateAsync(appUser, password);
 
-                    // If currentAppUser creation fails, rollback the transaction
+                    // If userToBeUpdated creation fails, rollback the transaction
                     if (!result.Succeeded)
                     {
                         await transaction.RollbackAsync();
@@ -192,16 +230,21 @@ public class AdminProcedures : IAdminProcedures
                     }
 
                     //check if the user 
-                    AppUser? currentAppUser = await _userManager.FindByIdAsync(updatedUser.Id);
-                    if (currentAppUser is null)
+                    AppUser? userToBeUpdated = await _userManager.FindByIdAsync(updatedUser.Id);
+                    if (userToBeUpdated is null)
                     {
                         await transaction.RollbackAsync();
                         _logger.LogWarning(new EventId(3328, "UpdateUserAccountFailureDueToNullUser"), "Tried to update null user. UserId={UserId}", updatedUser.Id);
                         return LibraryReturnedCodes.UserNotFoundWithGivenId;
                     }
 
+                    //check if the user does not have the highest priviledges. If they dont check to see if they try to update a user with the highest priviledges
+                    LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificUser(standardTokenProceduresTestModel.AppUser!, userToBeUpdated);
+                    if (returnedCode != LibraryReturnedCodes.NoError)
+                        return returnedCode;
+
                     //check if another user has the given email
-                    if (updatedUser.Email is not null && updatedUser.Email != currentAppUser.Email)
+                    if (updatedUser.Email is not null && updatedUser.Email != userToBeUpdated.Email)
                     {
                         AppUser? otherUser = await _userManager.FindByEmailAsync(updatedUser.Email);
                         if (otherUser is not null)
@@ -216,11 +259,11 @@ public class AdminProcedures : IAdminProcedures
                     //password update if a new password is provided
                     if (password is not null)
                     {
-                        bool checkPasswordResult = await _userManager.CheckPasswordAsync(currentAppUser, password);
+                        bool checkPasswordResult = await _userManager.CheckPasswordAsync(userToBeUpdated, password);
                         if (!checkPasswordResult)
                         {
-                            string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(currentAppUser);
-                            var changePasswordResult = await _userManager.ResetPasswordAsync(currentAppUser, passwordResetToken, password);
+                            string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(userToBeUpdated);
+                            var changePasswordResult = await _userManager.ResetPasswordAsync(userToBeUpdated, passwordResetToken, password);
                             if (!changePasswordResult.Succeeded)
                             {
                                 await transaction.RollbackAsync();
@@ -233,12 +276,12 @@ public class AdminProcedures : IAdminProcedures
 
                     //update basic fields like phoneNuber
                     if (updatedUser.PhoneNumber is not null)
-                        currentAppUser.PhoneNumber = updatedUser.PhoneNumber.Trim() == "" ? null : updatedUser.PhoneNumber.Trim();
+                        userToBeUpdated.PhoneNumber = updatedUser.PhoneNumber.Trim() == "" ? null : updatedUser.PhoneNumber.Trim();
 
-                    currentAppUser.Email = updatedUser.Email is null ? currentAppUser.Email : updatedUser.Email;
-                    currentAppUser.UserName = updatedUser.Email is null ? currentAppUser.Email : updatedUser.Email; //The email and the username are the same
-                    currentAppUser.EmailConfirmed = activateEmail;
-                    var updateBasicFieldsResult = await _userManager.UpdateAsync(currentAppUser);
+                    userToBeUpdated.Email = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email;
+                    userToBeUpdated.UserName = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email; //The email and the username are the same
+                    userToBeUpdated.EmailConfirmed = activateEmail;
+                    var updateBasicFieldsResult = await _userManager.UpdateAsync(userToBeUpdated);
                     if (!updateBasicFieldsResult.Succeeded)
                     {
                         await transaction.RollbackAsync();
@@ -274,17 +317,22 @@ public class AdminProcedures : IAdminProcedures
                 return returnCodeAndUserResponseModel.LibraryReturnedCodes; //null and the error status code
 
 
-            AppUser? appUser = await _userManager.FindByIdAsync(userId);
-            if (appUser is null)
+            AppUser? userToBeDeleted = await _userManager.FindByIdAsync(userId);
+            if (userToBeDeleted is null)
             {
                 _logger.LogWarning(new EventId(3337, "DeleteUserAccountFailureDueToNullUser"), "Tried to delete email of null user. UserId={UserId}", userId);
                 return LibraryReturnedCodes.UserNotFoundWithGivenId;
             }
 
-            var result = await _userManager.DeleteAsync(appUser);
+            //check if the user does not have the highest priviledges. If they dont check to see if they try to update a user with the highest priviledges
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificUser(returnCodeAndUserResponseModel.AppUser!, userToBeDeleted);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return returnedCode;
+
+            var result = await _userManager.DeleteAsync(userToBeDeleted);
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3338, "DeleteUserAccountFailureNoException"), "User account could not be deleted, but no exception was thrown. UserId={UserId}. Errors={Errors}.", appUser.Email, result.Errors);
+                _logger.LogWarning(new EventId(3338, "DeleteUserAccountFailureNoException"), "User account could not be deleted, but no exception was thrown. UserId={UserId}. Errors={Errors}.", userToBeDeleted.Email, result.Errors);
                 return LibraryReturnedCodes.UnknownError;
             }
 

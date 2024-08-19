@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace EshopApp.AuthLibrary.Migrations
 {
     /// <inheritdoc />
@@ -154,6 +156,49 @@ namespace EshopApp.AuthLibrary.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { "18a07836-cfa5-4f31-b381-fe4e30ceb1b0", "99ddb881-8436-4724-85be-0278d404fca3", "Manager", "MANAGER" },
+                    { "6025198b-f97f-4205-a0ab-8217ce845d54", "e9009b9e-d8ba-43ee-aea4-edd741628ecb", "Admin", "ADMIN" },
+                    { "a484e50e-5d17-4a03-bf17-b60b0cf03a1a", "fc1476ff-18dd-4d58-9a56-0ddfb2f0f96a", "User", "USER" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[,]
+                {
+                    { "74bb142e-700b-4554-a664-457e5ce6bd06", 0, "49df810a-c9d4-4f90-a084-d5bb2ca7d8b3", "manager@hotmail.com", true, false, null, "MANAGER@HOTMAIL.COM", "MANAGER@HOTMAIL.COM", "AQAAAAIAAYagAAAAEMX7APFgqrPZARg90Kh6jjhbEuX0+9NJHTdhxSKQZ8HDy+AcLVJp9TfgtQJriqjxzQ==", null, false, "2e78f54e-1791-4e79-929b-93bde441f758", false, "manager@hotmail.com" },
+                    { "97a482d2-10ff-40c3-8026-e7d56801d777", 0, "ad3e75a7-84d0-4f81-aa97-aac12f65ae94", "admin@hotmail.com", true, false, null, "ADMIN@HOTMAIL.COM", "ADMIN@HOTMAIL.COM", "AQAAAAIAAYagAAAAEF9blb6dn1qNDDxgNwm9IB4gabR6XbKrJ4nFRp0SJFFmTFaVxmQH6133V9e+2pC+Vg==", null, false, "f78c0c62-e953-4cb6-93df-f8f75e7c272e", false, "admin@hotmail.com" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoleClaims",
+                columns: new[] { "Id", "ClaimType", "ClaimValue", "RoleId" },
+                values: new object[,]
+                {
+                    { 1, "Permission", "CanManageUsers", "18a07836-cfa5-4f31-b381-fe4e30ceb1b0" },
+                    { 2, "Permission", "CanManageRoles", "18a07836-cfa5-4f31-b381-fe4e30ceb1b0" },
+                    { 3, "Permission", "CanManageUsers", "6025198b-f97f-4205-a0ab-8217ce845d54" },
+                    { 4, "Permission", "CanManageElevatedUsers", "6025198b-f97f-4205-a0ab-8217ce845d54" },
+                    { 5, "Permission", "CanManageRoles", "6025198b-f97f-4205-a0ab-8217ce845d54" },
+                    { 6, "Permission", "CanManageElevatedRoles", "6025198b-f97f-4205-a0ab-8217ce845d54" },
+                    { 7, "Protection", "CanOnlyBeManagedByElevatedUsers", "6025198b-f97f-4205-a0ab-8217ce845d54" },
+                    { 8, "Protection", "CanOnlyBeManagedByUsersWithElevatedRoles", "6025198b-f97f-4205-a0ab-8217ce845d54" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[,]
+                {
+                    { "18a07836-cfa5-4f31-b381-fe4e30ceb1b0", "74bb142e-700b-4554-a664-457e5ce6bd06" },
+                    { "6025198b-f97f-4205-a0ab-8217ce845d54", "97a482d2-10ff-40c3-8026-e7d56801d777" }
                 });
 
             migrationBuilder.CreateIndex(

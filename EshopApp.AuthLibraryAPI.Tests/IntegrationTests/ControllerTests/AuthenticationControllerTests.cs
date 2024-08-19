@@ -1,20 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.HelperMethods;
 using System.Net.Http.Json;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
 using System.Text.Json;
 using FluentAssertions;
 using System.Net;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
-using System.Net.Http.Headers;
 using System.Web;
-using Microsoft.AspNetCore.Authentication;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 
 namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.ControllerTests;
 
 [TestFixture]
 [Category("Integration")]
-[Author("konstantinos kinnas", "kinnaskonstantinos0@gmail.com")]
+[Author("Konstantinos Kinnas", "kinnaskonstantinos0@gmail.com")]
 internal class AuthenticationControllerTests
 {
     private HttpClient httpClient;
@@ -48,10 +47,7 @@ internal class AuthenticationControllerTests
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "konstantinoskinnas@gmail.com";
-        testSignUpModel.Password = "Kinas2000!";
-        testSignUpModel.PhoneNumber = "bogusPhone";
+        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "konstantinoskinnas@gmail.com", password: "Kinas2000!", phoneNumber: "6943655624");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
@@ -69,10 +65,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "konstantinoskinnas@gmail.com";
-        testSignUpModel.Password = "Kinas2000!";
-        testSignUpModel.PhoneNumber = "bogusPhone";
+        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "konstantinoskinnas@gmail.com", password: "Kinas2000!", phoneNumber: "6943655624");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
@@ -85,21 +78,21 @@ internal class AuthenticationControllerTests
     }
 
     [Test, Order(3)]
-    public async Task Signup_ShouldFailAndReturnBadRequest_IfPhoneFieldIsInvalid()
+    public async Task Signup_ShouldFailAndReturnBadRequest_IfPhoneFieldIsInvalidOrEmailFieldIsInvalid()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "konstantinoskinnas@gmail.com";
-        testSignUpModel.Password = "Kinas2000!";
-        testSignUpModel.PhoneNumber = "bogusPhone";
+        TestSignUpRequestModel invalidPhoneSignUpModel = new TestSignUpRequestModel(email: "konstantinoskinnas@gmail.com", password: "Kinas2000!", phoneNumber: "bogusPhoneFormat");
+        TestSignUpRequestModel invalidEmailSignUpModel = new TestSignUpRequestModel(email: "bogusEmailFormat", password: "Kinas2000!", phoneNumber: "6943655624");
 
         //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
-        
+        HttpResponseMessage invalidPhoneResponse = await httpClient.PostAsJsonAsync("api/authentication/signup", invalidPhoneSignUpModel);
+        HttpResponseMessage invalidEmailResponse = await httpClient.PostAsJsonAsync("api/authentication/signup", invalidEmailSignUpModel);
+
         //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        invalidPhoneResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        invalidEmailResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);   
     }
 
     [Test, Order(4)]
@@ -108,10 +101,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "kinnaskonstantinos0@gmail.com";
-        testSignUpModel.Password = "Kinas2000!";
-        testSignUpModel.PhoneNumber = "6943655624";
+        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "kinnaskonstantinos0@gmail.com", password: "Kinas2000!", phoneNumber: "6943655624");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
@@ -135,10 +125,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
 
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "kinnaskonstantinos0@gmail.com";
-        testSignUpModel.Password = "Kinas2000!";
-        testSignUpModel.PhoneNumber = "6943655624";
+        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "kinnaskonstantinos0@gmail.com", password: "Kinas2000!", phoneNumber: "6943655624");
         
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
@@ -205,10 +192,8 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
         string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
@@ -223,9 +208,7 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAccessTokenIsInvalid()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
@@ -238,9 +221,7 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnOkAndUser()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
@@ -259,8 +240,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel();
-        testForgotPasswordRequestModel.Email = "kinnaskonstantinos0@gmail.com";
+        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel() { Email = "kinnaskonstantinos0@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
@@ -278,8 +258,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY",_chosenApiKey);
-        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel();
-        testForgotPasswordRequestModel.Email = "bogus@gmail.com";
+        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel() { Email = "bogus@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
@@ -297,8 +276,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel();
-        testForgotPasswordRequestModel.Email = "bogusEmail";
+        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel() { Email = "bogusEmail" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
@@ -313,8 +291,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel();
-        testForgotPasswordRequestModel.Email = "kinnaskonstantinos0@gmail.com";
+        var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel() { Email = "kinnaskonstantinos0@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
@@ -332,10 +309,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        var testResetPasswordRequestModel = new TestResetPasswordModel();
-        testResetPasswordRequestModel.Token = _chosenResetPasswordToken;
-        testResetPasswordRequestModel.Password = "Kinas2023!";
-        testResetPasswordRequestModel.UserId = _chosenUserId;
+        var testResetPasswordRequestModel = new TestResetPasswordModel(userId: _chosenUserId!, token: _chosenResetPasswordToken!, password: "Kinas2023!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
@@ -354,10 +328,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        var testResetPasswordRequestModel = new TestResetPasswordModel();
-        testResetPasswordRequestModel.Token = "bogusToken";
-        testResetPasswordRequestModel.Password = "Kinas2023!";
-        testResetPasswordRequestModel.UserId = _chosenUserId;
+        var testResetPasswordRequestModel = new TestResetPasswordModel(userId: _chosenUserId!, token: "bogusPasswordResetToken" , password: "Kinas2023!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
@@ -375,10 +346,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        var testResetPasswordRequestModel = new TestResetPasswordModel();
-        testResetPasswordRequestModel.Token = _chosenResetPasswordToken;
-        testResetPasswordRequestModel.Password = "Kinas2023!";
-        testResetPasswordRequestModel.UserId = _chosenUserId;
+        var testResetPasswordRequestModel = new TestResetPasswordModel(userId: _chosenUserId!, token: _chosenResetPasswordToken!, password: "Kinas2023!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
@@ -395,10 +363,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel();
-        testSignInRequestModel.Email = "kinnaskonstantinos0@gmail.com";
-        testSignInRequestModel.Password = "Kinas2023!";
-        testSignInRequestModel.RememberMe = true;
+        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel(email: "kinnaskonstantinos0@gmail.com", password: "Kinas2023!", rememberMe: true);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
@@ -416,10 +381,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel();
-        testSignInRequestModel.Email = "bogusEmail@gmail.com";
-        testSignInRequestModel.Password = "bogusPassword";
-        testSignInRequestModel.RememberMe = true;
+        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel(email: "bogusEmail@gmail.com", password: "bogusPassword", rememberMe: true);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
@@ -434,10 +396,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel();
-        testSignInRequestModel.Email = "kinnaskonstantinos0@gmail.com";
-        testSignInRequestModel.Password = "Kinas2023!";
-        testSignInRequestModel.RememberMe = true;
+        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel(email: "kinnaskonstantinos0@gmail.com", password: "Kinas2023!", rememberMe: true);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
@@ -453,12 +412,8 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangePasswordRequestModel = new TestChangePasswordRequestModel();
-        testChangePasswordRequestModel.OldPassword = "Kinas2023!";
-        testChangePasswordRequestModel.NewPassword = "Kinas2020!";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
@@ -474,12 +429,9 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
-        var testChangePasswordRequestModel = new TestChangePasswordRequestModel();
-        testChangePasswordRequestModel.OldPassword = "Kinas2023!";
-        testChangePasswordRequestModel.NewPassword = "Kinas2020!";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+
+        var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023!", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
@@ -489,15 +441,11 @@ internal class AuthenticationControllerTests
     }
 
     [Test, Order(24)]
-    public async Task ChangePassword_ShouldReturnBadRequest_IfGivenOldPasswordDoesNotMuchActualOldPassword()
+    public async Task ChangePassword_ShouldReturnBadRequest_IfGivenCurrentPasswordDoesNotMuchActualCurrentPassword()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangePasswordRequestModel = new TestChangePasswordRequestModel();
-        testChangePasswordRequestModel.OldPassword = "bogusOldPassword";
-        testChangePasswordRequestModel.NewPassword = "Kinas2020!";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "bogusCurrentPassword", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
@@ -513,12 +461,8 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldSucceedAndReturnNoContent()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangePasswordRequestModel = new TestChangePasswordRequestModel();
-        testChangePasswordRequestModel.OldPassword = "Kinas2023!";
-        testChangePasswordRequestModel.NewPassword = "Kinas2020!";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023!", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
@@ -531,11 +475,8 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangeEmailRequestModel = new TestChangeEmailRequestModel();
-        testChangeEmailRequestModel.NewEmail = "realag58@gmail.com";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
@@ -551,11 +492,8 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
-        var testChangeEmailRequestModel = new TestChangeEmailRequestModel();
-        testChangeEmailRequestModel.NewEmail = "realag58@gmail.com";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+        var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
@@ -568,11 +506,8 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnBadRequest_IfTheNewEmailAlreadyExistsInTheSystem()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangeEmailRequestModel = new TestChangeEmailRequestModel();
-        testChangeEmailRequestModel.NewEmail = "realag58@gmail.com";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         var testSignUpRequestModel = new TestSignUpRequestModel();
         testSignUpRequestModel.Email = "realag58@gmail.com";
@@ -597,11 +532,8 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnOkAndChangeEmailToken()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangeEmailRequestModel = new TestChangeEmailRequestModel();
-        testChangeEmailRequestModel.NewEmail = "newemail@gmail.com";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "newemail@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
@@ -651,10 +583,8 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
         string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
@@ -669,10 +599,8 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "bogusToken");
-        
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
 
@@ -684,9 +612,7 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnNoContentAndSucceed()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
@@ -702,10 +628,7 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel();
-        testSignUpModel.Email = "other@gmail.com";
-        testSignUpModel.Password = "Password123!";
-        testSignUpModel.PhoneNumber = "6912345678";
+        TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "other@gmail.com", password: "Password123!", phoneNumber: "6912345678");
         HttpResponseMessage signUpResponse = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
         string? signUpResponseBody = await signUpResponse.Content.ReadAsStringAsync();
         TestSignUpResponseModel? signupResponseModel = JsonSerializer.Deserialize<TestSignUpResponseModel>(signUpResponseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -753,11 +676,8 @@ internal class AuthenticationControllerTests
     public async Task ConfirmChangeEmail_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
     {
         //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _chosenAccessToken);
-        var testChangeEmailRequestModel = new TestChangeEmailRequestModel();
-        testChangeEmailRequestModel.NewEmail = "newotheremail@gmail.com";
+        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "newotheremail@gmail.com" };
 
         HttpResponseMessage requestEmailChangeResponse = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
         _chosenEmailChangeToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(requestEmailChangeResponse, "changeEmailToken");
@@ -902,14 +822,10 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Remove("X-Bypass-Rate-Limiting");
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel();
-        testSignInRequestModel.Email = "newotheremail@gmail.com";
-        testSignInRequestModel.Password = "Password123!";
-        testSignInRequestModel.RememberMe = true;
-
-        var response = new HttpResponseMessage();
+        TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel(email: "newotheremail@gmail.com", password: "Password123!", rememberMe: true);
 
         //Act
+        HttpResponseMessage response = new();
         for (int i = 0; i < 101; i++)
             response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
 

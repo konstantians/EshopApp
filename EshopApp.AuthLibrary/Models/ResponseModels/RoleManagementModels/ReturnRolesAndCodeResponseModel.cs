@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
+﻿namespace EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
 
 public class ReturnRolesAndCodeResponseModel
 {
@@ -9,8 +7,9 @@ public class ReturnRolesAndCodeResponseModel
 
     public ReturnRolesAndCodeResponseModel(List<AppRole> appRoles, LibraryReturnedCodes libraryReturnedCodes)
     {
-        foreach (var role in appRoles)
+        foreach (var role in appRoles ?? Enumerable.Empty<AppRole>())            
             AppRoles.Add(role);
+
         LibraryReturnedCodes = libraryReturnedCodes;
     }
 }

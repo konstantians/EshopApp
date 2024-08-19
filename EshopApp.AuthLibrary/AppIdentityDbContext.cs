@@ -50,29 +50,38 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
             new AppRole { Id = adminRoleGuid, Name = "Admin", NormalizedName = "ADMIN", ConcurrencyStamp = Guid.NewGuid().ToString() }
         );
 
+        string managerUserGuid = Guid.NewGuid().ToString();
         builder.Entity<AppUser>().HasData(
-            new AppUser() { Id=Guid.NewGuid().ToString(), UserName = "admin@hotmail.com", Email = "admin@hotmail.com", NormalizedUserName = "ADMIN@HOTMAIL.COM", 
+            new AppUser() { Id = managerUserGuid, UserName = "manager@hotmail.com", Email = "manager@hotmail.com", NormalizedUserName = "MANAGER@HOTMAIL.COM", 
+                NormalizedEmail = "MANAGER@HOTMAIL.COM", EmailConfirmed = true, PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "CIiyyBRXjTGac7j!"), SecurityStamp = Guid.NewGuid().ToString()}
+        );
+
+        string adminUserGuid = Guid.NewGuid().ToString();
+        builder.Entity<AppUser>().HasData(
+            new AppUser() { Id = adminUserGuid, UserName = "admin@hotmail.com", Email = "admin@hotmail.com", NormalizedUserName = "ADMIN@HOTMAIL.COM", 
                 NormalizedEmail = "ADMIN@HOTMAIL.COM", EmailConfirmed = true, PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "0XfN725l5EwSTIk!"), SecurityStamp = Guid.NewGuid().ToString()}
         );
 
-        builder.Entity<IdentityRoleClaim<string>>().HasData(
-            new IdentityRoleClaim<string> { Id = 1, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewUsers" },
-            new IdentityRoleClaim<string> { Id = 2, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditUsers" },
-            new IdentityRoleClaim<string> { Id = 3, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewAdmins" },
-            new IdentityRoleClaim<string> { Id = 4, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditAdmins" },
-            new IdentityRoleClaim<string> { Id = 5, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewUserRoles" },
-            new IdentityRoleClaim<string> { Id = 6, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditUserRoles" },
-            new IdentityRoleClaim<string> { Id = 7, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewAdminRoles" },
-            new IdentityRoleClaim<string> { Id = 8, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditAdminRoles" }
+        builder.Entity<IdentityUserRole<string>>().HasData(
+            new IdentityUserRole<string> { UserId = managerUserGuid, RoleId = managerRoleGuid }
+        );
+
+        builder.Entity<IdentityUserRole<string>>().HasData(
+            new IdentityUserRole<string> { UserId = adminUserGuid, RoleId = adminRoleGuid }
         );
 
         builder.Entity<IdentityRoleClaim<string>>().HasData(
-            new IdentityRoleClaim<string> { Id = 9, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewUsers" },
-            new IdentityRoleClaim<string> { Id = 10, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditUsers" },
-            new IdentityRoleClaim<string> { Id = 11, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewAdmins" },
-            new IdentityRoleClaim<string> { Id = 12, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewUserRoles" },
-            new IdentityRoleClaim<string> { Id = 13, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanEditUserRoles" },
-            new IdentityRoleClaim<string> { Id = 14, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanViewAdminRoles" }
+            new IdentityRoleClaim<string> { Id = 1, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageUsers" },
+            new IdentityRoleClaim<string> { Id = 2, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" }
+        );
+
+        builder.Entity<IdentityRoleClaim<string>>().HasData(
+            new IdentityRoleClaim<string> { Id = 3, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageUsers" },
+            new IdentityRoleClaim<string> { Id = 4, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedUsers" },
+            new IdentityRoleClaim<string> { Id = 5, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" },
+            new IdentityRoleClaim<string> { Id = 6, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedRoles" },
+            new IdentityRoleClaim<string> { Id = 7, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByElevatedUsers" },
+            new IdentityRoleClaim<string> { Id = 8, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles" }
         );
     }
 }

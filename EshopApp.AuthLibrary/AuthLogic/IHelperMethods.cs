@@ -11,4 +11,6 @@ public interface IHelperMethods
     bool IsEmailConfirmed(AppUser user, EventId eventId, string loggingText);
     Task<ReturnUserAndCodeResponseModel> StandardTokenAndUserValidationProcedures(string accessToken, EventId templateEvent);
     Task<ReturnUserAndCodeResponseModel> StandardTokenValidationAuthenticationAndAuthorizationProcedures(string accessToken, List<Claim> expectedClaims, EventId templateEvent);
+    Task<LibraryReturnedCodes> CheckIfAuthorizedToEditSpecificRole(AppUser editorUser, AppRole editedRole);
+    Task<LibraryReturnedCodes> CheckIfAuthorizedToEditSpecificUser(AppUser editorUser, AppUser editedUser);
 }
