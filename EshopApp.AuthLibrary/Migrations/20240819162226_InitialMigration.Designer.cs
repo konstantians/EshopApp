@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.AuthLibrary.Migrations
 {
     [DbContext(typeof(AppIdentityDbContext))]
-    [Migration("20240812135156_ChangedTheNamesOfSomeSeededClaims")]
-    partial class ChangedTheNamesOfSomeSeededClaims
+    [Migration("20240819162226_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,22 +54,22 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "cfa9cc7f-c5fa-494a-a812-f843b51c9ee2",
-                            ConcurrencyStamp = "dacbc9bb-3f41-47cd-9bfa-c5779d37e0a3",
+                            Id = "a484e50e-5d17-4a03-bf17-b60b0cf03a1a",
+                            ConcurrencyStamp = "fc1476ff-18dd-4d58-9a56-0ddfb2f0f96a",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "7d7618e1-5b9a-4639-b433-05427cdde79f",
-                            ConcurrencyStamp = "4872c74a-5c10-476a-954f-40f54a061e8b",
+                            Id = "18a07836-cfa5-4f31-b381-fe4e30ceb1b0",
+                            ConcurrencyStamp = "99ddb881-8436-4724-85be-0278d404fca3",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = "df308491-a530-404b-be4e-43ca15afda90",
-                            ConcurrencyStamp = "97e547c5-2947-4390-a9aa-949dbf16d3bd",
+                            Id = "6025198b-f97f-4205-a0ab-8217ce845d54",
+                            ConcurrencyStamp = "e9009b9e-d8ba-43ee-aea4-edd741628ecb",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -142,17 +142,33 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "47aefaf2-7592-4947-88d1-f6b424e978e0",
+                            Id = "74bb142e-700b-4554-a664-457e5ce6bd06",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "c153c671-dc74-403c-9917-900551780536",
+                            ConcurrencyStamp = "49df810a-c9d4-4f90-a084-d5bb2ca7d8b3",
+                            Email = "manager@hotmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "MANAGER@HOTMAIL.COM",
+                            NormalizedUserName = "MANAGER@HOTMAIL.COM",
+                            PasswordHash = "AQAAAAIAAYagAAAAEMX7APFgqrPZARg90Kh6jjhbEuX0+9NJHTdhxSKQZ8HDy+AcLVJp9TfgtQJriqjxzQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "2e78f54e-1791-4e79-929b-93bde441f758",
+                            TwoFactorEnabled = false,
+                            UserName = "manager@hotmail.com"
+                        },
+                        new
+                        {
+                            Id = "97a482d2-10ff-40c3-8026-e7d56801d777",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "ad3e75a7-84d0-4f81-aa97-aac12f65ae94",
                             Email = "admin@hotmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@HOTMAIL.COM",
                             NormalizedUserName = "ADMIN@HOTMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEGJt9WiGcXYW5kN71PUXli557wKiNAy5+ld9thr06psFvYfv3Xdxtywq8cs4q8BhsA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEF9blb6dn1qNDDxgNwm9IB4gabR6XbKrJ4nFRp0SJFFmTFaVxmQH6133V9e+2pC+Vg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "df586591-460a-453b-9b2e-5ae5702caf12",
+                            SecurityStamp = "f78c0c62-e953-4cb6-93df-f8f75e7c272e",
                             TwoFactorEnabled = false,
                             UserName = "admin@hotmail.com"
                         });
@@ -187,99 +203,57 @@ namespace EshopApp.AuthLibrary.Migrations
                         {
                             Id = 1,
                             ClaimType = "Permission",
-                            ClaimValue = "CanViewUsers",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageUsers",
+                            RoleId = "18a07836-cfa5-4f31-b381-fe4e30ceb1b0"
                         },
                         new
                         {
                             Id = 2,
                             ClaimType = "Permission",
-                            ClaimValue = "CanEditUsers",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageRoles",
+                            RoleId = "18a07836-cfa5-4f31-b381-fe4e30ceb1b0"
                         },
                         new
                         {
                             Id = 3,
                             ClaimType = "Permission",
-                            ClaimValue = "CanViewAdmins",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageUsers",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         },
                         new
                         {
                             Id = 4,
                             ClaimType = "Permission",
-                            ClaimValue = "CanEditAdmins",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageElevatedUsers",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         },
                         new
                         {
                             Id = 5,
                             ClaimType = "Permission",
-                            ClaimValue = "CanViewUserRoles",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageRoles",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         },
                         new
                         {
                             Id = 6,
                             ClaimType = "Permission",
-                            ClaimValue = "CanEditUserRoles",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimValue = "CanManageElevatedRoles",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         },
                         new
                         {
                             Id = 7,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanViewAdminRoles",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
+                            ClaimType = "Protection",
+                            ClaimValue = "CanOnlyBeManagedByElevatedUsers",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         },
                         new
                         {
                             Id = 8,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanEditAdminRoles",
-                            RoleId = "df308491-a530-404b-be4e-43ca15afda90"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanViewUsers",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanEditUsers",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanViewAdmins",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanViewUserRoles",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
-                        },
-                        new
-                        {
-                            Id = 13,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanEditUserRoles",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
-                        },
-                        new
-                        {
-                            Id = 14,
-                            ClaimType = "Permission",
-                            ClaimValue = "CanViewAdminRoles",
-                            RoleId = "7d7618e1-5b9a-4639-b433-05427cdde79f"
+                            ClaimType = "Protection",
+                            ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
                         });
                 });
 
@@ -343,6 +317,18 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "74bb142e-700b-4554-a664-457e5ce6bd06",
+                            RoleId = "18a07836-cfa5-4f31-b381-fe4e30ceb1b0"
+                        },
+                        new
+                        {
+                            UserId = "97a482d2-10ff-40c3-8026-e7d56801d777",
+                            RoleId = "6025198b-f97f-4205-a0ab-8217ce845d54"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>

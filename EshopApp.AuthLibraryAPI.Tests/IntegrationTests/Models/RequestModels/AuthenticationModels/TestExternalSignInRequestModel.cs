@@ -1,4 +1,4 @@
-﻿namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
+﻿namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
 
 internal class TestExternalSignInRequestModel
 {

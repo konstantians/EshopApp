@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
+﻿namespace EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
 
 public class ReturnRoleAndCodeResponseModel
 {

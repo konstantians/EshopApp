@@ -18,6 +18,12 @@ public enum LibraryReturnedCodes
     ValidTokenButUserNotInSystem,
     ValidTokenButClaimNotInSystem,
     ValidTokenButUserNotInRoleInSystem,
+    InsufficientPrivilegesToManageElevatedUser,
+    InsufficientPrivilegesToManageElevatedRole,
+    CanNotAlterFundementalRole,
+    UserWasFoundAlreadyInRole,
+    UserWasNotFoundInRole,
+    TheRolesMustHaveDifferentIds,
     UnknownError,
     NoError
 }

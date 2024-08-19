@@ -56,7 +56,7 @@ public class HelperMethods : IHelperMethods
             return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.ValidTokenButUserNotInSystem);
         }
 
-        if (IsEmailConfirmed(appUser, new EventId(templateEvent.Id + 1, templateEvent.Name + "FailureDueToUnconfirmedEmail"), 
+        if (!IsEmailConfirmed(appUser, new EventId(templateEvent.Id + 1, templateEvent.Name + "FailureDueToUnconfirmedEmail"), 
             "The email of the account was not confirmed and thus the process could not proceed. Email={Email}."))
             return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
 
@@ -103,7 +103,7 @@ public class HelperMethods : IHelperMethods
             }
         }
 
-        if (IsEmailConfirmed(appUser, new EventId(templateEvent.Id + 4, templateEvent.Name + "FailureDueToUnconfirmedEmail"),
+        if (!IsEmailConfirmed(appUser, new EventId(templateEvent.Id + 4, templateEvent.Name + "FailureDueToUnconfirmedEmail"),
             "The email of the account was not confirmed and thus the process could not proceed. Email={Email}."))
             return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
 
@@ -114,4 +114,41 @@ public class HelperMethods : IHelperMethods
         return new ReturnUserAndCodeResponseModel(appUser, LibraryReturnedCodes.NoError);
     }
 
+    public async Task<LibraryReturnedCodes> CheckIfAuthorizedToEditSpecificRole(AppUser editorUser, AppRole editedRole)
+    {
+        IList<Claim>? editedRoleClaims = editedRole is null ? null : await _roleManager.GetClaimsAsync(editedRole);
+
+        //this determines if the role of the user is elavated, for example they are an admin
+        if (editedRoleClaims is not null && editedRoleClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByUsersWithElevatedRoles"))
+        {
+            IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(editorUser);
+            AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+            IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+            if (editorUserClaims is null || !editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedRoles"))
+                return LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedRole;
+        }
+
+        return LibraryReturnedCodes.NoError;
+    }
+
+    public async Task<LibraryReturnedCodes> CheckIfAuthorizedToEditSpecificUser(AppUser editorUser, AppUser editedUser)
+    {
+        IList<string> editedUserRoleNames = await _userManager.GetRolesAsync(editedUser);
+        AppRole? editedUserRole = editedUserRoleNames is null || editedUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editedUserRoleNames.FirstOrDefault()!);
+        IList<Claim>? editedUserClaims = editedUserRole is null ? null : await _roleManager.GetClaimsAsync(editedUserRole);
+
+        //this determines if the role of the user is elavated, for example they are an admin
+        if (editedUserClaims is not null && editedUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
+        {
+            IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(editorUser);
+            AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+            IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+            if (editorUserClaims is null || !editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedUsers"))
+                return LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser;
+        }
+
+        return LibraryReturnedCodes.NoError;
+    }
 }

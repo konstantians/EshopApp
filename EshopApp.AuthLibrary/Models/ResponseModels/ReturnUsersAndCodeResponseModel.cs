@@ -8,7 +8,7 @@ public class ReturnUsersAndCodeResponseModel
     public ReturnUsersAndCodeResponseModel() { }
     public ReturnUsersAndCodeResponseModel(List<AppUser> appUsers, LibraryReturnedCodes libraryReturnedCodes)
     {
-        foreach (AppUser appUser in appUsers)
+        foreach (AppUser appUser in appUsers ?? Enumerable.Empty<AppUser>())
             AppUsers.Add(appUser);
         LibraryReturnedCodes = libraryReturnedCodes;
     }

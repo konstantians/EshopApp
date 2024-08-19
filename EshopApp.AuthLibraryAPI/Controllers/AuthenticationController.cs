@@ -437,7 +437,7 @@ public class AuthenticationController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            LibraryReturnedCodes libraryReturnedCodes = await _authenticationProcedures.ChangePasswordAsync(token, changePasswordModel.OldPassword!, changePasswordModel.NewPassword!);
+            LibraryReturnedCodes libraryReturnedCodes = await _authenticationProcedures.ChangePasswordAsync(token, changePasswordModel.CurrentPassword!, changePasswordModel.NewPassword!);
 
             if (libraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });

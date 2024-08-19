@@ -1,10 +1,13 @@
 ﻿using EshopApp.AuthLibrary.Models;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
+using EshopApp.AuthLibraryAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Collections.Generic;
+using System.Data;
 using System.Security.Claims;
 
 namespace EshopApp.AuthLibrary.AuthLogic;
@@ -37,15 +40,27 @@ public class RoleManagementProcedures : IRoleManagementProcedures
             ReturnUserAndCodeResponseModel returnCodeAndUserResponseModel = await _helperMethods.StandardTokenValidationAuthenticationAndAuthorizationProcedures(accessToken, expectedClaims, new EventId(3400, "GetRoles"));
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return new ReturnRolesAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
-            
+
             List<AppRole> appRoles = await _roleManager.Roles.ToListAsync();
 
             foreach (AppRole appRole in appRoles ?? Enumerable.Empty<AppRole>()) //this is a fancy way of checking if there are no roles(appRoles would be null in that case)
             {
                 var returnedRoleClaims = await _roleManager.GetClaimsAsync(appRole);
-                if (returnedRoleClaims is not null)
-                    appRole.Claims.AddRange(returnedRoleClaims);
-            } 
+
+                if (returnedRoleClaims is null)
+                    continue;
+
+                foreach (Claim returnedRoleClaim in returnedRoleClaims)
+                    appRole.Claims.Add(new CustomClaim(returnedRoleClaim));
+            }
+
+            //get the claims of the user that is trying to read the roles
+            IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(returnCodeAndUserResponseModel.AppUser!);
+            AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+            IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole); 
+
+            if (appRoles is not null && (editorUserClaims is null || !editorUserClaims.Any(editorClaim => editorClaim.Type == "Permission" && editorClaim.Value == "CanManageElevatedRoles")))
+                appRoles.RemoveAll(role => role.Claims.Any(claim => claim.Value!.Contains("Elevated")));
 
             return new ReturnRolesAndCodeResponseModel(appRoles!, LibraryReturnedCodes.NoError);
         }
@@ -66,16 +81,21 @@ public class RoleManagementProcedures : IRoleManagementProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return new ReturnRoleAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
             
-            AppRole? appRole = await _roleManager.FindByIdAsync(roleId);
+            AppRole? foundRole = await _roleManager.FindByIdAsync(roleId);
 
-            if(appRole is not null)
-            {
-                var returnedRoleClaims = await _roleManager.GetClaimsAsync(appRole);
-                if (returnedRoleClaims is not null)
-                    appRole.Claims.AddRange(returnedRoleClaims);
-            }
+            if (foundRole is null)
+                return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
 
-            return new ReturnRoleAndCodeResponseModel(appRole!, LibraryReturnedCodes.NoError);
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnRoleAndCodeResponseModel(null!, returnedCode);
+
+            var returnedRoleClaims = await _roleManager.GetClaimsAsync(foundRole);
+
+            foreach (Claim returnedRoleClaim in returnedRoleClaims ?? Enumerable.Empty<Claim>())
+                foundRole.Claims.Add(new CustomClaim(returnedRoleClaim));
+
+            return new ReturnRoleAndCodeResponseModel(foundRole, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -94,15 +114,22 @@ public class RoleManagementProcedures : IRoleManagementProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return new ReturnRoleAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
 
-            AppRole? appRole = await _roleManager.FindByNameAsync(roleName);
-            if (appRole is not null)
-            {
-                var returnedRoleClaims = await _roleManager.GetClaimsAsync(appRole);
-                if (returnedRoleClaims is not null)
-                    appRole.Claims.AddRange(returnedRoleClaims);
-            }
+            AppRole? foundRole = await _roleManager.FindByNameAsync(roleName);
+            if (foundRole is null)
+                return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
 
-            return new ReturnRoleAndCodeResponseModel(appRole!, LibraryReturnedCodes.NoError);
+
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnRoleAndCodeResponseModel(null!, returnedCode);
+
+
+            var returnedRoleClaims = await _roleManager.GetClaimsAsync(foundRole);
+
+            foreach (Claim returnedRoleClaim in returnedRoleClaims ?? Enumerable.Empty<Claim>())
+                foundRole.Claims.Add(new CustomClaim(returnedRoleClaim));
+
+            return new ReturnRoleAndCodeResponseModel(foundRole, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -128,6 +155,10 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 return new ReturnRolesAndCodeResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenId);
             }
 
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificUser(returnCodeAndUserResponseModel.AppUser!, foundUser);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnRolesAndCodeResponseModel(null!, returnedCode);
+
             List<string> userAppRolesNames = new List<string>(await _userManager.GetRolesAsync(foundUser));
             if(userAppRolesNames.Count == 0)
                 return new ReturnRolesAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
@@ -138,7 +169,13 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 var appRole = await _roleManager.FindByNameAsync(userAppRoleName);
                 List<Claim> roleClaims = new List<Claim>(await _roleManager.GetClaimsAsync(appRole!));
 
-                appRole!.Claims.AddRange(roleClaims);
+                if (roleClaims is null)
+                    continue;
+
+                foreach (Claim returnedRoleClaim in roleClaims)
+                    appRole!.Claims.Add(new CustomClaim(returnedRoleClaim));
+
+                appRoles.Add(appRole);
             }
 
             return new ReturnRolesAndCodeResponseModel(appRoles!, LibraryReturnedCodes.NoError);
@@ -151,7 +188,7 @@ public class RoleManagementProcedures : IRoleManagementProcedures
         }
     }
 
-    public async Task<ReturnRoleAndCodeResponseModel> CreateRoleAsync(string accessToken, List<Claim> expectedClaims, string roleName, List<Claim> roleClaims)
+    public async Task<ReturnRoleAndCodeResponseModel> CreateRoleAsync(string accessToken, List<Claim> expectedClaims, string roleName, List<CustomClaim> roleClaims)
     {
         var executionStrategy = _appIdentityDbContext.Database.CreateExecutionStrategy();
 
@@ -166,6 +203,27 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                     if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                         return new ReturnRoleAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
 
+                    //find the priviledges of the user(if the are elevated or not
+                    IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(returnCodeAndUserResponseModel.AppUser!);
+                    AppRole? editorUserRole = editorUserRoleNames is null ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+                    IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+                    //make sure that the added claims exist in the system
+                    List<Claim> uniqueClaims = await GetAllUniqueClaimsInSystemAsyncCommonPart();
+                    List<Claim> roleClaimsFiltered = new List<Claim>();
+                    foreach (CustomClaim customRoleClaim in roleClaims)
+                    {
+                        //here make the check to see if the user can add this returnedClaim to the role
+                        if (customRoleClaim.Value!.Contains("Elevated") &&
+                        (editorUserClaims is null || !editorUserClaims.Any(editorClaim => editorClaim.Type == "Permission" && editorClaim.Value == "CanManageElevatedRoles")))
+                            continue;
+
+                        //if the check is passed then check here if the returnedClaim is contained in the database
+                        if (uniqueClaims.Any(uniqueClaim => uniqueClaim.Type == customRoleClaim.Type && uniqueClaim.Value == customRoleClaim.Value))
+                            roleClaimsFiltered.Add(new Claim(customRoleClaim.Type!, customRoleClaim.Value));
+                    }
+
+                    //check that there is not already another role with the given role name
                     var otherRole = await _roleManager.FindByNameAsync(roleName);
                     if (otherRole is not null)
                     {
@@ -175,6 +233,7 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                         return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.DuplicateRole);
                     }
 
+                    //create the role
                     var result = await _roleManager.CreateAsync(new AppRole(roleName));
                     if (!result.Succeeded)
                     {
@@ -185,15 +244,6 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                     }
 
                     AppRole? newlyCreatedAppRole = await _roleManager.FindByNameAsync(roleName);
-
-                    //make sure that the added claims exist in the system
-                    List<Claim> uniqueClaims = await GetAllUniqueClaimsInSystemAsyncCommonPart();
-                    List<Claim> roleClaimsFiltered = new List<Claim>();
-                    foreach (Claim roleClaim in roleClaims)
-                    {
-                        if(uniqueClaims.Any(uniqueClaim => uniqueClaim.Type == roleClaim.Type && uniqueClaim.Value == roleClaim.Value))
-                            roleClaimsFiltered.Add(roleClaim);
-                    }
 
                     //finally add the filtered roles to the role
                     foreach (Claim roleClaimFiltered in roleClaimsFiltered)
@@ -208,6 +258,8 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                             return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.UnknownError);
 
                         }
+
+                        newlyCreatedAppRole!.Claims.Add(new CustomClaim(roleClaimFiltered));
                     }
 
                     await transaction.CommitAsync();
@@ -243,7 +295,13 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 return LibraryReturnedCodes.RoleNotFoundWithGivenId;
             }
 
-            //TODO add a transaction and remove all the roles of the given rule... maybe leave that for after tests, because I am not certain.
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return returnedCode;
+
+            if (foundRole.Name == "Admin" || foundRole.Name == "User")
+                return LibraryReturnedCodes.CanNotAlterFundementalRole;
+
             var result = await _roleManager.DeleteAsync(foundRole);
             if (!result.Succeeded)
             {
@@ -277,6 +335,10 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 _logger.LogWarning(new EventId(3441, "GetUsersOfGivenRoleFailureDueToNullRole"), "The role was not found in the system and thus no users could have it, RoleId={RoleId}", roleId);
                 return new ReturnUsersAndCodeResponseModel(null!, LibraryReturnedCodes.RoleNotFoundWithGivenId);
             }
+
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return new ReturnUsersAndCodeResponseModel(null!, returnedCode);
 
             IList<AppUser> returnedUsersInRole = await _userManager.GetUsersInRoleAsync(foundRole.Name!);
             return new ReturnUsersAndCodeResponseModel(returnedUsersInRole.ToList(), LibraryReturnedCodes.NoError);
@@ -312,7 +374,15 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 return LibraryReturnedCodes.RoleNotFoundWithGivenId;
             }
 
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return returnedCode;
+
             var result = await _userManager.AddToRoleAsync(foundUser, foundRole.Name!);
+            if (!result.Succeeded && result.Errors.Any(error => error.Code == "UserAlreadyInRole"))
+            {
+                return LibraryReturnedCodes.UserWasFoundAlreadyInRole;
+            }
             if (!result.Succeeded)
             {
                 _logger.LogWarning(new EventId(3449, "AddRoleToUserFailureNoException"), "The role could not be added to the user and returned errors, but no exception was thrown. " +
@@ -346,6 +416,9 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                     if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                         return returnCodeAndUserResponseModel.LibraryReturnedCodes;
 
+                    if (currentRoleId == newRoleId)
+                        return LibraryReturnedCodes.TheRolesMustHaveDifferentIds;
+
                     var foundUser = await _userManager.FindByIdAsync(userId);
                     if (foundUser is null)
                     {
@@ -376,8 +449,32 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                         return LibraryReturnedCodes.RoleNotFoundWithGivenId;
                     }
 
+                    //check if the have the necessary permissions for the new role
+                    LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundNewRole);
+                    if (returnedCode != LibraryReturnedCodes.NoError)
+                    {
+                        await transaction.RollbackAsync();
+
+                        return returnedCode;
+                    }
+
+                    //check if the have the necessary permissions for the current role
+                    returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundCurrentRole);
+                    if (returnedCode != LibraryReturnedCodes.NoError)
+                    {
+                        await transaction.RollbackAsync();
+
+                        return returnedCode;
+                    }
+
                     var result = await _userManager.RemoveFromRoleAsync(foundUser, foundCurrentRole.Name!);
-                    if (!result.Succeeded)
+                    if (!result.Succeeded && result.Errors.Any(error => error.Code == "UserNotInRole"))
+                    {
+                        await transaction.RollbackAsync();
+
+                        return LibraryReturnedCodes.UserWasNotFoundInRole;
+                    }
+                    else if (!result.Succeeded)
                     {
                         await transaction.RollbackAsync();
 
@@ -387,6 +484,12 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                     }
 
                     result = await _userManager.AddToRoleAsync(foundUser, foundNewRole.Name!);
+                    if (!result.Succeeded && result.Errors.Any(error => error.Code == "UserAlreadyInRole"))
+                    {
+                        await transaction.RollbackAsync();
+
+                        return LibraryReturnedCodes.UserWasFoundAlreadyInRole;
+                    }
                     if (!result.Succeeded)
                     {
                         await transaction.RollbackAsync();
@@ -438,8 +541,16 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 return LibraryReturnedCodes.RoleNotFoundWithGivenId;
             }
 
+            LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+            if (returnedCode != LibraryReturnedCodes.NoError)
+                return returnedCode;
+
             var result = await _userManager.RemoveFromRoleAsync(foundUser, foundRole.Name!);
-            if (!result.Succeeded)
+            if (!result.Succeeded && result.Errors.Any(error => error.Code == "UserNotInRole"))
+            {
+                return LibraryReturnedCodes.UserWasNotFoundInRole;
+            }
+            else if (!result.Succeeded)
             {
                 _logger.LogWarning(new EventId(3467, "RemoveRoleFromUserFailureNoException"), "The role could not be removed from the user and returned errors, but no exception was thrown. " +
                     "RoleId={RoleId}. Errors={Errors}.", roleId, result.Errors);
@@ -468,7 +579,21 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                 return new ReturnClaimsAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
 
             List<Claim> uniqueClaims = await GetAllUniqueClaimsInSystemAsyncCommonPart();
-            return new ReturnClaimsAndCodeResponseModel(uniqueClaims, LibraryReturnedCodes.NoError);
+            await FilterElevatedClaimsBasedOnUserPermissions(returnCodeAndUserResponseModel.AppUser!, uniqueClaims);
+
+            //get the claims of the user that is trying to read the roles
+            IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(returnCodeAndUserResponseModel.AppUser!);
+            AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+            IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+            //if the user does not have elevated permissions then filter the claims that will be returned
+            if (uniqueClaims is not null && (editorUserClaims is null || !editorUserClaims.Any(editorClaim => editorClaim.Type == "Permission" && editorClaim.Value == "CanManageElevatedRoles")))
+                uniqueClaims.RemoveAll(claim => claim.Value!.Contains("Elevated"));
+
+            List<CustomClaim> uniqueCustomClaims = new List<CustomClaim>();
+            foreach (Claim uniqueClaim in uniqueClaims ?? Enumerable.Empty<Claim>())
+                uniqueCustomClaims.Add(new CustomClaim(uniqueClaim));
+            return new ReturnClaimsAndCodeResponseModel(uniqueCustomClaims!, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -478,7 +603,7 @@ public class RoleManagementProcedures : IRoleManagementProcedures
         }
     }
 
-    public async Task<ReturnRoleAndCodeResponseModel> UpdateClaimsOfRoleAsync(string accessToken, List<Claim> expectedClaims, string roleId, List<Claim> updatedClaims)
+    public async Task<ReturnRoleAndCodeResponseModel> UpdateClaimsOfRoleAsync(string accessToken, List<Claim> expectedClaims, string roleId, List<CustomClaim> updatedClaims)
     {
         var executionStrategy = _appIdentityDbContext.Database.CreateExecutionStrategy();
 
@@ -507,23 +632,37 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                         return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.RoleNotFoundWithGivenId);
                     }
 
-                    List<Claim> uniqueClaims = await GetAllUniqueClaimsInSystemAsyncCommonPart();
-                    List<Claim> filteredUpdatedClaims = new List<Claim>();
-                    // This makes sure that the given claims actually exist in the system
-                    foreach (Claim updatedClaim in updatedClaims)
+                    //Check if the role is fundemental 
+                    if (foundRole.Name == "Admin" || foundRole.Name == "User")
                     {
-                        if (uniqueClaims.Any(claim => claim.Type == updatedClaim.Type && claim.Value == updatedClaim.Value))
-                            filteredUpdatedClaims.Add(updatedClaim);
+                        await transaction.RollbackAsync();
+
+                        return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.CanNotAlterFundementalRole);
                     }
 
+                    LibraryReturnedCodes returnedCode = await _helperMethods.CheckIfAuthorizedToEditSpecificRole(returnCodeAndUserResponseModel.AppUser!, foundRole);
+                    if (returnedCode != LibraryReturnedCodes.NoError)
+                        return new ReturnRoleAndCodeResponseModel(null!, returnedCode);
+
+                    List<Claim> uniqueClaims = await GetAllUniqueClaimsInSystemAsyncCommonPart();
+
+                    List<Claim> filteredUpdatedClaims = new List<Claim>();
+                    // This makes sure that the given claims actually exist in the system
+                    foreach (CustomClaim updatedClaim in updatedClaims)
+                    {
+                        if (uniqueClaims.Any(claim => claim.Type == updatedClaim.Type && claim.Value == updatedClaim.Value))
+                            filteredUpdatedClaims.Add(new Claim(updatedClaim.Type!, updatedClaim.Value!));
+                    }
+
+                    await FilterElevatedClaimsBasedOnUserPermissions(returnCodeAndUserResponseModel.AppUser!, filteredUpdatedClaims);
+
                     // Get the existing claims of the role
-                    IList<Claim> roleReturnedExistingClaims = await _roleManager.GetClaimsAsync(foundRole);
-                    List<Claim> roleExistingClaims = roleReturnedExistingClaims is null ? new List<Claim>() : new List<Claim>(roleReturnedExistingClaims);
+                    List<Claim> roleExistingClaims = new List<Claim>(await _roleManager.GetClaimsAsync(foundRole));
 
                     // Remove claims from the role that are in the filtered updated list of claims
                     foreach (Claim roleExistingClaim in roleExistingClaims)
                     {
-                        if (filteredUpdatedClaims.Any(filteredUpdatedClaim => filteredUpdatedClaim.Type == roleExistingClaim.Type && filteredUpdatedClaim.Value == roleExistingClaim.Value))
+                        if (filteredUpdatedClaims!.Any(filteredUpdatedClaim => filteredUpdatedClaim.Type == roleExistingClaim.Type && filteredUpdatedClaim.Value == roleExistingClaim.Value))
                             continue;
 
                         var removeClaimResult = await _roleManager.RemoveClaimAsync(foundRole, roleExistingClaim);
@@ -537,7 +676,7 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                         }
                     }
 
-                    // Add claims that are not already part
+                    // Add claims that are not already part of the role
                     foreach (Claim filteredUpdatedClaim in filteredUpdatedClaims)
                     {
                         if (roleExistingClaims.Any(roleExistingClaim => roleExistingClaim.Type == filteredUpdatedClaim.Type && roleExistingClaim.Value == filteredUpdatedClaim.Value))
@@ -554,6 +693,10 @@ public class RoleManagementProcedures : IRoleManagementProcedures
                             return new ReturnRoleAndCodeResponseModel(null!, LibraryReturnedCodes.UnknownError);
                         }
                     }
+
+                    IList<Claim> outputClaims = await _roleManager.GetClaimsAsync(foundRole);
+                    foreach (Claim outputClaim in outputClaims ?? Enumerable.Empty<Claim>())
+                        foundRole.Claims.Add(new CustomClaim(outputClaim));
 
                     await transaction.CommitAsync();
 
@@ -575,17 +718,32 @@ public class RoleManagementProcedures : IRoleManagementProcedures
     private async Task<List<Claim>> GetAllUniqueClaimsInSystemAsyncCommonPart()
     {
         List<AppRole> appRoles = await _roleManager.Roles.ToListAsync();
-        HashSet<Claim> claims = new HashSet<Claim>();
+        List<Claim> uniqueClaims = new List<Claim>();
 
-        //Claims in AspNetCore Identity are terribly implemented using one to many. That means that a role can have many claims, but a roleClaim can not have many roles.
-        //Terrible implementation, but disregarding that the following needs to happen, because there might exist 2 claims that have the same roleClaim type and value, but different claimId and claimrole
+        //Claims in AspNetCore Identity are terribly implemented using one to many. That means that a role can have many claims, but a customRoleClaim can not have many roles.
+        //Terrible implementation, but disregarding that the following needs to happen, because there might exist 2 claims that have the same customRoleClaim type and value, but different claimId and claimrole
         foreach (AppRole appRole in appRoles)
         {
             List<Claim> returnedRoleClaims = new List<Claim>(await _roleManager.GetClaimsAsync(appRole));
-            foreach (Claim claim in returnedRoleClaims)
-                claims.Add(claim); // filters out duplicates since it is a set
+            foreach (Claim returnedRoleClaim in returnedRoleClaims)
+            {
+                if(!uniqueClaims.Any(uniqueClaim => uniqueClaim.Type == returnedRoleClaim.Type && uniqueClaim.Value == returnedRoleClaim.Value))
+                    uniqueClaims.Add(returnedRoleClaim);
+            }
         }
 
-        return claims.ToList();
+        return uniqueClaims;
+    }
+
+    private async Task FilterElevatedClaimsBasedOnUserPermissions(AppUser appUser, List<Claim> claims)
+    {
+        //get the claims of the user that is trying to read the roles
+        IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(appUser!);
+        AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames.FirstOrDefault()!);
+        IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
+
+        //if the user does not have elevated permissions then filter the claims that will be returned
+        if (claims is not null && (editorUserClaims is null || !editorUserClaims.Any(editorClaim => editorClaim.Type == "Permission" && editorClaim.Value == "CanManageElevatedRoles")))
+            claims.RemoveAll(claim => claim.Value!.Contains("Elevated"));
     }
 }

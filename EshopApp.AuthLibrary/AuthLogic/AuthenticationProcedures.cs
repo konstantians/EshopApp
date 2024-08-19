@@ -24,10 +24,10 @@ public class AuthenticationProcedures : IAuthenticationProcedures
     private readonly ILogger<AuthenticationProcedures> _logger;
     private readonly IConfiguration _config;
     private readonly AppIdentityDbContext _identityDbContext;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly RoleManager<AppRole> _roleManager;
     private readonly IHelperMethods _helperMethods;
-    public AuthenticationProcedures(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, AppIdentityDbContext appIdentityDbContext, RoleManager<IdentityRole> roleManager,
-        IRoleManagementProcedures roleManagementProcedures, IConfiguration config, IHelperMethods helperMethods, ILogger<AuthenticationProcedures> logger = null!)
+    public AuthenticationProcedures(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, AppIdentityDbContext appIdentityDbContext, RoleManager<AppRole> roleManager,
+        IConfiguration config, IHelperMethods helperMethods, ILogger<AuthenticationProcedures> logger = null!)
     {
         _identityDbContext = appIdentityDbContext;
         _roleManager = roleManager;
@@ -82,6 +82,8 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                     appUser.Email, result.Errors);
                 return new LibSignUpResponseModel(null!, null!, LibraryReturnedCodes.UnknownError);
             }
+
+            await _userManager.AddToRoleAsync(appUser, "User");
 
             string confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(appUser);
             _logger.LogInformation(new EventId(2200, "SignUpSuccess"), "Successfully created user account: UserId={UserId}, Email={Email}.", appUser.Id, appUser.Email);
@@ -236,8 +238,6 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    //TODO think to maybe add a property to the appUser to check specifically if the admin has deactivated the account and leave the confirm email alone and activate it here to avoid the edge case
-    //in which a user creates a local account does not activate it and then tries to continue with google..
     public async Task<ReturnTokenAndCodeResponseModel> HandleExternalSignInCallbackAsync()
     {
         try
@@ -571,7 +571,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             new Claim(ClaimTypes.Email, user.Email!),
         };
 
-        List<IdentityRole> userRoles = new List<IdentityRole>();
+        List<AppRole> userRoles = new List<AppRole>();
         foreach (string roleName in roleNames)
         {
             var role = await _roleManager.FindByNameAsync(roleName);

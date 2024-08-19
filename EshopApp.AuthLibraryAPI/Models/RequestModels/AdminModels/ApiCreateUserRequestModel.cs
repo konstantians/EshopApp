@@ -1,5 +1,4 @@
-﻿using EshopApp.AuthLibrary.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace EshopApp.AuthLibraryAPI.Models.RequestModels.AdminModels;
 

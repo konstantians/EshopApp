@@ -22,7 +22,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = "CanViewUsersPolicy")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> GetUsers()
     {
 		try
@@ -30,13 +30,13 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnUsersAndCodeResponseModel returnUsersAndCodeResponseModel = await _adminProcedures.GetUsersAsync(accessToken, new List<Claim>(){ new Claim("Permission", "CanViewUsers")});
+            ReturnUsersAndCodeResponseModel returnUsersAndCodeResponseModel = await _adminProcedures.GetUsersAsync(accessToken, new List<Claim>(){ new Claim("Permission", "CanManageUsers") });
             if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
             else if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
@@ -50,8 +50,8 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpGet("GetUserById")]
-    [Authorize(Policy = "CanViewUsersPolicy")]
+    [HttpGet("GetUserById/{userId}")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> GetUserById(string userId)
     {
         try
@@ -59,13 +59,15 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnUserAndCodeResponseModel? returnUserAndCodeResponseModel = await _adminProcedures.FindUserByIdAsync(accessToken, new List<Claim>() { new Claim("Permission", "CanViewUsers") }, userId);
+            ReturnUserAndCodeResponseModel? returnUserAndCodeResponseModel = await _adminProcedures.FindUserByIdAsync(accessToken, new List<Claim>() { new Claim("Permission", "CanManageUsers") }, userId);
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+            else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser)
+                return StatusCode(403, new { ErrorMessage = "InsufficientPrivilegesToManageElevatedUser" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
@@ -82,8 +84,8 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpGet("GetUserByEmail")]
-    [Authorize(Policy = "CanViewUsersPolicy")]
+    [HttpGet("GetUserByEmail/{email}")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> GetUserByEmail(string email)
     {
         try
@@ -91,13 +93,15 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnUserAndCodeResponseModel? returnUserAndCodeResponseModel = await _adminProcedures.FindUserByEmailAsync(accessToken, new List<Claim>() { new Claim("Permission", "CanViewUsers") }, email);
+            ReturnUserAndCodeResponseModel? returnUserAndCodeResponseModel = await _adminProcedures.FindUserByEmailAsync(accessToken, new List<Claim>() { new Claim("Permission", "CanManageUsers") }, email);
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+            else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser)
+                return StatusCode(403, new { ErrorMessage = "InsufficientPrivilegesToManageElevatedUser" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
@@ -115,8 +119,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "CanViewUsersPolicy")]
-    [Authorize(Policy = "CanEditUsersPolicy")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> CreateUserAccount([FromBody] ApiCreateUserRequestModel apiCreateUserRequestModel)
     {
         try
@@ -124,16 +127,16 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanViewUsers") , new Claim("Permission", "CanEditUsers")};
+            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
             ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _adminProcedures.CreateUserAccountAsync(accessToken, expectedClaims, apiCreateUserRequestModel.Email!, apiCreateUserRequestModel.Password!, 
                 apiCreateUserRequestModel.PhoneNumber!);
 
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
@@ -152,8 +155,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = "CanViewUsersPolicy")]
-    [Authorize(Policy = "CanEditUsersPolicy")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> UpdateUserAccount([FromBody] ApiUpdateUserRequestModel apiUpdateUserRequestModel)
     {
         try
@@ -161,16 +163,18 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanViewUsers"), new Claim("Permission", "CanEditUsers") };
+            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
             LibraryReturnedCodes returnedCode = await _adminProcedures.UpdateUserAccountAsync(accessToken, expectedClaims, apiUpdateUserRequestModel.AppUser!,
                 apiUpdateUserRequestModel.ActivateEmail, apiUpdateUserRequestModel.Password);
 
             if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnedCode == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+            else if (returnedCode == LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser)
+                return StatusCode(403, new { ErrorMessage = "InsufficientPrivilegesToManageElevatedUser" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountLocked)
@@ -191,8 +195,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("{userId}")]
-    [Authorize(Policy = "CanViewUsersPolicy")]
-    [Authorize(Policy = "CanEditUsersPolicy")]
+    [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> DeleteUserAccount(string userId)
     {
         try
@@ -200,15 +203,17 @@ public class AdminController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanViewUsers"), new Claim("Permission", "CanEditUsers") };
+            List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
             LibraryReturnedCodes returnedCode = await _adminProcedures.DeleteUserAccountAsync(accessToken, expectedClaims, userId);
 
             if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnedCode == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+            else if (returnedCode == LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser)
+                return StatusCode(403, new { ErrorMessage = "InsufficientPrivilegesToManageElevatedUser" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountLocked)
