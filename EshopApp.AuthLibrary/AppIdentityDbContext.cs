@@ -11,10 +11,7 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
     private readonly IConfiguration? _configuration;
 
     //used for migrations
-    public AppIdentityDbContext()
-    {
-
-    }
+    public AppIdentityDbContext() { }
 
     //used when the application is running
     public AppIdentityDbContext(DbContextOptions<AppIdentityDbContext> options, IConfiguration configuration) : base(options)
@@ -25,7 +22,7 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         //if the application runs use this
-        if (_configuration != null)
+        if (_configuration is not null)
         {
             optionsBuilder.UseSqlServer(_configuration.GetConnectionString("DefaultAuthentication"),
                 options => options.EnableRetryOnFailure());
