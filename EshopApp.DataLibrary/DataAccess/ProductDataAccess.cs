@@ -26,7 +26,7 @@ public class ProductDataAccess : IProductDataAccess
             List<Product> products = await _appDataDbContext.Products
                 .Include(p => p.Categories)
                 .Include(p => p.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Include(p => p.Variants)
                     .ThenInclude(v => v.Discount)
                 .Include(p => p.Variants)
@@ -51,7 +51,7 @@ public class ProductDataAccess : IProductDataAccess
             List<Product> products = await _appDataDbContext.Products
                 .Include(p => p.Categories)
                 .Include(p => p.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Include(p => p.Variants)
                     .ThenInclude(v => v.Discount)
                 .Include(p => p.Variants)
@@ -77,7 +77,7 @@ public class ProductDataAccess : IProductDataAccess
             Product? foundProduct = await _appDataDbContext.Products
                 .Include(p => p.Categories)
                 .Include(p => p.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Include(p => p.Variants)
                     .ThenInclude(v => v.Discount)
                 .Include(p => p.Variants)
@@ -97,6 +97,19 @@ public class ProductDataAccess : IProductDataAccess
     {
         try
         {
+            //a product can not be created without having at least one variant
+            if (product.Variants is null || !product.Variants.Any())
+            {
+                _logger.LogWarning(new EventId(9999, "CreateProductFailureBecauseVariantWasNotProvided"), "The product could not be created, because variant information was not provided.");
+                return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.NoVariantWasProvidedForProductCreation);
+            }
+
+            if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Code == product.Code))
+                return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateProductCode);
+
+            if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Name == product.Name))
+                return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityName);
+
             product.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Products.FirstOrDefaultAsync(otherProduct => otherProduct.Id == product.Id) is not null)
                 product.Id = Guid.NewGuid().ToString();
@@ -106,9 +119,8 @@ public class ProductDataAccess : IProductDataAccess
             product.ModifiedAt = dateTimeNow;
             await _appDataDbContext.Products.AddAsync(product);
 
-            await _appDataDbContext.SaveChangesAsync();
+            await _appDataDbContext.SaveChangesAsync(); //this will necessarily also create at least one variant
 
-            //TODO does this also create a variant? Good question 
             _logger.LogInformation(new EventId(9999, "CreateProductSuccess"), "The product was successfully created.");
             return new ReturnProductAndCodeResponseModel(product, DataLibraryReturnedCodes.NoError);
         }
@@ -135,8 +147,22 @@ public class ProductDataAccess : IProductDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundProduct.Code = updatedProduct.Code ?? foundProduct.Code;
-            foundProduct.Name = updatedProduct.Name ?? foundProduct.Name;
+            if (updatedProduct.Code is not null)
+            {
+                if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Code == updatedProduct.Code))
+                    return DataLibraryReturnedCodes.DuplicateProductCode;
+
+                foundProduct.Code = updatedProduct.Code;
+            }
+
+            if (updatedProduct.Name is not null)
+            {
+                if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Name == updatedProduct.Name))
+                    return DataLibraryReturnedCodes.DuplicateEntityName;
+
+                foundProduct.Name = foundProduct.Name;
+            }
+
             foundProduct.Description = updatedProduct.Description;
 
             if (updatedProduct.Categories != null && !updatedProduct.Categories.Any())

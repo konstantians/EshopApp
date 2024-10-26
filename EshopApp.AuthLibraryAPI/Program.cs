@@ -1,20 +1,20 @@
 using EshopApp.AuthLibrary;
-using EshopApp.AuthLibrary.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using EshopApp.AuthLibraryAPI.Middlewares;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Reflection;
 using EshopApp.AuthLibrary.AuthLogic;
+using EshopApp.AuthLibrary.Models;
+using EshopApp.AuthLibraryAPI.Middlewares;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Reflection;
+using System.Text;
 
 namespace EshopApp.AuthLibraryAPI;
 
 public class Program()
 {
-    public static void Main(string[] args) 
+    public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         IConfiguration configuration = builder.Configuration;
@@ -132,7 +132,7 @@ public class Program()
             context =>
             {
                 context.Request.Headers.TryGetValue("X-Bypass-Rate-Limiting", out var bypassRateLimitingCode);
-                if (configuration["RateLimitingBypassCode"] is null || bypassRateLimitingCode.IsNullOrEmpty())
+                if (configuration["RateLimitingBypassCode"] is null || string.IsNullOrEmpty(bypassRateLimitingCode))
                     return true;
 
                 //if the header does not contain an accurate code for the bypassRateLimimit then use rate limiter
@@ -157,7 +157,7 @@ public class Program()
         app.UseAuthorization();
 
         app.UseMiddleware<ApiKeyProtectionMiddleware>(apiKeys);
-           
+
         app.MapControllers();
 
         app.Run();

@@ -23,12 +23,15 @@ public class VariantDataAccess : IVariantDataAccess
     {
         try
         {
+            //because it might not be very clear, the variant can have many variant images with each variant image having only one image. The reason why it is clunky it is because IsThumbnail property needs to be in the bridge table
             List<Variant> variants = await _appDataDbContext.Variants
-                .Include(v => v.Images)
+                .Include(v => v.VariantImages)
                 .Include(v => v.Attributes)
                 .Include(v => v.Discount)
                 .Include(v => v.Product)
                     .ThenInclude(p => p!.Categories)
+                .Include(v => v.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
                 .Take(amount)
                 .ToListAsync();
 
@@ -47,7 +50,7 @@ public class VariantDataAccess : IVariantDataAccess
         try
         {
             List<Variant> variants = await _appDataDbContext.Variants
-                .Include(v => v.Images)
+                .Include(v => v.VariantImages)
                 .Include(v => v.Attributes)
                 .Include(v => v.Product)
                     .ThenInclude(p => p!.Categories)
@@ -70,7 +73,7 @@ public class VariantDataAccess : IVariantDataAccess
         try
         {
             Variant? foundVariant = await _appDataDbContext.Variants
-                .Include(v => v.Images)
+                .Include(v => v.VariantImages)
                 .Include(v => v.Attributes)
                 .Include(v => v.Discount)
                 .Include(v => v.Product)
@@ -92,7 +95,7 @@ public class VariantDataAccess : IVariantDataAccess
         try
         {
             Variant? foundVariant = await _appDataDbContext.Variants
-                .Include(v => v.Images)
+                .Include(v => v.VariantImages)
                 .Include(v => v.Attributes)
                 .Include(v => v.Discount)
                 .Include(v => v.Product)
@@ -118,6 +121,9 @@ public class VariantDataAccess : IVariantDataAccess
                 _logger.LogWarning(new EventId(9999, "CreateVariantFailureDueToNullProduct"), "Tried to create variant for null product.");
                 return new ReturnVariantAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidProductIdWasGiven);
             }
+
+            if (await _appDataDbContext.Variants.AnyAsync(existingVariant => existingVariant.SKU == variant.Id))
+                return new ReturnVariantAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateVariantSku);
 
             variant.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Variants.FirstOrDefaultAsync(otherVariant => otherVariant.Id == variant.Id) is not null)
@@ -148,7 +154,7 @@ public class VariantDataAccess : IVariantDataAccess
                 return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
 
             Variant? foundVariant = await _appDataDbContext.Variants
-                .Include(v => v.Images)
+                .Include(v => v.VariantImages)
                 .Include(v => v.Attributes)
                 .Include(v => v.Discount)
                 .FirstOrDefaultAsync();
@@ -159,9 +165,17 @@ public class VariantDataAccess : IVariantDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundVariant.SKU = updatedVariant.SKU ?? foundVariant.SKU;
+            if (updatedVariant.SKU is not null)
+            {
+                if (await _appDataDbContext.Variants.AnyAsync(existingVariant => existingVariant.SKU == updatedVariant.Id))
+                    return DataLibraryReturnedCodes.DuplicateVariantSku;
+
+                foundVariant.SKU = updatedVariant.SKU;
+            }
+
             foundVariant.Price = updatedVariant.Price;
             foundVariant.UnitsInStock = updatedVariant.UnitsInStock;
+            foundVariant.IsThumbnailVariant = updatedVariant.IsThumbnailVariant;
 
             if (updatedVariant.Discount is not null)
             {
@@ -172,19 +186,24 @@ public class VariantDataAccess : IVariantDataAccess
             else
                 foundVariant.Discount = null;
 
-            if (updatedVariant.Images != null && !updatedVariant.Images.Any())
+            if (updatedVariant.VariantImages != null && !updatedVariant.VariantImages.Any())
             {
-                foundVariant.Images.Clear();
+                foundVariant.VariantImages.Clear();
             }
-            else if (updatedVariant.Images != null)
+            //here this is a bit complicated, but the idea is that variantImage bridge entity has an id that always remains the same,
+            //but theoretically either a new connection was added or previous connections where removed. So because the variantImage can not exist
+            //before this moment(in the case of the new connection) the typical filtering can not take place
+            else if (updatedVariant.VariantImages != null)
             {
-                List<string> updatedVariantImages = updatedVariant.Images.Select(variantImage => variantImage.Id!).ToList(); // just add them here, for filtering below
-                List<VariantImage> filteredVariantImages = await _appDataDbContext.VariantImages
+                //TODO what if the images do not exist? That assumes that the connection is done when the images exist, but in a lot of cases that is not the case... Think about it
+
+                //List<string> updatedVariantImages = updatedVariant.VariantImages.Select(variantImage => variantImage.Id!).ToList(); // just add them here, for filtering below
+                /*List<VariantImage> filteredVariantImages = await _appDataDbContext.VariantImages
                     .Where(databaseVariantImage => updatedVariantImages.Contains(databaseVariantImage.Id!))
                     .ToListAsync();
-
-                foundVariant.Images.Clear();
-                foundVariant.Images.AddRange(filteredVariantImages);
+                */
+                foundVariant.VariantImages.Clear();
+                foundVariant.VariantImages.AddRange(updatedVariant.VariantImages);
             }
 
             if (updatedVariant.Attributes != null && !updatedVariant.Attributes.Any())
@@ -216,7 +235,6 @@ public class VariantDataAccess : IVariantDataAccess
         }
     }
 
-    //TODO figure out how to add or remove discount from variant. Something a long those lines
     /*public async Task<DataLibraryReturnedCodes> RemoveDiscountFromVariantAsync(Variant updatedVariant)
     {
         try
@@ -269,137 +287,6 @@ public class VariantDataAccess : IVariantDataAccess
         {
             _logger.LogError(new EventId(9999, "DeleteVariantFailure"), ex, "An error occurred while deleting the variant with Id={id}. " +
                 "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", variantId, ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<ReturnVariantsImagesAndCodeResponseModel> GetVariantImagesAsync(int amount)
-    {
-        try
-        {
-            List<VariantImage> variantImages = await _appDataDbContext.VariantImages
-                .Include(vI => vI.Variant)
-                    .ThenInclude(v => v!.Product)
-                        .ThenInclude(p => p!.Categories)
-                .Include(vI => vI.Variant)
-                    .ThenInclude(v => v!.Attributes)
-                .Take(amount)
-                .ToListAsync();
-
-            return new ReturnVariantsImagesAndCodeResponseModel(variantImages, DataLibraryReturnedCodes.NoError);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(9999, "GetVariantImagesFailure"), ex, "An error occurred while retrieving the variant images. " +
-                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<ReturnVariantAndCodeResponseModel> GetVariantImageByIdAsync(string id)
-    {
-        try
-        {
-            Variant? foundVariant = await _appDataDbContext.Variants
-                .Include(v => v.Images)
-                .Include(v => v.Attributes)
-                .Include(v => v.Product)
-                    .ThenInclude(p => p!.Categories)
-                .FirstOrDefaultAsync(variantImage => variantImage.Id == id);
-            return new ReturnVariantAndCodeResponseModel(foundVariant!, DataLibraryReturnedCodes.NoError);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(9999, "GetVariantImageByIdFailure"), ex, "An error occurred while retrieving the variant image with Id={id}. " +
-                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", id, ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<ReturnVariantImageAndCodeResponseModel> CreateVariantImageAsync(VariantImage variantImage)
-    {
-        try
-        {
-            Variant? foundVariant = await _appDataDbContext.Variants.FirstOrDefaultAsync(variant => variant.Id == variantImage.VariantId);
-            if (foundVariant is null)
-            {
-                _logger.LogWarning(new EventId(9999, "CreateVariantImageFailureDueToNullVariant"), "Tried to create variant image for null product.");
-                return new ReturnVariantImageAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
-            }
-
-            variantImage.Id = Guid.NewGuid().ToString();
-            while (await _appDataDbContext.VariantImages.FirstOrDefaultAsync(otherVariantImage => otherVariantImage.Id == variantImage.Id) is not null)
-                variantImage.Id = Guid.NewGuid().ToString();
-
-            DateTime dateTimeNow = DateTime.Now;
-            variantImage.CreatedAt = dateTimeNow;
-            variantImage.ModifiedAt = dateTimeNow;
-            await _appDataDbContext.VariantImages.AddAsync(variantImage);
-
-            await _appDataDbContext.SaveChangesAsync();
-
-            _logger.LogInformation(new EventId(9999, "CreateVariantImageSuccess"), "The variant image was successfully created.");
-            return new ReturnVariantImageAndCodeResponseModel(variantImage, DataLibraryReturnedCodes.NoError);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(9999, "CreateVariantImageFailure"), ex, "An error occurred while creating the variant image. " +
-                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<DataLibraryReturnedCodes> UpdateVariantImageAsync(VariantImage updatedVariantImage)
-    {
-        try
-        {
-            if (updatedVariantImage.Id is null)
-                return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
-
-            VariantImage? foundVariantImage = await _appDataDbContext.VariantImages.FirstOrDefaultAsync(variantImage => variantImage.Id == updatedVariantImage.Id);
-            if (foundVariantImage is null)
-            {
-                _logger.LogWarning(new EventId(9999, "UpdateVariantImageFailureDueToNullVariantImage"), "The variant image with Id={id} was not found and thus the update could not proceed.", updatedVariantImage.Id);
-                return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
-            }
-
-            foundVariantImage.ImagePath = updatedVariantImage.ImagePath ?? foundVariantImage.ImagePath;
-            foundVariantImage.IsThumbNail = updatedVariantImage.IsThumbNail;
-            foundVariantImage.ModifiedAt = DateTime.Now;
-            await _appDataDbContext.SaveChangesAsync();
-
-            _logger.LogWarning(new EventId(9999, "UpdateVariantImageSuccess"), "The variant image with Id={id} was successfully updated.", updatedVariantImage.Id);
-            return DataLibraryReturnedCodes.NoError;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(9999, "UpdateVariantImageFailure"), ex, "An error occurred while updating the variant image with Id={id}. " +
-                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", updatedVariantImage.Id, ex.Message, ex.StackTrace);
-            throw;
-        }
-    }
-
-    public async Task<DataLibraryReturnedCodes> DeleteVariantImageAsync(string variantImageId)
-    {
-        try
-        {
-            VariantImage? foundVariantImage = await _appDataDbContext.VariantImages.FirstOrDefaultAsync(variantImage => variantImage.Id == variantImageId);
-            if (foundVariantImage is null)
-            {
-                _logger.LogWarning(new EventId(9999, "DeleteVariantImageFailureDueToNullVariantImage"), "The variant image with Id={id} was not found and thus the delete could not proceed.", variantImageId);
-                return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
-            }
-
-            _appDataDbContext.VariantImages.Remove(foundVariantImage);
-            await _appDataDbContext.SaveChangesAsync();
-
-            _logger.LogInformation(new EventId(9999, "DeleteVariantImageSuccess"), "The variant image with Id={id} was successfully deleted.", variantImageId);
-            return DataLibraryReturnedCodes.NoError;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(9999, "UpdateVariantImageFailure"), ex, "An error occurred while deleting the variant image with Id={id}. " +
-                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", variantImageId, ex.Message, ex.StackTrace);
             throw;
         }
     }

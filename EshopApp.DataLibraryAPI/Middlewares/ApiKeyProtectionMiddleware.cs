@@ -1,4 +1,4 @@
-﻿namespace EshopApp.AuthLibraryAPI.Middlewares;
+﻿namespace EshopApp.DataLibraryAPI.Middlewares;
 
 public class ApiKeyProtectionMiddleware
 {

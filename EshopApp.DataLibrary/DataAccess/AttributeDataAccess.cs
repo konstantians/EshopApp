@@ -28,7 +28,7 @@ public class AttributeDataAccess : IAttributeDataAccess
                     .ThenInclude(v => v.Product)
                         .ThenInclude(p => p!.Categories)
                 .Include(a => a.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Take(amount)
                 .ToListAsync();
 
@@ -51,7 +51,7 @@ public class AttributeDataAccess : IAttributeDataAccess
                     .ThenInclude(v => v.Product)
                         .ThenInclude(p => p!.Categories)
                 .Include(a => a.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .FirstOrDefaultAsync(attribute => attribute.Id == id);
             return new ReturnAttributeAndCodeResponseModel(foundAttribute!, DataLibraryReturnedCodes.NoError);
         }
@@ -67,6 +67,9 @@ public class AttributeDataAccess : IAttributeDataAccess
     {
         try
         {
+            if (await _appDataDbContext.Attributes.AnyAsync(existingAttributes => existingAttributes.Name == attribute.Name))
+                return new ReturnAttributeAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityName);
+
             attribute.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Attributes.FirstOrDefaultAsync(otherAttribute => otherAttribute.Id == attribute.Id) is not null)
                 attribute.Id = Guid.NewGuid().ToString();
@@ -103,7 +106,14 @@ public class AttributeDataAccess : IAttributeDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundAttribute.Name = updatedAttribute.Name ?? foundAttribute.Name;
+            if (updatedAttribute.Name is not null)
+            {
+                if (await _appDataDbContext.Attributes.AnyAsync(existingAttributes => existingAttributes.Name == updatedAttribute.Name))
+                    return DataLibraryReturnedCodes.DuplicateEntityName;
+
+                foundAttribute.Name = updatedAttribute.Name;
+            }
+
             if (updatedAttribute.Variants != null && !updatedAttribute.Variants.Any())
             {
                 foundAttribute.Variants.Clear();

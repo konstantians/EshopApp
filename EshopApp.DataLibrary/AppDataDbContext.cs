@@ -37,25 +37,47 @@ public class AppDataDbContext : DbContext
     public DbSet<Variant> Variants { get; set; }
     public DbSet<AppAttribute> Attributes { get; set; }
     public DbSet<Discount> Discounts { get; set; }
+    public DbSet<AppImage> Images { get; set; }
     public DbSet<VariantImage> VariantImages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        //product can have many variants(one to many)
+        /******************* Category *******************/
+        modelBuilder.Entity<Category>()
+            .HasIndex(category => category.Name).IsUnique();
+
+        modelBuilder.Entity<Category>()
+            .Property(category => category.Name).HasMaxLength(50).IsRequired();
+
+        /******************* Products *******************/
+        //variant can have many variants(one to many)
         modelBuilder.Entity<Product>()
             .HasMany(product => product.Variants)
             .WithOne(variant => variant.Product)
             .HasForeignKey(variant => variant.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        //product can have many categories and a category can have many products(many to many)
+        //variant can have many categories and a category can have many products(many to many)
         modelBuilder.Entity<Product>()
             .HasMany(product => product.Categories)
             .WithMany(categories => categories.Products);
 
+        modelBuilder.Entity<Product>()
+            .HasIndex(product => product.Code).IsUnique();
+
+        modelBuilder.Entity<Product>()
+            .Property(product => product.Code).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<Product>()
+            .HasIndex(product => product.Name).IsUnique();
+
+        modelBuilder.Entity<Product>()
+            .Property(product => product.Name).HasMaxLength(50).IsRequired();
+
+        /******************* Variants *******************/
         //variant can have many images(one to many)
         modelBuilder.Entity<Variant>()
-            .HasMany(variant => variant.Images)
+            .HasMany(variant => variant.VariantImages)
             .WithOne(image => image.Variant)
             .HasForeignKey(image => image.VariantId)
             .OnDelete(DeleteBehavior.Cascade);
@@ -65,13 +87,57 @@ public class AppDataDbContext : DbContext
             .HasMany(variant => variant.Attributes)
             .WithMany(attribute => attribute.Variants);
 
+        modelBuilder.Entity<Variant>()
+            .HasIndex(variant => variant.SKU).IsUnique();
+
+        modelBuilder.Entity<Variant>()
+            .Property(variant => variant.SKU).HasMaxLength(50).IsRequired();
+
+        /******************* Attributes *******************/
+        modelBuilder.Entity<AppAttribute>()
+            .HasIndex(attribute => attribute.Name).IsUnique();
+
+        modelBuilder.Entity<AppAttribute>()
+            .Property(attribute => attribute.Name).HasMaxLength(50).IsRequired();
+
+        /******************* VariantImages *******************/
+        modelBuilder.Entity<VariantImage>()
+            .HasOne(variantImage => variantImage.Variant)
+            .WithMany(variant => variant.VariantImages)
+            .HasForeignKey(variantImage => variantImage.VariantId);
+
+        modelBuilder.Entity<VariantImage>()
+            .HasOne(variantImage => variantImage.Image)
+            .WithMany(image => image.VariantImages)
+            .HasForeignKey(variantImage => variantImage.ImageId);
+
+        /******************* Images *******************/
+        modelBuilder.Entity<AppImage>()
+            .HasIndex(image => image.Name).IsUnique();
+
+        modelBuilder.Entity<AppImage>()
+            .Property(image => image.Name).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<AppImage>()
+            .HasIndex(image => image.ImagePath).IsUnique();
+
+        modelBuilder.Entity<AppImage>()
+            .Property(Image => Image.ImagePath).HasMaxLength(75).IsRequired(); //75 - 36 = 39 characters for the name of the image
+
+        /******************* Discounts *******************/
         //discounts can have many variants(one to many)
         modelBuilder.Entity<Discount>()
             .HasMany(discount => discount.Variants)
             .WithOne(variant => variant.Discount)
             .HasForeignKey(variant => variant.DiscountId);
 
+        modelBuilder.Entity<Discount>()
+            .HasIndex(discount => discount.Name).IsUnique();
+
+        modelBuilder.Entity<Discount>()
+            .Property(discount => discount.Name).HasMaxLength(50).IsRequired();
+
         base.OnModelCreating(modelBuilder);
-        //so what is the plan? I mean if you delete a product the variants need to go and then the variant images and then 
+        //so what is the plan? I mean if you delete a variant the variants need to go and then the variant images and then 
     }
 }
