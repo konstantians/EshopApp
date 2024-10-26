@@ -6,5 +6,9 @@ public enum DataLibraryReturnedCodes
     TheIdOfTheEntityCanNotBeNull,
     EntityNotFoundWithGivenId,
     InvalidProductIdWasGiven,
-    InvalidVariantIdWasGiven
+    InvalidVariantIdWasGiven,
+    NoVariantWasProvidedForProductCreation,
+    DuplicateVariantSku,
+    DuplicateProductCode,
+    DuplicateEntityName
 }

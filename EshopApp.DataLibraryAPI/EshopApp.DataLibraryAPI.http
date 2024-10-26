@@ -1,6 +1,0 @@
-@EshopApp.DataLibraryAPI_HostAddress = http://localhost:5084
-
-GET {{EshopApp.DataLibraryAPI_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

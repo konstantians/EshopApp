@@ -26,7 +26,7 @@ public class CategoryDataAccess : ICategoryDataAccess
             List<Category> categories = await _appDataDbContext.Categories
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
-                        .ThenInclude(v => v.Images)
+                        .ThenInclude(v => v.VariantImages)
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.Discount)
@@ -53,7 +53,7 @@ public class CategoryDataAccess : ICategoryDataAccess
             Category? foundCategory = await _appDataDbContext.Categories
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
-                        .ThenInclude(v => v.Images)
+                        .ThenInclude(v => v.VariantImages)
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.Discount)
@@ -75,6 +75,9 @@ public class CategoryDataAccess : ICategoryDataAccess
     {
         try
         {
+            if (await _appDataDbContext.Categories.AnyAsync(existingCategories => existingCategories.Name == category.Name))
+                return new ReturnCategoryAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityName);
+
             category.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Categories.FirstOrDefaultAsync(otherCategory => otherCategory.Id == category.Id) is not null)
                 category.Id = Guid.NewGuid().ToString();
@@ -111,7 +114,14 @@ public class CategoryDataAccess : ICategoryDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundCategory.Name = updatedCategory.Name;
+            if (updatedCategory.Name is not null)
+            {
+                if (await _appDataDbContext.Categories.AnyAsync(existingCategories => existingCategories.Name == updatedCategory.Name))
+                    return DataLibraryReturnedCodes.DuplicateEntityName;
+
+                foundCategory.Name = updatedCategory.Name;
+            }
+
             if (updatedCategory.Products != null && !updatedCategory.Products.Any())
             {
                 foundCategory.Products.Clear();

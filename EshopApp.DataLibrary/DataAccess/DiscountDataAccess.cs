@@ -28,7 +28,7 @@ public class DiscountDataAccess : IDiscountDataAccess
                     .ThenInclude(v => v.Product)
                         .ThenInclude(p => p!.Categories)
                 .Include(d => d.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Include(d => d.Variants)
                     .ThenInclude(v => v.Attributes)
                 .Take(amount)
@@ -53,7 +53,7 @@ public class DiscountDataAccess : IDiscountDataAccess
                     .ThenInclude(v => v.Product)
                         .ThenInclude(p => p!.Categories)
                 .Include(d => d.Variants)
-                    .ThenInclude(v => v.Images)
+                    .ThenInclude(v => v.VariantImages)
                 .Include(d => d.Variants)
                     .ThenInclude(v => v.Attributes)
                 .FirstOrDefaultAsync(discount => discount.Id == id);
@@ -71,6 +71,9 @@ public class DiscountDataAccess : IDiscountDataAccess
     {
         try
         {
+            if (await _appDataDbContext.Discounts.AnyAsync(existingDiscount => existingDiscount.Name == discount.Name))
+                return new ReturnDiscountAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityName);
+
             discount.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Discounts.FirstOrDefaultAsync(otherDiscount => otherDiscount.Id == discount.Id) is not null)
                 discount.Id = Guid.NewGuid().ToString();
@@ -107,7 +110,13 @@ public class DiscountDataAccess : IDiscountDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundDiscount.Name = updatedDiscount.Name;
+            if (updatedDiscount.Name is not null)
+            {
+                if (await _appDataDbContext.Discounts.AnyAsync(existingDiscount => existingDiscount.Name == updatedDiscount.Name))
+                    return DataLibraryReturnedCodes.DuplicateEntityName;
+                foundDiscount.Name = updatedDiscount.Name;
+            }
+
             foundDiscount.Percentage = updatedDiscount.Percentage;
             if (updatedDiscount.Variants != null && !updatedDiscount.Variants.Any())
             {
