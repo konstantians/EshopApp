@@ -4,9 +4,11 @@ public class Variant
 {
     public string? Id { get; set; }
     public string? SKU { get; set; }
-    public decimal Price { get; set; }
-    public bool IsThumbnailVariant { get; set; }
-    public int UnitsInStock { get; set; }
+    public decimal? Price { get; set; }
+    public bool? IsThumbnailVariant { get; set; }
+    public bool? IsDeactivated { get; set; }
+    public bool? ExistsInOrder { get; set; }
+    public int? UnitsInStock { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public string? ProductId { get; set; }

@@ -2,7 +2,7 @@
 using EshopApp.DataLibrary.Models;
 using EshopApp.DataLibrary.Models.ResponseModels;
 using EshopApp.DataLibrary.Models.ResponseModels.ImagesModels;
-using EshopApp.DataLibraryAPI.Models.RequestModels;
+using EshopApp.DataLibraryAPI.Models.RequestModels.ImageModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -11,7 +11,6 @@ namespace EshopApp.DataLibraryAPI.Controllers;
 [ApiController]
 [EnableRateLimiting("DefaultWindowLimiter")]
 [Route("api/[controller]")]
-
 public class ImageController : ControllerBase
 {
     private readonly IImageDataAccess _imageDataAccess;
@@ -53,15 +52,21 @@ public class ImageController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateImage(AppImage image)
+    public async Task<IActionResult> CreateImage(CreateImageRequestModel createImageRequestModel)
     {
         try
         {
+            AppImage image = new AppImage();
+            image.Name = createImageRequestModel.Name;
+            image.ImagePath = createImageRequestModel.ImagePath;
+            image.ShouldNotShowInGallery = createImageRequestModel.ShouldNotShowInGallery;
+            image.ExistsInOrder = createImageRequestModel.ExistsInOrder;
+
             ReturnImageAndCodeResponseModel response = await _imageDataAccess.CreateImageAsync(image);
             if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });
 
-            return CreatedAtAction(nameof(GetImageById), new { id = response.Image!.Id }, response.Image);
+            return CreatedAtAction(nameof(GetImageById), new { id = response.Image!.Id, includeSoftDeleted = false }, response.Image);
         }
         catch (Exception)
         {
@@ -69,16 +74,23 @@ public class ImageController : ControllerBase
         }
     }
 
-    [HttpPost]
-    public async Task<IActionResult> UpdateImage(AppImage image)
+    [HttpPut]
+    public async Task<IActionResult> UpdateImage(UpdateImageRequestModel updateImageRequestModel)
     {
         try
         {
+            AppImage image = new AppImage();
+            image.Id = updateImageRequestModel.Id;
+            image.Name = updateImageRequestModel.Name;
+            image.ImagePath = updateImageRequestModel.ImagePath;
+            image.ShouldNotShowInGallery = updateImageRequestModel.ShouldNotShowInGallery;
+            image.ExistsInOrder = updateImageRequestModel.ExistsInOrder;
+
             DataLibraryReturnedCodes returnedCode = await _imageDataAccess.UpdateImageAsync(image);
             if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
                 return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
             else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
-                return BadRequest(new { ErrorMessage = "EntityNotFoundWithGivenId" });
+                return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
             else if (returnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });
 
@@ -90,7 +102,7 @@ public class ImageController : ControllerBase
         }
     }
 
-    [HttpPut]
+    [HttpPut("RestoreDeletedImages")]
     public async Task<IActionResult> RestoreDeletedImages(RestoreImagesRequestModel requestModel)
     {
         try
@@ -112,6 +124,10 @@ public class ImageController : ControllerBase
             DataLibraryReturnedCodes returnedCode = await _imageDataAccess.DeleteImageAsync(id);
             if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
                 return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+                return NotFound();
+            else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
+                return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
 
             return NoContent();
         }

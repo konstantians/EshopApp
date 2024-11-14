@@ -84,7 +84,7 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("ExistsInOrder")
+                    b.Property<bool?>("ExistsInOrder")
                         .HasColumnType("bit");
 
                     b.Property<string>("ImagePath")
@@ -100,7 +100,7 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("ShouldNotShowInGallery")
+                    b.Property<bool?>("ShouldNotShowInGallery")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
@@ -154,7 +154,8 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("Percentage")
+                    b.Property<int?>("Percentage")
+                        .IsRequired()
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -180,6 +181,14 @@ namespace EshopApp.DataLibrary.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("ExistsInOrder")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDeactivated")
+                        .IsRequired()
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
@@ -211,13 +220,22 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<string>("DiscountId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("IsThumbnailVariant")
+                    b.Property<bool?>("ExistsInOrder")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDeactivated")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsThumbnailVariant")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("Price")
+                    b.Property<decimal?>("Price")
+                        .IsRequired()
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ProductId")
@@ -228,7 +246,8 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("UnitsInStock")
+                    b.Property<int?>("UnitsInStock")
+                        .IsRequired()
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -316,7 +335,8 @@ namespace EshopApp.DataLibrary.Migrations
                 {
                     b.HasOne("EshopApp.DataLibrary.Models.AppImage", "Image")
                         .WithMany("VariantImages")
-                        .HasForeignKey("ImageId");
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("EshopApp.DataLibrary.Models.Variant", "Variant")
                         .WithMany("VariantImages")

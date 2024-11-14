@@ -13,7 +13,7 @@ public class DiscountDataAccess : IDiscountDataAccess
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<DiscountDataAccess> _logger;
 
-    DiscountDataAccess(AppDataDbContext appDataDbContext, ILogger<DiscountDataAccess> logger = null!)
+    public DiscountDataAccess(AppDataDbContext appDataDbContext, ILogger<DiscountDataAccess> logger = null!)
     {
         _appDataDbContext = appDataDbContext;
         _logger = logger ?? NullLogger<DiscountDataAccess>.Instance;
@@ -110,14 +110,16 @@ public class DiscountDataAccess : IDiscountDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
+            //if null do nothing
             if (updatedDiscount.Name is not null)
             {
-                if (await _appDataDbContext.Discounts.AnyAsync(existingDiscount => existingDiscount.Name == updatedDiscount.Name))
+                if (await _appDataDbContext.Discounts.AnyAsync(existingDiscount => existingDiscount.Name == updatedDiscount.Name && existingDiscount.Id != updatedDiscount.Id))
                     return DataLibraryReturnedCodes.DuplicateEntityName;
                 foundDiscount.Name = updatedDiscount.Name;
             }
 
-            foundDiscount.Percentage = updatedDiscount.Percentage;
+            //if null do nothing
+            foundDiscount.Percentage = updatedDiscount.Percentage ?? foundDiscount.Percentage;
             if (updatedDiscount.Variants != null && !updatedDiscount.Variants.Any())
             {
                 foundDiscount.Variants.Clear();

@@ -1,13 +1,13 @@
-﻿using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
-using EshopApp.AuthLibrary.AuthLogic;
+﻿using EshopApp.AuthLibrary.AuthLogic;
+using EshopApp.AuthLibrary.Models.ResponseModels;
+using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
+using EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
 using EshopApp.AuthLibraryAPI.Models.ResponseModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Web;
-using EshopApp.AuthLibrary.Models.ResponseModels;
-using EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
 
 namespace EshopApp.AuthLibraryAPI.Controllers;
 
@@ -44,7 +44,7 @@ public class AuthenticationController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string token = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnUserAndCodeResponseModel returnCodeAndUserResponseModel  = await _authenticationProcedures.GetCurrentUserByTokenAsync(token);
+            ReturnUserAndCodeResponseModel returnCodeAndUserResponseModel = await _authenticationProcedures.GetCurrentUserByTokenAsync(token);
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
@@ -130,7 +130,7 @@ public class AuthenticationController : ControllerBase
         {
             if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
                 return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
-            
+
             ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ConfirmEmailAsync(userId, confirmEmailToken);
             if (redirectUrl is not null)
             {
@@ -169,7 +169,7 @@ public class AuthenticationController : ControllerBase
             return StatusCode(500);
         }
     }
-    
+
     /// <summary>
     /// This endpoint is used to sign in a user using the email and password fields that were given as input and optionally the rememberMe field. An important thing to keep in mind is that if 
     /// the account is not activated, even if the credentials are correct the sign in will return an error, so the ConfirmEmail endpoint should be used first before a sign in can succeed.
@@ -189,7 +189,7 @@ public class AuthenticationController : ControllerBase
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
                 return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
-                return Unauthorized(new { ErrorMessage = "UserAccountNotActivated"});
+                return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidCredentials)
                 return Unauthorized(new { ErrorMessage = "InvalidCredentials" });
 
@@ -213,10 +213,10 @@ public class AuthenticationController : ControllerBase
         {
             IEnumerable<AuthenticationScheme> externalIdentityProviders = await _authenticationProcedures.GetExternalIdentityProvidersAsync();
             List<string> externalIdentityProvidersNames = new List<string>();
-            foreach (AuthenticationScheme scheme in externalIdentityProviders) 
+            foreach (AuthenticationScheme scheme in externalIdentityProviders)
                 externalIdentityProvidersNames.Add(scheme.Name);
 
-            return Ok(externalIdentityProvidersNames); 
+            return Ok(externalIdentityProvidersNames);
         }
         catch
         {
@@ -245,7 +245,7 @@ public class AuthenticationController : ControllerBase
             string redirectUrl = Url.Action("ExternalSignInCallback", "Authentication", new { ReturnUrl = apiExternalSignInRequestModel.ReturnUrl })!;
             AuthenticationProperties identityProviderConfiguration = _authenticationProcedures.GetExternalIdentityProvidersProperties(apiExternalSignInRequestModel.IdentityProviderName!, redirectUrl);
 
-            return new ChallengeResult(apiExternalSignInRequestModel.IdentityProviderName!, identityProviderConfiguration);        
+            return new ChallengeResult(apiExternalSignInRequestModel.IdentityProviderName!, identityProviderConfiguration);
         }
         catch
         {
@@ -352,10 +352,10 @@ public class AuthenticationController : ControllerBase
             ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ResetPasswordAsync(resetPasswordModel.UserId!, resetPasswordModel.Token!, resetPasswordModel.Password!);
 
             if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
-                return BadRequest(new {ErrorMessage = "UserNotFoundWithGivenEmail" });
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return BadRequest(new { ErrorMessage = "UserAccountNotActivated" });
-            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
                 return BadRequest(new { ErrorMessage = "UnknownError" });
 
             return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
@@ -422,7 +422,7 @@ public class AuthenticationController : ControllerBase
             return StatusCode(500, "Internal Server Error");
         }
     }*/
-    
+
     /// <summary>
     /// This endpoint allows a user with a valid access token to change their current password. Appropriate status codes will be returned in case of errors.
     /// </summary>
@@ -449,7 +449,7 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new { ErrorMessage = "PasswordMismatchError" });
             else if (libraryReturnedCodes == LibraryReturnedCodes.UnknownError)
                 return BadRequest(new { ErrorMessage = "UnknownError" });
-            
+
             return NoContent();
         }
         catch
@@ -558,11 +558,11 @@ public class AuthenticationController : ControllerBase
 
             if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
                 return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
-            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.DuplicateEmail)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
-            else if(returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidEmailAndEmailChangeTokenCombination)
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidEmailAndEmailChangeTokenCombination)
                 return BadRequest(new { ErrorMessage = "InvalidEmailChangeEmailTokenCombination" });
-            
+
             return Ok(new { AccessToken = returnCodeAndTokenResponseModel.Token });
         }
         catch
@@ -596,7 +596,7 @@ public class AuthenticationController : ControllerBase
 
             LibraryReturnedCodes returnedCode = await _authenticationProcedures.DeleteAccountAsync(token);
 
-            if (returnedCode  == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
+            if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
@@ -617,7 +617,7 @@ public class AuthenticationController : ControllerBase
     {
         List<string> trustedDomains = _configuration["ExcludedCorsOrigins"]!.Split(" ").ToList();
         var redirectUri = new Uri(redirectUrl);
-        
+
         foreach (string trustedDomain in trustedDomains)
         {
             var trustedUri = new Uri(trustedDomain);

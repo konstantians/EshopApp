@@ -22,7 +22,7 @@ public class AppDataDbContext : DbContext
         if (_configuration is not null)
         {
 
-            optionsBuilder.UseSqlServer(_configuration.GetConnectionString("SqlData"),
+            optionsBuilder.UseSqlServer(_configuration.GetConnectionString("DefaultData"),
                 options => options.EnableRetryOnFailure());
         }
         else
@@ -74,6 +74,12 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<Product>()
             .Property(product => product.Name).HasMaxLength(50).IsRequired();
 
+        modelBuilder.Entity<Product>()
+            .Property(product => product.IsDeactivated).IsRequired();
+
+        modelBuilder.Entity<Product>()
+            .Property(product => product.ExistsInOrder).IsRequired();
+
         /******************* Variants *******************/
         //variant can have many images(one to many)
         modelBuilder.Entity<Variant>()
@@ -93,6 +99,18 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<Variant>()
             .Property(variant => variant.SKU).HasMaxLength(50).IsRequired();
 
+        modelBuilder.Entity<Variant>()
+            .Property(variant => variant.Price).IsRequired();
+
+        modelBuilder.Entity<Variant>()
+            .Property(variant => variant.UnitsInStock).IsRequired();
+
+        modelBuilder.Entity<Variant>()
+            .Property(variant => variant.IsDeactivated).IsRequired();
+
+        modelBuilder.Entity<Variant>()
+            .Property(variant => variant.ExistsInOrder).IsRequired();
+
         /******************* Attributes *******************/
         modelBuilder.Entity<AppAttribute>()
             .HasIndex(attribute => attribute.Name).IsUnique();
@@ -104,12 +122,15 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<VariantImage>()
             .HasOne(variantImage => variantImage.Variant)
             .WithMany(variant => variant.VariantImages)
-            .HasForeignKey(variantImage => variantImage.VariantId);
+            .HasForeignKey(variantImage => variantImage.VariantId)
+            .OnDelete(DeleteBehavior.Cascade);
+        //because this is a bit confusing this means that when the variant is deleted the variant images that are connected to it also will be deleted(it figures it out from which entity is the one)
 
         modelBuilder.Entity<VariantImage>()
             .HasOne(variantImage => variantImage.Image)
             .WithMany(image => image.VariantImages)
-            .HasForeignKey(variantImage => variantImage.ImageId);
+            .HasForeignKey(variantImage => variantImage.ImageId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         /******************* Images *******************/
         modelBuilder.Entity<AppImage>()
@@ -136,6 +157,9 @@ public class AppDataDbContext : DbContext
 
         modelBuilder.Entity<Discount>()
             .Property(discount => discount.Name).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<Discount>()
+            .Property(discount => discount.Percentage).IsRequired();
 
         base.OnModelCreating(modelBuilder);
         //so what is the plan? I mean if you delete a variant the variants need to go and then the variant images and then 

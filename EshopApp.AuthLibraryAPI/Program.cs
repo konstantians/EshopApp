@@ -72,7 +72,7 @@ public class Program()
             .AddDefaultTokenProviders();
 
         builder.Services.AddDbContext<AppIdentityDbContext>(options =>
-        options.UseSqlServer(configuration.GetConnectionString("DefaultAuthentication")));
+            options.UseSqlServer(configuration.GetConnectionString("DefaultAuthentication")));
 
         builder.Services.Configure<IdentityOptions>(options =>
         {

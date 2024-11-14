@@ -1,13 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.HelperMethods;
+﻿using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
-using System.Net;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
 using System.Web;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 
 namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.ControllerTests;
 
@@ -39,7 +38,11 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
 
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
     }
 
     [Test, Order(1)]
@@ -51,7 +54,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -69,7 +72,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -92,7 +95,7 @@ internal class AuthenticationControllerTests
 
         //Assert
         invalidPhoneResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        invalidEmailResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);   
+        invalidEmailResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Test, Order(4)]
@@ -126,10 +129,10 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
 
         TestSignUpRequestModel testSignUpModel = new TestSignUpRequestModel(email: "kinnaskonstantinos0@gmail.com", password: "Kinas2000!", phoneNumber: "6943655624");
-        
+
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signup", testSignUpModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -145,7 +148,7 @@ internal class AuthenticationControllerTests
 
         string bogusUserId = "bogusId";
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
-        
+
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={bogusUserId}&confirmEmailToken={emailConfirmationToken}");
 
@@ -180,7 +183,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}");
-        string? accessToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "accessToken");
+        string? accessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -192,11 +195,11 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
-        
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -208,7 +211,7 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnUnauthorized_IfAccessTokenIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
@@ -221,7 +224,7 @@ internal class AuthenticationControllerTests
     public async Task GetUserByAccessToken_ShouldReturnOkAndUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/authentication/getuserbyaccesstoken");
@@ -244,7 +247,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -257,12 +260,12 @@ internal class AuthenticationControllerTests
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY",_chosenApiKey);
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         var testForgotPasswordRequestModel = new TestForgotPasswordRequestModel() { Email = "bogus@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -295,7 +298,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
-        string? passwordResetToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "passwordResetToken");
+        string? passwordResetToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "passwordResetToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -313,7 +316,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -328,11 +331,11 @@ internal class AuthenticationControllerTests
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        var testResetPasswordRequestModel = new TestResetPasswordModel(userId: _chosenUserId!, token: "bogusPasswordResetToken" , password: "Kinas2023!");
+        var testResetPasswordRequestModel = new TestResetPasswordModel(userId: _chosenUserId!, token: "bogusPasswordResetToken", password: "Kinas2023!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -350,7 +353,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/resetpassword", testResetPasswordRequestModel);
-        string? accessToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "accessToken");
+        string? accessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -367,7 +370,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -385,7 +388,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
-        
+
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -400,7 +403,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/signin", testSignInRequestModel);
-        string? accessToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "accessToken");
+        string? accessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -412,12 +415,12 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
         var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -429,7 +432,7 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
 
         var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023!", newPassword: "Kinas2020!");
 
@@ -444,29 +447,29 @@ internal class AuthenticationControllerTests
     public async Task ChangePassword_ShouldReturnBadRequest_IfGivenCurrentPasswordDoesNotMuchActualCurrentPassword()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
         var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "bogusCurrentPassword", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         errorMessage.Should().NotBeNull();
         errorMessage.Should().Be("PasswordMismatchError");
     }
-    
+
     [Test, Order(25)]
     public async Task ChangePassword_ShouldSucceedAndReturnNoContent()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
         var testChangePasswordRequestModel = new TestChangePasswordRequestModel(currentPassword: "Kinas2023!", newPassword: "Kinas2020!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/changepassword", testChangePasswordRequestModel);
-       
+
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -475,12 +478,12 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
         var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -492,7 +495,7 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
         var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         //Act
@@ -506,7 +509,7 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnBadRequest_IfTheNewEmailAlreadyExistsInTheSystem()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
         var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "realag58@gmail.com" };
 
         var testSignUpRequestModel = new TestSignUpRequestModel();
@@ -520,7 +523,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -532,12 +535,12 @@ internal class AuthenticationControllerTests
     public async Task RequestChangeAccountEmail_ShouldReturnOkAndChangeEmailToken()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
         var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "newemail@gmail.com" };
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
-        string? changeEmailToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "changeEmailToken");
+        string? changeEmailToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "changeEmailToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -572,7 +575,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmchangeemail?userId={userId}&newEmail={newEmail}&changeEmailToken={changeEmailToken}");
-        string? accessToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "accessToken");
+        string? accessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -583,11 +586,11 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
-        
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _chosenAccessToken);
+
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -599,7 +602,7 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnUnauthorized_IfInvalidAccessToken()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "bogusToken");
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
@@ -612,7 +615,7 @@ internal class AuthenticationControllerTests
     public async Task DeleteAccount_ShouldReturnNoContentAndSucceed()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/authentication/deleteaccount");
@@ -635,14 +638,14 @@ internal class AuthenticationControllerTests
         _chosenUserId = signupResponseModel!.UserId;
         _chosenConfirmationEmailToken = signupResponseModel!.ConfirmationToken;
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        
+
         string? userId = _chosenUserId;
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
         string? redirectUrl = WebUtility.UrlEncode("https://evil.com/handleRedirect?returnUrl=https://evil.com/home");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}&redirectUrl={redirectUrl}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -667,7 +670,7 @@ internal class AuthenticationControllerTests
         response.Headers.Location.Should().NotBeNull();
         WebUtility.UrlDecode(response.Headers.Location!.AbsoluteUri).Should().Contain(WebUtility.UrlDecode(redirectUrl));
         response.Headers.Location.Query.Should().Contain("accessToken");
-        
+
         var query = HttpUtility.ParseQueryString(response.Headers.Location.Query);
         _chosenAccessToken = query["accessToken"];
     }
@@ -676,11 +679,11 @@ internal class AuthenticationControllerTests
     public async Task ConfirmChangeEmail_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
         var testChangeEmailRequestModel = new TestChangeEmailRequestModel() { NewEmail = "newotheremail@gmail.com" };
 
         HttpResponseMessage requestEmailChangeResponse = await httpClient.PostAsJsonAsync("api/authentication/requestchangeaccountemail", testChangeEmailRequestModel);
-        _chosenEmailChangeToken = await JsonParsingHelperMethods.GetSingleStringValueFromBody(requestEmailChangeResponse, "changeEmailToken");
+        _chosenEmailChangeToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(requestEmailChangeResponse, "changeEmailToken");
 
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         string? userId = _chosenUserId;
@@ -690,7 +693,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmchangeemail?userId={userId}&newEmail={newEmail}&changeEmailToken={changeEmailToken}&redirectUrl={redirectUrl}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -728,7 +731,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/getregisteredexternalidentityproviders");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -767,7 +770,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -787,7 +790,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -838,6 +841,10 @@ internal class AuthenticationControllerTests
     public void OneTimeTearDown()
     {
         httpClient.Dispose();
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
     }
 }

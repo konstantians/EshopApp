@@ -1,11 +1,11 @@
 ﻿using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.HelperMethods;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.RoleModels;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
-using System.Text.Json;
-using FluentAssertions;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 using System.Net.Http.Json;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.RoleModels;
+using System.Text.Json;
 
 namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.ControllerTests;
 
@@ -21,7 +21,7 @@ internal class RoleControllerTests
     private string? _userAccessToken;
     private string? _userId;
     private string? _adminId;
-    private string? _userRoleId;  
+    private string? _userRoleId;
     private string? _managerRoleId;
     private string? _adminRoleId;
     private string? _chosenRoleId;
@@ -41,7 +41,11 @@ internal class RoleControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
 
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
 
         (_userId, _adminId, _userAccessToken, _managerAccessToken, _adminAccessToken) = await CommonProcedures.commonAdminManagerAndUserSetup(httpClient);
     }
@@ -50,11 +54,11 @@ internal class RoleControllerTests
     public async Task GetRoles_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -66,7 +70,7 @@ internal class RoleControllerTests
     public async Task GetRoles_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role");
@@ -79,7 +83,7 @@ internal class RoleControllerTests
     public async Task GetRoles_ShouldReturnNonElevatedRoles_IfUserDoesNotHaveElevatedPermissions()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role");
@@ -96,7 +100,7 @@ internal class RoleControllerTests
     public async Task GetRoles_ShouldReturnOkAndRoles()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role");
@@ -124,12 +128,12 @@ internal class RoleControllerTests
     public async Task GetRoleById_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string userRoleId = _userRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolebyid/{userRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -141,7 +145,7 @@ internal class RoleControllerTests
     public async Task GetRoleById_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string userRoleId = _userRoleId!;
 
         //Act
@@ -155,12 +159,12 @@ internal class RoleControllerTests
     public async Task GetRoleById_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminRoleId = _adminRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolebyid/{adminRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -172,7 +176,7 @@ internal class RoleControllerTests
     public async Task GetRoleById_ShouldReturnNotFound_IfRoleWithGivenRoleIdWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusUserRoleId = "bogusUserId";
 
         //Act
@@ -186,7 +190,7 @@ internal class RoleControllerTests
     public async Task GetRoleById_ShouldReturnOkAndRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userRoleId = _userRoleId!;
 
         //Act
@@ -204,22 +208,22 @@ internal class RoleControllerTests
     public async Task GetRoleByName_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string roleName = "Admin";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolebyname/{roleName}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(11)]
     public async Task GetRoleByName_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string roleName = "User";
 
         //Act
@@ -233,12 +237,12 @@ internal class RoleControllerTests
     public async Task GetRoleByName_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminRoleName = "Admin";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolebyname/{adminRoleName}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -250,7 +254,7 @@ internal class RoleControllerTests
     public async Task GetRoleByName_ShouldReturnNotFound_IfRoleWithGivenRoleNameWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusRoleName = "bogusRoleName";
 
         //Act
@@ -264,7 +268,7 @@ internal class RoleControllerTests
     public async Task GetRoleByName_ShouldReturnOkAndRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string adminRoleName = "Admin";
 
         //Act
@@ -282,22 +286,22 @@ internal class RoleControllerTests
     public async Task GetRolesOfUser_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string userId = _userId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolesofuser/{userId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(16)]
     public async Task GetRolesOfUser_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string userId = _userId!;
 
         //Act
@@ -311,12 +315,12 @@ internal class RoleControllerTests
     public async Task GetRolesOfUser_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminId = _adminId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolesofuser/{adminId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -328,22 +332,22 @@ internal class RoleControllerTests
     public async Task GetRolesOfUser_ShouldReturnBadRequest_IfUserWithGivenUserIdWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusUserId = "bogusUserId";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getrolesofuser/{bogusUserId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
     }
 
     [Test, Order(19)]
     public async Task GetRolesOfUser_ShouldReturnOkAndRolesOfUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
 
         //Act
@@ -363,23 +367,23 @@ internal class RoleControllerTests
     public async Task CreateRole_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageRoles"), new TestCustomClaim("BogusType", "BogusValue")];
         var testCreateRoleRequestModel = new TestCreateRoleRequestModel("Manager2", customClaims);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role", testCreateRoleRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(21)]
     public async Task CreateRole_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageRoles"), new TestCustomClaim("BogusType", "BogusValue")];
         var testCreateRoleRequestModel = new TestCreateRoleRequestModel("Manager2", customClaims);
 
@@ -394,13 +398,13 @@ internal class RoleControllerTests
     public async Task CreateRole_ShouldReturnBadRequest_IfDuplicateRoleName()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageRoles"), new TestCustomClaim("BogusType", "BogusValue")];
         var duplicateRoleNameTestCreateRoleRequestModel = new TestCreateRoleRequestModel("Manager", customClaims);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role", duplicateRoleNameTestCreateRoleRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -412,7 +416,7 @@ internal class RoleControllerTests
     public async Task CreateRole_ShouldCreateRoleAndReturnCreated()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageRoles"), new TestCustomClaim("BogusType", "BogusValue")];
         var testCreateRoleRequestModel = new TestCreateRoleRequestModel("Manager2", customClaims);
 
@@ -435,7 +439,7 @@ internal class RoleControllerTests
     public async Task CreateRole_ShouldCreateRoleAndReturnCreated_ButItShouldNotAddElevatedClaims_IfUserDoesNotHaveManageElevatedRolesClaim()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("Permission", "CanManageElevatedRoles")];
         var testCreateRoleRequestModel = new TestCreateRoleRequestModel("Manager3", customClaims);
 
@@ -457,22 +461,22 @@ internal class RoleControllerTests
     public async Task DeleteRole_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string roleId = _chosenRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/{roleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(26)]
     public async Task DeleteRole_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string roleId = _chosenRoleId!;
 
         //Act
@@ -486,12 +490,12 @@ internal class RoleControllerTests
     public async Task DeleteRole_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToEditElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminRoleId = _adminRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/{adminRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -503,22 +507,22 @@ internal class RoleControllerTests
     public async Task DeleteUserAccount_ShouldReturnBadRequest_IfUserWithGivenIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusRoleId = "bogusRoleId";
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/{bogusRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
     }
 
     [Test, Order(29)]
     public async Task DeleteRole_ShouldReturnNoContent()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string chosenRoleId = _chosenRoleId!;
 
         //Act
@@ -532,12 +536,12 @@ internal class RoleControllerTests
     public async Task DeleteRole_ShouldReturnBadRequest_IfElevatedUserTriesToDeleteFundementalRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string adminRoleId = _adminRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/{adminRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -549,22 +553,22 @@ internal class RoleControllerTests
     public async Task GetUsersOfRole_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string roleId = _adminRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getusersofrole/{roleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(32)]
     public async Task GetUsersOfRole_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string roleId = _userRoleId!;
 
         //Act
@@ -578,12 +582,12 @@ internal class RoleControllerTests
     public async Task GetUsersOfRole_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminRoleId = _adminRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getusersofrole/{adminRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -595,21 +599,21 @@ internal class RoleControllerTests
     public async Task GetUsersOfRole_ShouldReturnBadRequest_IfRoleWithGivenRoleIdWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusRoleId = "bogusBogusId";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/role/getusersofrole/{bogusRoleId}");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
     }
 
     [Test, Order(35)]
     public async Task GetUsersOfRole_ShouldReturnOkAndUsersOfRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string adminRoleId = _adminRoleId!;
 
         //Act
@@ -628,22 +632,22 @@ internal class RoleControllerTests
     public async Task AddRoleToUser_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_userId!, _adminRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/addroletouser", testAddRoleToUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(37)]
     public async Task AddRoleToUser_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_userId!, _adminRoleId!);
 
         //Act
@@ -657,12 +661,12 @@ internal class RoleControllerTests
     public async Task AddRoleToUser_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_userId!, _adminRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/addroletouser", testAddRoleToUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -674,42 +678,42 @@ internal class RoleControllerTests
     public async Task AddRoleToUser_ShouldReturnBadRequest_IfUserWithGivenUserIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel("bogusUserId", _adminRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/addroletouser", testAddRoleToUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
     }
 
     [Test, Order(40)]
     public async Task AddRoleToUser_ShouldReturnBadRequest_IfRoleWithGivenRoleIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_userId!, "bogusRoleId");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/addroletouser", testAddRoleToUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
     }
 
     [Test, Order(41)]
     public async Task AddRoleToUser_ShouldReturnBadRequest_IfUserAlreadyInRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_adminId!, _adminRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/addroletouser", testAddRoleToUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -721,7 +725,7 @@ internal class RoleControllerTests
     public async Task AddRoleToUser_ShouldReturnNoContentAndAddRoleToUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testAddRoleToUserRequestModel = new TestAddRoleToUserRequestModel(_userId!, _adminRoleId!);
         string adminRoleId = _adminRoleId!;
 
@@ -742,22 +746,22 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _adminRoleId!, _managerRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", testReplaceRoleOfUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(44)]
     public async Task ReplaceRoleOfUser_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _adminRoleId!, _managerRoleId!);
 
         //Act
@@ -771,12 +775,12 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _adminRoleId!, _managerRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", testReplaceRoleOfUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -788,12 +792,12 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnBadRequest_IfUserWithGivenUserIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel("bogusUserId", _adminRoleId!, _managerRoleId!);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", testReplaceRoleOfUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -805,15 +809,15 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnBadRequest_IfRoleWithGivenRoleIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var bogusCurrentRoleIdModel = new TestReplaceRoleOfUserRequestModel(_userId!, "bogusCurrentRoleId", _managerRoleId!);
         var bogusNewRoleIdModel = new TestReplaceRoleOfUserRequestModel(_userId!, _adminRoleId!, "bogusNewRoleId");
 
         //Act
         HttpResponseMessage bogusCurrentRoleIdResponse = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", bogusCurrentRoleIdModel);
-        string? bogusCurrentRoleIdResponseErrorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(bogusCurrentRoleIdResponse, "errorMessage");
+        string? bogusCurrentRoleIdResponseErrorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(bogusCurrentRoleIdResponse, "errorMessage");
         HttpResponseMessage bogusNewRoleIdResponse = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", bogusCurrentRoleIdModel);
-        string? bogusNewRoleIdResponseErrorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(bogusCurrentRoleIdResponse, "errorMessage");
+        string? bogusNewRoleIdResponseErrorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(bogusCurrentRoleIdResponse, "errorMessage");
 
         //Assert
         bogusCurrentRoleIdResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -828,29 +832,29 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnBadRequest_IfUserWasNotFoundInRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _managerRoleId!, _adminRoleId!); //user is in roles user and admin not in manager, so that role can not be replaced
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", testReplaceRoleOfUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         errorMessage.Should().NotBeNull();
-        errorMessage.Should().Be("UserWasNotFoundInRole");        
+        errorMessage.Should().Be("UserWasNotFoundInRole");
     }
 
     [Test, Order(49)]
     public async Task ReplaceRoleOfUser_ShouldReturnBadRequest_IfUserWasAlreadyInRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _userRoleId!, _adminRoleId!); //user is in roles user and admin. So he does not need to swap user with admin
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/replaceroleofuser", testReplaceRoleOfUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -862,7 +866,7 @@ internal class RoleControllerTests
     public async Task ReplaceRoleOfUser_ShouldReturnNoContentAndAddRoleToUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testReplaceRoleOfUserRequestModel = new TestReplaceRoleOfUserRequestModel(_userId!, _adminRoleId!, _managerRoleId!);
         string userId = _userId!;
 
@@ -885,23 +889,23 @@ internal class RoleControllerTests
     public async Task RemoveRoleFromUser_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string userId = _userId!;
         string roleId = _managerRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/removerolefromuser/{userId}/role/{roleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(52)]
     public async Task RemoveRoleFromUser_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string userId = _userId!;
         string roleId = _managerRoleId!;
 
@@ -916,13 +920,13 @@ internal class RoleControllerTests
     public async Task RemoveRoleFromUser_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToEditElevatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string userId = _userId!;
         string adminRoleId = _adminRoleId!; //the user currently does not have the admin role, but the check of permissions will happen first
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/RemoveRoleFromUser/{userId}/role/{adminRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -934,45 +938,45 @@ internal class RoleControllerTests
     public async Task RemoveRoleFromUser_ShouldReturnBadRequest_IfUserWithGivenUserIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusUserId = "bogusUserId";
         string roleId = _managerRoleId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/removerolefromuser/{bogusUserId}/role/{roleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "UserNotFoundWithGivenId");
     }
 
     [Test, Order(55)]
     public async Task RemoveRoleFromUser_ShouldReturnBadRequest_IfRoleWithGivenRoleIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
         string bogusRoleId = "bogusRoleId";
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/removerolefromuser/{userId}/role/{bogusRoleId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
     }
 
     [Test, Order(56)]
     public async Task RemoveRoleFromUser_ShouldReturnBadRequest_IfUserWasNotFoundInRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
         string idOfRoleThatUserIsNotPart = _adminRoleId!; //user currently not in admin role
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/role/removerolefromuser/{userId}/role/{idOfRoleThatUserIsNotPart}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -984,7 +988,7 @@ internal class RoleControllerTests
     public async Task RemoveRoleFromUser_ShouldReturnNoContentAndRemoveRoleFromUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
         string roleId = _managerRoleId!;
 
@@ -1006,11 +1010,11 @@ internal class RoleControllerTests
     public async Task GetAllUniqueClaimsInSystemAsync_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role/getclaims");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -1022,7 +1026,7 @@ internal class RoleControllerTests
     public async Task GetAllUniqueClaimsInSystemAsync_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role/getclaims");
@@ -1035,7 +1039,7 @@ internal class RoleControllerTests
     public async Task GetAllUniqueClaimsInSystemAsync_ShouldReturnNonElevatedClaims_IfUserDoesNotHaveElevatedPermissions()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role/getclaims");
@@ -1052,7 +1056,7 @@ internal class RoleControllerTests
     public async Task GetAllUniqueClaimsInSystemAsync_ShouldReturnOkAndUniqueClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/role/getclaims");
@@ -1069,23 +1073,23 @@ internal class RoleControllerTests
     public async Task UpdateClaimsOfRole_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         List<TestCustomClaim> newClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("BogusType", "BogusValue")];
         var testUpdateClaimsOfRoleRequestModel = new TestUpdateClaimsOfRoleRequestModel(_chosenRoleIdToBeUpdated!, newClaims);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/updateclaimsofrole", testUpdateClaimsOfRoleRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(63)]
     public async Task UpdateClaimsOfRole_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         List<TestCustomClaim> newClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("BogusType", "BogusValue")];
         var testUpdateClaimsOfRoleRequestModel = new TestUpdateClaimsOfRoleRequestModel(_chosenRoleIdToBeUpdated!, newClaims);
 
@@ -1100,32 +1104,32 @@ internal class RoleControllerTests
     public async Task UpdateClaimsOfRole_ShouldReturnBadRequest_IfRoleWithGivenRoleIdWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         List<TestCustomClaim> newClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("BogusType", "BogusValue")];
         var testUpdateClaimsOfRoleRequestModel = new TestUpdateClaimsOfRoleRequestModel("bogusRoleId", newClaims);
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/role/updateclaimsofrole", testUpdateClaimsOfRoleRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
+        TestUtilitiesLibrary.CommonTestProcedures.EntityNotFoundChecks(response, "RoleNotFoundWithGivenId");
     }
 
     [Test, Order(65)]
     public async Task UpdateClaimsOfRole_ShouldReturnBadRequest_IfUserTriedToUpdateFundementalRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         List<TestCustomClaim> customClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageRoles"), new TestCustomClaim("BogusType", "BogusValue")];
         var userFundementalRoleModel = new TestUpdateClaimsOfRoleRequestModel(_userRoleId!, customClaims);
         var adminFundementalRoleModel = new TestUpdateClaimsOfRoleRequestModel(_adminRoleId!, customClaims);
 
         //Act
         HttpResponseMessage userFundementalRoleResponse = await httpClient.PostAsJsonAsync("api/role/updateclaimsofrole", userFundementalRoleModel);
-        string? userFundementalRoleError = await JsonParsingHelperMethods.GetSingleStringValueFromBody(userFundementalRoleResponse, "errorMessage");
+        string? userFundementalRoleError = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(userFundementalRoleResponse, "errorMessage");
         HttpResponseMessage adminFundementalRoleResponse = await httpClient.PostAsJsonAsync("api/role/updateclaimsofrole", adminFundementalRoleModel);
-        string? adminFundementalRoleError = await JsonParsingHelperMethods.GetSingleStringValueFromBody(adminFundementalRoleResponse, "errorMessage");
+        string? adminFundementalRoleError = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(adminFundementalRoleResponse, "errorMessage");
 
         //Assert
         userFundementalRoleResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -1140,7 +1144,7 @@ internal class RoleControllerTests
     public async Task UpdateClaimsOfRole_ShouldCreateRoleAndReturnUpdatedRole_ButItShouldNotAddElevatedClaims_IfUserDoesNotHaveManageElevatedRolesClaim()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         List<TestCustomClaim> newClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("BogusType", "BogusValue")];
         var testUpdateClaimsOfRoleRequestModel = new TestUpdateClaimsOfRoleRequestModel(_chosenRoleIdToBeUpdated!, newClaims);
 
@@ -1160,7 +1164,7 @@ internal class RoleControllerTests
     public async Task UpdateClaimsOfRole_ShouldCreateRoleAndReturnUpdatedRole()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         List<TestCustomClaim> newClaims = [new TestCustomClaim("Permission", "CanManageUsers"), new TestCustomClaim("Permission", "CanManageElevatedUsers"), new TestCustomClaim("BogusType", "BogusValue")];
         var testUpdateClaimsOfRoleRequestModel = new TestUpdateClaimsOfRoleRequestModel(_chosenRoleIdToBeUpdated!, newClaims);
 
@@ -1181,6 +1185,10 @@ internal class RoleControllerTests
     public void OnTimeTearDown()
     {
         httpClient.Dispose();
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
     }
 }
