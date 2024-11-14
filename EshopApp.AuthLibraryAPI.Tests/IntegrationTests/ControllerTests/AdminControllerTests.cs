@@ -1,12 +1,9 @@
 ﻿using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.HelperMethods;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AdminModels;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -39,7 +36,11 @@ internal class AdminControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
 
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
 
         (_userId, _adminId, _userAccessToken, _managerAccessToken, _adminAccessToken) = await CommonProcedures.commonAdminManagerAndUserSetup(httpClient);
     }
@@ -48,21 +49,21 @@ internal class AdminControllerTests
     public async Task GetUsers_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/admin");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(2)]
     public async Task GetUsers_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/admin");
@@ -75,7 +76,7 @@ internal class AdminControllerTests
     public async Task GetUsers_ShouldReturnNonElevatedUsers_IfUserDoesNotHaveElevatedPermissions()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/admin");
@@ -92,7 +93,7 @@ internal class AdminControllerTests
     public async Task GetUsers_ShouldReturnOkAndUsers()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/admin");
@@ -109,22 +110,22 @@ internal class AdminControllerTests
     public async Task GetUserById_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string userId = _userId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/admin/getuserbyid/{userId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(6)]
     public async Task GetUserById_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string userId = _userId!;
 
         //Act
@@ -138,12 +139,12 @@ internal class AdminControllerTests
     public async Task GetUserById_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminId = _adminId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/admin/getuserbyid/{adminId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -155,7 +156,7 @@ internal class AdminControllerTests
     public async Task GetUserById_ShouldReturnNotFound_IfUserWithGivenUserIdWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusUserId = "bogusUserId";
 
         //Act
@@ -169,7 +170,7 @@ internal class AdminControllerTests
     public async Task GetUserById_ShouldReturnOkAndUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
 
         //Act
@@ -187,22 +188,22 @@ internal class AdminControllerTests
     public async Task GetUserByEmail_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string email = "kinnaskonstantinos0@gmail.com";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/admin/getuserbyemail/{email}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(11)]
     public async Task GetUserByEmail_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string email = "kinnaskonstantinos0@gmail.com";
 
         //Act
@@ -216,12 +217,12 @@ internal class AdminControllerTests
     public async Task GetUserByEmail_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToAccessElevatedUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminEmail = "admin@hotmail.com";
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/admin/getuserbyemail/{adminEmail}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -233,7 +234,7 @@ internal class AdminControllerTests
     public async Task GetUserByEmail_ShouldReturnNotFound_IfUserWithGivenEmailWasNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
 
         string bogusEmail = "bogusEmail@gmail.com";
 
@@ -248,7 +249,7 @@ internal class AdminControllerTests
     public async Task GetUserByEmail_ShouldReturnOkAndUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string email = "kinnaskonstantinos0@gmail.com";
 
         //Act
@@ -261,28 +262,28 @@ internal class AdminControllerTests
         testAppUser.Should().NotBeNull();
         testAppUser!.Email.Should().Be(email);
     }
-    
+
     [Test, Order(15)]
     public async Task CreateUserAccount_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
 
         var testCreateUserRequestModel = new TestCreateUserRequestModel("user@gmail.com", "6911111111", "Password123!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/admin", testCreateUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(16)]
     public async Task CreateUserAccount_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         var testCreateUserRequestModel = new TestCreateUserRequestModel("user@gmail.com", "6911111111", "Password123!");
 
         //Act
@@ -296,7 +297,7 @@ internal class AdminControllerTests
     public async Task CreateUserAccount_ShouldReturnBadRequest_IfEmailOrPhoneIsBadlyFormatted()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var badlyFormattedEmail = new TestCreateUserRequestModel("userBadlyFormattedEmail", "6911111111", "Password123!");
         var badlyFormattedPhone = new TestCreateUserRequestModel("user@gmail.com", "badlyFormattedPhone", "Password123!");
 
@@ -313,12 +314,12 @@ internal class AdminControllerTests
     public async Task CreateUserAccount_ShouldReturnBadRequest_IfDuplicateEmail()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var duplicateEmailCreateUserRequestModel = new TestCreateUserRequestModel("kinnaskonstantinos0@gmail.com", "6911111111", "Password123!");
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/admin", duplicateEmailCreateUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -330,7 +331,7 @@ internal class AdminControllerTests
     public async Task CreateUserAccount_ShouldCreateUserAndReturnCreated()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         var testCreateUserRequestModel = new TestCreateUserRequestModel("user@gmail.com", "6911111111", "Password123!");
 
         //Act
@@ -350,23 +351,23 @@ internal class AdminControllerTests
     public async Task UpdateUserAccount_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         TestAppUser updatedUser = new TestAppUser() { Id = _userId!, Email = "realag58@gmail.com", PhoneNumber = "6922222222" };
         var testUpdateUserRequestModel = new TestUpdateUserRequestModel(new TestAppUser(), "Password123!");
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync($"api/admin", testUpdateUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(21)]
     public async Task UpdateUserAccount_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         TestAppUser updatedUser = new TestAppUser() { Id = _userId!, Email = "realag58@gmail.com", PhoneNumber = "6922222222" };
         var testUpdateUserRequestModel = new TestUpdateUserRequestModel(updatedUser, "Password123!");
 
@@ -381,13 +382,13 @@ internal class AdminControllerTests
     public async Task UpdateUserAccount_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToEditElevatedUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         TestAppUser updatedUser = new TestAppUser() { Id = _adminId!, Email = "realag58@gmail.com", PhoneNumber = "6922222222" };
         var testUpdateUserRequestModel = new TestUpdateUserRequestModel(updatedUser, "Password123!");
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync($"api/admin", testUpdateUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -399,14 +400,14 @@ internal class AdminControllerTests
     public async Task UpdateUserAccount_ShouldReturnBadRequest_IfUserWithGivenIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestAppUser updatedUser = new TestAppUser() { Id = "bogusUserId", Email = "realag58@gmail.com", PhoneNumber = "6922222222" };
 
         var testUpdateUserRequestModel = new TestUpdateUserRequestModel(updatedUser, "Password123!");
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync($"api/admin", testUpdateUserRequestModel);
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -418,7 +419,7 @@ internal class AdminControllerTests
     public async Task UpdateUserAccount_ShouldSucceedAndUpdateUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestAppUser updatedUser = new TestAppUser() { Id = _userId!, Email = "realag58@gmail.com", PhoneNumber = "6922222222" };
 
         var testUpdateUserRequestModel = new TestUpdateUserRequestModel(updatedUser, "Password123!");
@@ -434,22 +435,22 @@ internal class AdminControllerTests
     public async Task DeleteUserAccount_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         string userId = _userId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/admin/{userId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        CommonProcedures.ApiKeyIsMissingChecks(response, "Invalid");
+        TestUtilitiesLibrary.CommonTestProcedures.ApiKeyIsMissingChecks(response, "Invalid");
     }
 
     [Test, Order(26)]
     public async Task DeleteUserAccount_ShouldReturnForbidden_IfUserDoesNotHaveCorrectClaims()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
         string userId = _userId!;
 
         //Act
@@ -463,12 +464,12 @@ internal class AdminControllerTests
     public async Task DeleteUserAccount_ShouldReturnForbidden_IfUserDoesNotHaveElevatedPermissionsToEditElevatedUser()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _managerAccessToken);
         string adminId = _adminId!;
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/admin/{adminId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -480,12 +481,12 @@ internal class AdminControllerTests
     public async Task DeleteUserAccount_ShouldReturnBadRequest_IfUserWithGivenIdIsNotFound()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string bogusUserId = "bogusUserId";
 
         //Act
         HttpResponseMessage response = await httpClient.DeleteAsync($"api/admin/{bogusUserId}");
-        string? errorMessage = await JsonParsingHelperMethods.GetSingleStringValueFromBody(response, "errorMessage");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -497,7 +498,7 @@ internal class AdminControllerTests
     public async Task DeleteUserAccount_ShouldReturnNoContent()
     {
         //Arrange
-        CommonProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         string userId = _userId!;
 
         //Act
@@ -511,7 +512,11 @@ internal class AdminControllerTests
     public void OnTimeTearDown()
     {
         httpClient.Dispose();
-        ResetDatabaseHelperMethods.ResetSqlAuthDatabase();
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+            new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
+            "Auth Database Successfully Cleared!"
+        );
     }
 
 }

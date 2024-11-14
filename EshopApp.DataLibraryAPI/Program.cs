@@ -1,6 +1,9 @@
+using EshopApp.DataLibrary;
 using EshopApp.DataLibrary.DataAccess;
 using EshopApp.DataLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace EshopApp.DataLibraryAPI;
 
@@ -12,7 +15,10 @@ public class Program()
         IConfiguration configuration = builder.Configuration;
         // Add services to the container.
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        });
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -31,6 +37,10 @@ public class Program()
         List<string> apiKeys = new List<string>();
         if (configuration["ApiKeys"] is not null)
             apiKeys = configuration["ApiKeys"]!.Split(" ").ToList();
+
+        builder.Services.AddDbContext<AppDataDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultData")));
+
 
         builder.Services.AddScoped<ICategoryDataAccess, CategoryDataAccess>();
         builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
@@ -57,7 +67,6 @@ public class Program()
                 appBuilder.UseRateLimiter();
             }
         );
-
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

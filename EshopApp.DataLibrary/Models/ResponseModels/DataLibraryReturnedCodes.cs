@@ -3,6 +3,7 @@
 public enum DataLibraryReturnedCodes
 {
     NoError,
+    NoErrorButNotFullyDeleted,
     TheIdOfTheEntityCanNotBeNull,
     EntityNotFoundWithGivenId,
     InvalidProductIdWasGiven,

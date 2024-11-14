@@ -13,7 +13,7 @@ public class CategoryDataAccess : ICategoryDataAccess
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<CategoryDataAccess> _logger;
 
-    CategoryDataAccess(AppDataDbContext appDataDbContext, ILogger<CategoryDataAccess> logger = null!)
+    public CategoryDataAccess(AppDataDbContext appDataDbContext, ILogger<CategoryDataAccess> logger = null!)
     {
         _appDataDbContext = appDataDbContext;
         _logger = logger ?? NullLogger<CategoryDataAccess>.Instance;
@@ -116,7 +116,7 @@ public class CategoryDataAccess : ICategoryDataAccess
 
             if (updatedCategory.Name is not null)
             {
-                if (await _appDataDbContext.Categories.AnyAsync(existingCategories => existingCategories.Name == updatedCategory.Name))
+                if (await _appDataDbContext.Categories.AnyAsync(existingCategories => existingCategories.Name == updatedCategory.Name && existingCategories.Id != updatedCategory.Id))
                     return DataLibraryReturnedCodes.DuplicateEntityName;
 
                 foundCategory.Name = updatedCategory.Name;

@@ -2,15 +2,14 @@
 using EshopApp.DataLibrary.Models.ResponseModels;
 using EshopApp.DataLibrary.Models.ResponseModels.ProductModels;
 
-namespace EshopApp.DataLibrary.DataAccess
+namespace EshopApp.DataLibrary.DataAccess;
+
+public interface IProductDataAccess
 {
-    public interface IProductDataAccess
-    {
-        Task<ReturnProductAndCodeResponseModel> CreateProductAsync(Product product);
-        Task<DataLibraryReturnedCodes> DeleteProductAsync(string productId);
-        Task<ReturnProductAndCodeResponseModel> GetProductByIdAsync(string id);
-        Task<ReturnProductsAndCodeResponseModel> GetProductsAsync(int amount);
-        Task<ReturnProductsAndCodeResponseModel> GetProductsOfCategoryAsync(string categoryId, int amount);
-        Task<DataLibraryReturnedCodes> UpdateProductAsync(Product updatedProduct);
-    }
+    Task<ReturnProductAndCodeResponseModel> CreateProductAsync(Product product);
+    Task<DataLibraryReturnedCodes> DeleteProductAsync(string productId);
+    Task<ReturnProductAndCodeResponseModel> GetProductByIdAsync(string id, bool includeDeactivated);
+    Task<ReturnProductsAndCodeResponseModel> GetProductsAsync(int amount, bool includeDeactivated);
+    Task<ReturnProductsAndCodeResponseModel> GetProductsOfCategoryAsync(string categoryId, int amount, bool includeDeactivated);
+    Task<DataLibraryReturnedCodes> UpdateProductAsync(Product updatedProduct);
 }

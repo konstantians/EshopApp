@@ -11,7 +11,6 @@ namespace EshopApp.AuthLibraryAPI.Controllers;
 [ApiController]
 [EnableRateLimiting("DefaultWindowLimiter")]
 [Route("api/[controller]")]
-
 public class AdminController : ControllerBase
 {
     private readonly IAdminProcedures _adminProcedures;
@@ -25,12 +24,12 @@ public class AdminController : ControllerBase
     [Authorize(Policy = "CanManageUsersPolicy")]
     public async Task<IActionResult> GetUsers()
     {
-		try
-		{
+        try
+        {
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnUsersAndCodeResponseModel returnUsersAndCodeResponseModel = await _adminProcedures.GetUsersAsync(accessToken, new List<Claim>(){ new Claim("Permission", "CanManageUsers") });
+            ReturnUsersAndCodeResponseModel returnUsersAndCodeResponseModel = await _adminProcedures.GetUsersAsync(accessToken, new List<Claim>() { new Claim("Permission", "CanManageUsers") });
             if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnUsersAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
@@ -45,7 +44,7 @@ public class AdminController : ControllerBase
             return Ok(returnUsersAndCodeResponseModel.AppUsers);
         }
         catch (Exception)
-		{
+        {
             return StatusCode(500);
         }
     }
@@ -128,7 +127,7 @@ public class AdminController : ControllerBase
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
-            ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _adminProcedures.CreateUserAccountAsync(accessToken, expectedClaims, apiCreateUserRequestModel.Email!, apiCreateUserRequestModel.Password!, 
+            ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _adminProcedures.CreateUserAccountAsync(accessToken, expectedClaims, apiCreateUserRequestModel.Email!, apiCreateUserRequestModel.Password!,
                 apiCreateUserRequestModel.PhoneNumber!);
 
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
@@ -146,7 +145,7 @@ public class AdminController : ControllerBase
             else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
                 return BadRequest(new { ErrorMessage = "UnknownError" });
 
-            return CreatedAtAction(nameof(GetUserById), new { userId = returnUserAndCodeResponseModel.AppUser!.Id}, returnUserAndCodeResponseModel.AppUser);
+            return CreatedAtAction(nameof(GetUserById), new { userId = returnUserAndCodeResponseModel.AppUser!.Id }, returnUserAndCodeResponseModel.AppUser);
         }
         catch (Exception)
         {
@@ -179,8 +178,8 @@ public class AdminController : ControllerBase
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnedCode == LibraryReturnedCodes.UserAccountLocked)
                 return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
-            else if(returnedCode == LibraryReturnedCodes.UserNotFoundWithGivenId)
-                return BadRequest(new { ErrorMessage =  "UserNotFoundWithGivenId"});
+            else if (returnedCode == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
             else if (returnedCode == LibraryReturnedCodes.DuplicateEmail)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
             else if (returnedCode == LibraryReturnedCodes.UnknownError)
@@ -222,7 +221,7 @@ public class AdminController : ControllerBase
                 return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
             else if (returnedCode == LibraryReturnedCodes.UnknownError)
                 return BadRequest(new { ErrorMessage = "UnknownError" });
-            
+
             return NoContent();
         }
         catch (Exception)

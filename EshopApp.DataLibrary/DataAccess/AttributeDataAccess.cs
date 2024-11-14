@@ -13,7 +13,7 @@ public class AttributeDataAccess : IAttributeDataAccess
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<AttributeDataAccess> _logger;
 
-    AttributeDataAccess(AppDataDbContext appDataDbContext, ILogger<AttributeDataAccess> logger = null!)
+    public AttributeDataAccess(AppDataDbContext appDataDbContext, ILogger<AttributeDataAccess> logger = null!)
     {
         _appDataDbContext = appDataDbContext;
         _logger = logger ?? NullLogger<AttributeDataAccess>.Instance;
@@ -108,7 +108,7 @@ public class AttributeDataAccess : IAttributeDataAccess
 
             if (updatedAttribute.Name is not null)
             {
-                if (await _appDataDbContext.Attributes.AnyAsync(existingAttributes => existingAttributes.Name == updatedAttribute.Name))
+                if (await _appDataDbContext.Attributes.AnyAsync(existingAttributes => existingAttributes.Name == updatedAttribute.Name && existingAttributes.Id != updatedAttribute.Id))
                     return DataLibraryReturnedCodes.DuplicateEntityName;
 
                 foundAttribute.Name = updatedAttribute.Name;

@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="fluentassertions" Version="6.12.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.7" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="NUnit" Version="3.14.0" />
@@ -25,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EshopApp.AuthLibraryAPI\EshopApp.AuthLibraryAPI.csproj" />
+    <ProjectReference Include="..\EshopApp.TestUtilitiesLibrary\EshopApp.TestUtilitiesLibrary.csproj" />
   </ItemGroup>
 
 </Project>

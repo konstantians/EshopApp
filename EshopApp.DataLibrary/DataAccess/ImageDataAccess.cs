@@ -13,7 +13,7 @@ public class ImageDataAccess : IImageDataAccess
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<ImageDataAccess> _logger;
 
-    ImageDataAccess(AppDataDbContext appDataDbContext, ILogger<ImageDataAccess> logger = null!)
+    public ImageDataAccess(AppDataDbContext appDataDbContext, ILogger<ImageDataAccess> logger = null!)
     {
         _appDataDbContext = appDataDbContext;
         _logger = logger ?? NullLogger<ImageDataAccess>.Instance;
@@ -30,7 +30,7 @@ public class ImageDataAccess : IImageDataAccess
                 .Include(image => image.VariantImages)
                     .ThenInclude(variantImages => variantImages.Variant)
                         .ThenInclude(variant => variant!.Product)
-                .Where(image => !image.ShouldNotShowInGallery)
+                .Where(image => !image.ShouldNotShowInGallery!.Value)
                 .Take(amount)
                 .ToListAsync();
             }
@@ -65,7 +65,7 @@ public class ImageDataAccess : IImageDataAccess
                 .Include(image => image.VariantImages)
                     .ThenInclude(variantImages => variantImages.Variant)
                         .ThenInclude(variant => variant!.Product)
-                .FirstOrDefaultAsync(image => image.Id == id && !image.ShouldNotShowInGallery);
+                .FirstOrDefaultAsync(image => image.Id == id && !image.ShouldNotShowInGallery!.Value);
             }
             else
             {
@@ -97,9 +97,13 @@ public class ImageDataAccess : IImageDataAccess
             while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.Id == image.Id) is not null)
                 image.Id = Guid.NewGuid().ToString();
 
-            image.ImagePath = "image_" + Guid.NewGuid().ToString();
-            while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.ImagePath == image.ImagePath) is not null) //TODO maybe change the filepath name in the future
-                image.ImagePath = "image_" + Guid.NewGuid().ToString();
+            string prefix = image.Name!.Replace(' ', '_') + '_';
+            image.ImagePath = prefix + Guid.NewGuid().ToString();
+            while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.ImagePath == image.ImagePath) is not null)
+                image.ImagePath = prefix + Guid.NewGuid().ToString();
+
+            image.ShouldNotShowInGallery = image.ShouldNotShowInGallery ?? false;
+            image.ExistsInOrder = image.ExistsInOrder ?? false;
 
             DateTime dateTimeNow = DateTime.Now;
             image.CreatedAt = dateTimeNow;
@@ -125,7 +129,7 @@ public class ImageDataAccess : IImageDataAccess
             if (updatedImage.Id is null)
                 return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
 
-            AppImage? foundImage = await _appDataDbContext.Images.FirstOrDefaultAsync(image => image.Id == updatedImage.Id);
+            AppImage? foundImage = await _appDataDbContext.Images.Include(i => i.VariantImages).FirstOrDefaultAsync(image => image.Id == updatedImage.Id);
             if (foundImage is null)
             {
                 _logger.LogWarning(new EventId(9999, "UpdateImageDueToNullImage"), "The image with Id={id} was not found and thus the update could not proceed.", updatedImage.Id);
@@ -134,14 +138,16 @@ public class ImageDataAccess : IImageDataAccess
 
             if (updatedImage.Name is not null)
             {
-                if (await _appDataDbContext.Images.AnyAsync(existingDiscount => existingDiscount.Name == updatedImage.Name))
+                if (await _appDataDbContext.Images.AnyAsync(existingDiscount => existingDiscount.Name == updatedImage.Name && existingDiscount.Id != updatedImage.Id))
                     return DataLibraryReturnedCodes.DuplicateEntityName;
                 foundImage.Name = updatedImage.Name;
             }
 
-            foundImage.ShouldNotShowInGallery = updatedImage.ShouldNotShowInGallery;
-            foundImage.ExistsInOrder = updatedImage.ExistsInOrder;
+            foundImage.ImagePath = updatedImage.ImagePath ?? foundImage.ImagePath;
+            foundImage.ShouldNotShowInGallery = updatedImage.ShouldNotShowInGallery ?? foundImage.ShouldNotShowInGallery;
+            foundImage.ExistsInOrder = updatedImage.ExistsInOrder ?? foundImage.ExistsInOrder;
             foundImage.ModifiedAt = DateTime.Now;
+
             await _appDataDbContext.SaveChangesAsync();
 
             _logger.LogInformation(new EventId(9999, "UpdateImageSuccess"), "The image was successfully updated.");
@@ -193,14 +199,14 @@ public class ImageDataAccess : IImageDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            if (foundImage.ExistsInOrder)
+            if (foundImage.ExistsInOrder!.Value)
             {
                 foundImage.ShouldNotShowInGallery = true;
                 await _appDataDbContext.SaveChangesAsync();
 
                 _logger.LogInformation(new EventId(9999, "DeleteImageSuccessButSetToNotVisible"), "The image with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it will correctly not be shown in the images of the gallery.", imageId);
-                return DataLibraryReturnedCodes.NoError;
+                return DataLibraryReturnedCodes.NoErrorButNotFullyDeleted;
             }
 
             _appDataDbContext.Images.Remove(foundImage);

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EshopApp.DataLibraryAPI.Models.RequestModels;
+namespace EshopApp.DataLibraryAPI.Models.RequestModels.ImageModels;
 
 public class RestoreImagesRequestModel
 {

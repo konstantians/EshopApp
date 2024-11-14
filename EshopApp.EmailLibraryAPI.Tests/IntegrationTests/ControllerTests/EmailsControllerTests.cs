@@ -1,11 +1,11 @@
-﻿using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
+﻿using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.HelperMethods;
+using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.Models.RequestModels;
+using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net.Http.Json;
 using System.Net;
-using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.HelperMethods;
+using System.Net.Http.Json;
 using System.Text.Json;
-using EshopApp.EmailLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
 
 namespace EshopApp.EmailLibraryAPI.Tests.IntegrationTests.ControllerTests;
 
@@ -16,13 +16,13 @@ internal class EmailsControllerTests
 {
     private HttpClient httpClient;
     private string? chosenEmailEntryId;
-    
+
     [OneTimeSetUp]
     public async Task OnTimeSetup()
     {
         var webApplicationFactory = new WebApplicationFactory<Program>();
         httpClient = webApplicationFactory.CreateClient();
-        
+
         await ResetDatabaseHelperMethods.ResetNoSqlEmailDatabaseAsync();
         EmailHelperMethods.DeleteAllEmailFiles();
     }
@@ -98,7 +98,7 @@ internal class EmailsControllerTests
     public async Task GetEmailEntry_ShouldReturnOkAndEmailEntry()
     {
         //Arrange
-        string emailEntryId = chosenEmailEntryId!; 
+        string emailEntryId = chosenEmailEntryId!;
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/emails/{emailEntryId}");

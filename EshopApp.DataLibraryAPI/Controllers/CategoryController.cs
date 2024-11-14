@@ -2,6 +2,7 @@
 using EshopApp.DataLibrary.Models;
 using EshopApp.DataLibrary.Models.ResponseModels;
 using EshopApp.DataLibrary.Models.ResponseModels.CategoryModels;
+using EshopApp.DataLibraryAPI.Models.RequestModels.CategoryModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -10,7 +11,6 @@ namespace EshopApp.DataLibraryAPI.Controllers;
 [ApiController]
 [EnableRateLimiting("DefaultWindowLimiter")]
 [Route("api/[controller]")]
-
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryDataAccess _categoryDataAccess;
@@ -52,10 +52,12 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCategory(Category category)
+    public async Task<IActionResult> CreateCategory(CreateCategoryRequestModel createCategoryRequestModel)
     {
         try
         {
+            Category category = new Category();
+            category.Name = createCategoryRequestModel.Name;
             ReturnCategoryAndCodeResponseModel response = await _categoryDataAccess.CreateCategoryAsync(category);
             if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });
@@ -69,15 +71,20 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateCategory(Category category)
+    public async Task<IActionResult> UpdateCategory(UpdateCategoryRequestModel updateCategoryRequestModel)
     {
         try
         {
+            Category category = new Category();
+            category.Id = updateCategoryRequestModel.Id;
+            category.Name = updateCategoryRequestModel.Name;
+            category.Products = updateCategoryRequestModel.ProductIds?.Select(productId => new Product { Id = productId }).ToList()!;
+
             DataLibraryReturnedCodes returnedCode = await _categoryDataAccess.UpdateCategoryAsync(category);
             if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
                 return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
             else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
-                return BadRequest(new { ErrorMessage = "EntityNotFoundWithGivenId" });
+                return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
             else if (returnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });
 
@@ -97,6 +104,8 @@ public class CategoryController : ControllerBase
             DataLibraryReturnedCodes returnedCode = await _categoryDataAccess.DeleteCategoryAsync(id);
             if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
                 return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
+            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+                return NotFound();
 
             return NoContent();
         }
