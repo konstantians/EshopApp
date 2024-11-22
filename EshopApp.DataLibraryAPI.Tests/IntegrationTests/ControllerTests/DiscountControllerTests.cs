@@ -34,7 +34,7 @@ internal class DiscountControllerTests
 
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
             "Data Database Successfully Cleared!"
         );
 
@@ -183,7 +183,7 @@ internal class DiscountControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync("api/discount/amount/10");
+        HttpResponseMessage response = await httpClient.GetAsync("api/discount/amount/10/includeDeactivated/true");
         string? responseBody = await response.Content.ReadAsStringAsync();
         List<TestDiscount>? testDiscounts = JsonSerializer.Deserialize<List<TestDiscount>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -219,7 +219,7 @@ internal class DiscountControllerTests
         string bogusDiscountId = "bogusDiscountId";
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/discount/{bogusDiscountId}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/discount/{bogusDiscountId}/includeDeactivated/true");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -234,7 +234,7 @@ internal class DiscountControllerTests
         string discountId = _chosenDiscountId!;
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync($"api/discount/{discountId}");
+        HttpResponseMessage response = await httpClient.GetAsync($"api/discount/{discountId}/includeDeactivated/true");
         string? responseBody = await response.Content.ReadAsStringAsync();
         TestDiscount? testDiscount = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -340,7 +340,7 @@ internal class DiscountControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/discount", testUpdateDiscountRequestModel);
-        HttpResponseMessage getResponse = await httpClient.GetAsync($"api/discount/{_chosenDiscountId}");
+        HttpResponseMessage getResponse = await httpClient.GetAsync($"api/discount/{_chosenDiscountId}/includeDeactivated/true");
         string? responseBody = await getResponse.Content.ReadAsStringAsync();
         TestDiscount? testDiscount = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -364,7 +364,7 @@ internal class DiscountControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/discount", testUpdateDiscountRequestModel);
-        HttpResponseMessage getResponse = await httpClient.GetAsync($"api/discount/{_chosenDiscountId}");
+        HttpResponseMessage getResponse = await httpClient.GetAsync($"api/discount/{_chosenDiscountId}/includeDeactivated/true");
         string? responseBody = await getResponse.Content.ReadAsStringAsync();
         TestDiscount? testDiscount = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -434,7 +434,7 @@ internal class DiscountControllerTests
         //Act
         HttpResponseMessage response = new();
         for (int i = 0; i < 101; i++)
-            response = await httpClient.GetAsync("api/discount/amount/10");
+            response = await httpClient.GetAsync("api/discount/amount/10/includeDeactivated/true");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
@@ -446,7 +446,7 @@ internal class DiscountControllerTests
         httpClient.Dispose();
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
             "Data Database Successfully Cleared!"
         );
     }

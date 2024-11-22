@@ -161,7 +161,7 @@ public class ProductDataAccess : IProductDataAccess
             }
 
             if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Code == product.Code))
-                return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateProductCode);
+                return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityCode);
 
             if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Name == product.Name))
                 return new ReturnProductAndCodeResponseModel(null!, DataLibraryReturnedCodes.DuplicateEntityName);
@@ -284,7 +284,7 @@ public class ProductDataAccess : IProductDataAccess
             if (updatedProduct.Code is not null)
             {
                 if (await _appDataDbContext.Products.AnyAsync(existingProduct => existingProduct.Code == updatedProduct.Code && existingProduct.Id != updatedProduct.Id))
-                    return DataLibraryReturnedCodes.DuplicateProductCode;
+                    return DataLibraryReturnedCodes.DuplicateEntityCode;
 
                 foundProduct.Code = updatedProduct.Code;
             }

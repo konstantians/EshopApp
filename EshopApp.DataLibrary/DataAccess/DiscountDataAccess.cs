@@ -19,20 +19,39 @@ public class DiscountDataAccess : IDiscountDataAccess
         _logger = logger ?? NullLogger<DiscountDataAccess>.Instance;
     }
 
-    public async Task<ReturnDiscountsAndCodeResponseModel> GetDiscountsAsync(int amount)
+    public async Task<ReturnDiscountsAndCodeResponseModel> GetDiscountsAsync(int amount, bool includeDeactivated)
     {
         try
         {
-            List<Discount> discounts = await _appDataDbContext.Discounts
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.Product)
-                        .ThenInclude(p => p!.Categories)
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.VariantImages)
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.Attributes)
-                .Take(amount)
-                .ToListAsync();
+            List<Discount> discounts;
+            if (!includeDeactivated)
+            {
+                discounts = await _appDataDbContext.Discounts
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p!.Categories)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.VariantImages)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Attributes)
+                    .Where(discount => !discount.IsDeactivated!.Value)
+                    .Take(amount)
+                    .ToListAsync();
+            }
+            else
+            {
+                discounts = await _appDataDbContext.Discounts
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p!.Categories)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.VariantImages)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Attributes)
+                    .Take(amount)
+                    .ToListAsync();
+            }
+
 
             return new ReturnDiscountsAndCodeResponseModel(discounts, DataLibraryReturnedCodes.NoError);
         }
@@ -44,19 +63,37 @@ public class DiscountDataAccess : IDiscountDataAccess
         }
     }
 
-    public async Task<ReturnDiscountAndCodeResponseModel> GetDiscountByIdAsync(string id)
+    public async Task<ReturnDiscountAndCodeResponseModel> GetDiscountByIdAsync(string id, bool includeDeactivated)
     {
         try
         {
-            Discount? foundDiscount = await _appDataDbContext.Discounts
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.Product)
-                        .ThenInclude(p => p!.Categories)
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.VariantImages)
-                .Include(d => d.Variants)
-                    .ThenInclude(v => v.Attributes)
-                .FirstOrDefaultAsync(discount => discount.Id == id);
+            Discount? foundDiscount;
+
+            if (!includeDeactivated)
+            {
+                foundDiscount = await _appDataDbContext.Discounts
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p!.Categories)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.VariantImages)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Attributes)
+                    .FirstOrDefaultAsync(discount => discount.Id == id && !discount.IsDeactivated!.Value);
+            }
+            else
+            {
+                foundDiscount = await _appDataDbContext.Discounts
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p!.Categories)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.VariantImages)
+                    .Include(d => d.Variants)
+                        .ThenInclude(v => v.Attributes)
+                    .FirstOrDefaultAsync(discount => discount.Id == id);
+            }
+
             return new ReturnDiscountAndCodeResponseModel(foundDiscount!, DataLibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
@@ -77,6 +114,9 @@ public class DiscountDataAccess : IDiscountDataAccess
             discount.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.Discounts.FirstOrDefaultAsync(otherDiscount => otherDiscount.Id == discount.Id) is not null)
                 discount.Id = Guid.NewGuid().ToString();
+
+            discount.IsDeactivated = discount.IsDeactivated ?? false;
+            discount.ExistsInOrder = discount.ExistsInOrder ?? false;
 
             DateTime dateTimeNow = DateTime.Now;
             discount.CreatedAt = dateTimeNow;
@@ -135,6 +175,8 @@ public class DiscountDataAccess : IDiscountDataAccess
                 foundDiscount.Variants.AddRange(filteredVariants);
             }
 
+            foundDiscount.IsDeactivated = foundDiscount.IsDeactivated ?? false;
+            foundDiscount.ExistsInOrder = foundDiscount.ExistsInOrder ?? false;
             foundDiscount.ModifiedAt = DateTime.Now;
             await _appDataDbContext.SaveChangesAsync();
 
@@ -158,6 +200,16 @@ public class DiscountDataAccess : IDiscountDataAccess
             {
                 _logger.LogWarning(new EventId(9999, "DeleteDiscountFailureDueToNullDiscount"), "The discount with Id={id} was not found and thus the deletion could not proceed.", discountId);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
+            }
+
+            if (foundDiscount.ExistsInOrder!.Value)
+            {
+                foundDiscount.IsDeactivated = true;
+                await _appDataDbContext.SaveChangesAsync();
+
+                _logger.LogInformation(new EventId(9999, "DeleteDiscountSuccessButSetToDeactivated"), "The discount with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
+                    "but it is now correctly deactivated.", discountId);
+                return DataLibraryReturnedCodes.NoErrorButNotFullyDeleted;
             }
 
             _appDataDbContext.Discounts.Remove(foundDiscount);
