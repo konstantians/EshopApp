@@ -8,7 +8,7 @@ public interface IDiscountDataAccess
 {
     Task<ReturnDiscountAndCodeResponseModel> CreateDiscountAsync(Discount discount);
     Task<DataLibraryReturnedCodes> DeleteDiscountAsync(string discountId);
-    Task<ReturnDiscountAndCodeResponseModel> GetDiscountByIdAsync(string id);
-    Task<ReturnDiscountsAndCodeResponseModel> GetDiscountsAsync(int amount);
+    Task<ReturnDiscountAndCodeResponseModel> GetDiscountByIdAsync(string id, bool includeDeactivated);
+    Task<ReturnDiscountsAndCodeResponseModel> GetDiscountsAsync(int amount, bool includeDeactivated);
     Task<DataLibraryReturnedCodes> UpdateDiscountAsync(Discount updatedDiscount);
 }

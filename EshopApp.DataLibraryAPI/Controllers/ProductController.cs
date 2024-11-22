@@ -99,7 +99,7 @@ public class ProductController : ControllerBase
             ReturnProductAndCodeResponseModel response = await _productDataAccess.CreateProductAsync(product);
             if (response.ReturnedCode == DataLibraryReturnedCodes.NoVariantWasProvidedForProductCreation)
                 return BadRequest(new { ErrorMessage = "NoVariantWasProvidedForProductCreation" });
-            else if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateProductCode)
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityCode)
                 return BadRequest(new { ErrorMessage = "DuplicateProductCode" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });
@@ -133,7 +133,7 @@ public class ProductController : ControllerBase
             DataLibraryReturnedCodes returnedCode = await _productDataAccess.UpdateProductAsync(product);
             if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
-            else if (returnedCode == DataLibraryReturnedCodes.DuplicateProductCode)
+            else if (returnedCode == DataLibraryReturnedCodes.DuplicateEntityCode)
                 return BadRequest(new { ErrorMessage = "DuplicateProductCode" });
             else if (returnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });

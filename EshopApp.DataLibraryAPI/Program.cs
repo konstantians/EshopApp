@@ -48,6 +48,7 @@ public class Program()
         builder.Services.AddScoped<IImageDataAccess, ImageDataAccess>();
         builder.Services.AddScoped<IDiscountDataAccess, DiscountDataAccess>();
         builder.Services.AddScoped<IAttributeDataAccess, AttributeDataAccess>();
+        builder.Services.AddScoped<ICouponDataAccess, CouponDataAccess>();
 
         var app = builder.Build();
 

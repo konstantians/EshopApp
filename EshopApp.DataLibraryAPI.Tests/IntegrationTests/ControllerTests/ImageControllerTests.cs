@@ -29,7 +29,7 @@ internal class ImageControllerTests
 
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
             "Data Database Successfully Cleared!"
         );
 
@@ -400,7 +400,7 @@ internal class ImageControllerTests
         httpClient.Dispose();
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
             "Data Database Successfully Cleared!"
         );
     }

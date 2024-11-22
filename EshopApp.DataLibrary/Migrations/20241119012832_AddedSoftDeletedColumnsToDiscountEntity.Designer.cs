@@ -4,6 +4,7 @@ using EshopApp.DataLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.DataLibrary.Migrations
 {
     [DbContext(typeof(AppDataDbContext))]
-    partial class AppDataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241119012832_AddedSoftDeletedColumnsToDiscountEntity")]
+    partial class AddedSoftDeletedColumnsToDiscountEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,6 +169,7 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ExpirationDate")
+                        .IsRequired()
                         .HasColumnType("datetime2");
 
                     b.Property<bool?>("IsDeactivated")
@@ -180,6 +184,7 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("StartDate")
+                        .IsRequired()
                         .HasColumnType("datetime2");
 
                     b.Property<string>("TriggerEvent")
@@ -295,15 +300,13 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("ExpirationDate")
-                        .IsRequired()
+                    b.Property<DateTime>("ExpirationDate")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("StartDate")
-                        .IsRequired()
+                    b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("TimesUsed")

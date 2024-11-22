@@ -5,11 +5,16 @@ public enum DataLibraryReturnedCodes
     NoError,
     NoErrorButNotFullyDeleted,
     TheIdOfTheEntityCanNotBeNull,
+    TheIdOfTheCouponCanNotBeNull,
+    TheIdOfTheUserCanNotBeNull,
     EntityNotFoundWithGivenId,
     InvalidProductIdWasGiven,
     InvalidVariantIdWasGiven,
+    InvalidCouponIdWasGiven,
+    StartAndExpirationDatesCanNotBeNullForUniversalCoupons,
+    DefaultDateIntervalInDaysCanNotBeNullForUserSpecificCoupons,
     NoVariantWasProvidedForProductCreation,
     DuplicateVariantSku,
-    DuplicateProductCode,
+    DuplicateEntityCode,
     DuplicateEntityName
 }
