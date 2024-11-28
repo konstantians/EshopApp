@@ -95,7 +95,6 @@ public class CouponDataAccess : ICouponDataAccess
             coupon.Description = coupon.Description ?? "";
             coupon.IsUserSpecific = coupon.IsUserSpecific ?? false; //once set this can not change
             coupon.IsDeactivated = coupon.IsDeactivated ?? false;
-            coupon.ExistsInOrder = coupon.ExistsInOrder ?? false;
             coupon.Code = coupon.Code ?? Guid.NewGuid().ToString().Substring(0, 6);
             while (await _appDataDbContext.Coupons.FirstOrDefaultAsync(otherUserCoupon => otherUserCoupon.Code == coupon.Code) is not null)
                 coupon.Code = Guid.NewGuid().ToString().Substring(0, 6);
@@ -137,7 +136,7 @@ public class CouponDataAccess : ICouponDataAccess
             if (updatedCoupon.Id is null)
                 return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
 
-            Coupon? foundCoupon = await _appDataDbContext.Coupons.FirstOrDefaultAsync(coupon => coupon.Id == updatedCoupon.Id);
+            Coupon? foundCoupon = await _appDataDbContext.Coupons.Include(coupon => coupon.UserCoupons).FirstOrDefaultAsync(coupon => coupon.Id == updatedCoupon.Id);
             if (foundCoupon is null)
             {
                 _logger.LogWarning(new EventId(9999, "UpdateCouponFailureDueToNullCoupon"), "The coupon with Id={id} was not found and thus the update could not proceed.", updatedCoupon.Id);
@@ -149,10 +148,9 @@ public class CouponDataAccess : ICouponDataAccess
             foundCoupon.DiscountPercentage = updatedCoupon.DiscountPercentage ?? foundCoupon.DiscountPercentage;
             foundCoupon.UsageLimit = updatedCoupon.UsageLimit ?? foundCoupon.UsageLimit;
             foundCoupon.IsDeactivated = updatedCoupon.IsDeactivated ?? foundCoupon.IsDeactivated;
-            foundCoupon.ExistsInOrder = updatedCoupon.ExistsInOrder ?? foundCoupon.ExistsInOrder;
 
             //if null do nothing and in this specific case make sure that it does not exist inside an order
-            if (updatedCoupon.Code is not null && !foundCoupon.ExistsInOrder!.Value)
+            if (updatedCoupon.Code is not null && !foundCoupon.UserCoupons.Any(usercoupon => usercoupon.ExistsInOrder!.Value))
             {
                 if (await _appDataDbContext.Coupons.AnyAsync(existingCoupon => existingCoupon.Code == updatedCoupon.Code && existingCoupon.Id != updatedCoupon.Id))
                     return DataLibraryReturnedCodes.DuplicateEntityCode;
@@ -231,10 +229,14 @@ public class CouponDataAccess : ICouponDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            if (foundCoupon.ExistsInOrder!.Value)
+            if (foundCoupon.UserCoupons.Any(userCoupon => userCoupon.ExistsInOrder!.Value))
             {
-                foundCoupon.IsDeactivated = true;
-                await _appDataDbContext.SaveChangesAsync();
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundCoupon.IsDeactivated!.Value)
+                {
+                    foundCoupon.IsDeactivated = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
 
                 _logger.LogInformation(new EventId(9999, "DeleteCouponSuccessButSetToDeactivated"), "The coupon with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it was correctly deactivated.", couponId);
@@ -298,10 +300,14 @@ public class CouponDataAccess : ICouponDataAccess
             if (foundCoupon is null)
                 return new ReturnUserCouponAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidCouponIdWasGiven);
 
-            userCoupon.TimesUsed = userCoupon.TimesUsed ?? 0;
             userCoupon.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.UserCoupons.FirstOrDefaultAsync(otherUserCoupon => otherUserCoupon.Id == userCoupon.Id) is not null)
                 userCoupon.Id = Guid.NewGuid().ToString();
+
+
+            userCoupon.TimesUsed = userCoupon.TimesUsed ?? 0;
+            userCoupon.IsDeactivated = userCoupon.IsDeactivated ?? false;
+            userCoupon.ExistsInOrder = userCoupon.ExistsInOrder ?? false;
 
             DateTime dateTimeNow = DateTime.Now;
             userCoupon.CreatedAt = dateTimeNow;
@@ -358,7 +364,7 @@ public class CouponDataAccess : ICouponDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            if (foundUserCoupon.Coupon!.IsUserSpecific!.Value && !foundUserCoupon.Coupon.ExistsInOrder!.Value
+            if (foundUserCoupon.Coupon!.IsUserSpecific!.Value && !foundUserCoupon.ExistsInOrder!.Value
                 && updatedUserCoupon.Code is not null)
             {
                 if (await _appDataDbContext.UserCoupons.AnyAsync(existingUserCoupon => existingUserCoupon.Code == updatedUserCoupon.Code && existingUserCoupon.Id != updatedUserCoupon.Id))
@@ -400,6 +406,20 @@ public class CouponDataAccess : ICouponDataAccess
             {
                 _logger.LogWarning(new EventId(9999, "DeleteUserCouponFailureDueToNullUserCoupon"), "The user coupon with Id={id} was not found and thus the deletion could not proceed.", userCouponId);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
+            }
+
+            if (foundUserCoupon.ExistsInOrder!.Value)
+            {
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundUserCoupon.IsDeactivated!.Value)
+                {
+                    foundUserCoupon.IsDeactivated = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
+
+                _logger.LogInformation(new EventId(9999, "DeleteUserCouponSuccessButSetToDeactivated"), "The user coupon with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
+                    "but it was correctly deactivated.", userCouponId);
+                return DataLibraryReturnedCodes.NoErrorButNotFullyDeleted;
             }
 
             _appDataDbContext.UserCoupons.Remove(foundUserCoupon);

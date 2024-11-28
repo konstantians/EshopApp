@@ -17,4 +17,5 @@ public class Variant
     public Discount? Discount { get; set; }
     public List<AppAttribute> Attributes { get; set; } = new List<AppAttribute>();
     public List<VariantImage> VariantImages { get; set; } = new List<VariantImage>();
+    public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

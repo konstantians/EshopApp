@@ -9,4 +9,5 @@ public class AppImage
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public List<VariantImage> VariantImages { get; set; } = new List<VariantImage>();
+    public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

@@ -115,8 +115,8 @@ public class DiscountDataAccess : IDiscountDataAccess
             while (await _appDataDbContext.Discounts.FirstOrDefaultAsync(otherDiscount => otherDiscount.Id == discount.Id) is not null)
                 discount.Id = Guid.NewGuid().ToString();
 
+            discount.Description = discount.Description ?? "";
             discount.IsDeactivated = discount.IsDeactivated ?? false;
-            discount.ExistsInOrder = discount.ExistsInOrder ?? false;
 
             DateTime dateTimeNow = DateTime.Now;
             discount.CreatedAt = dateTimeNow;
@@ -166,17 +166,17 @@ public class DiscountDataAccess : IDiscountDataAccess
             }
             else if (updatedDiscount.Variants != null)
             {
-                List<string> updatedVariant = updatedDiscount.Variants.Select(variant => variant.Id!).ToList(); // just add them here, for filtering below
+                List<string> updatedVariantIds = updatedDiscount.Variants.Select(variant => variant.Id!).ToList(); // just add them here, for filtering below
                 List<Variant> filteredVariants = await _appDataDbContext.Variants
-                    .Where(databaseVariant => updatedVariant.Contains(databaseVariant.Id!))
+                    .Where(databaseVariant => updatedVariantIds.Contains(databaseVariant.Id!))
                     .ToListAsync();
 
                 foundDiscount.Variants.Clear();
                 foundDiscount.Variants.AddRange(filteredVariants);
             }
 
-            foundDiscount.IsDeactivated = foundDiscount.IsDeactivated ?? false;
-            foundDiscount.ExistsInOrder = foundDiscount.ExistsInOrder ?? false;
+            foundDiscount.Description = updatedDiscount.Description ?? foundDiscount.Description;
+            foundDiscount.IsDeactivated = updatedDiscount.IsDeactivated ?? foundDiscount.IsDeactivated;
             foundDiscount.ModifiedAt = DateTime.Now;
             await _appDataDbContext.SaveChangesAsync();
 
@@ -195,17 +195,21 @@ public class DiscountDataAccess : IDiscountDataAccess
     {
         try
         {
-            Discount? foundDiscount = await _appDataDbContext.Discounts.FirstOrDefaultAsync(discount => discount.Id == discountId);
+            Discount? foundDiscount = await _appDataDbContext.Discounts.Include(discount => discount.Variants).FirstOrDefaultAsync(discount => discount.Id == discountId);
             if (foundDiscount is null)
             {
                 _logger.LogWarning(new EventId(9999, "DeleteDiscountFailureDueToNullDiscount"), "The discount with Id={id} was not found and thus the deletion could not proceed.", discountId);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            if (foundDiscount.ExistsInOrder!.Value)
+            if (foundDiscount.Variants.Any(variant => variant.ExistsInOrder!.Value))
             {
-                foundDiscount.IsDeactivated = true;
-                await _appDataDbContext.SaveChangesAsync();
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundDiscount.IsDeactivated!.Value)
+                {
+                    foundDiscount.IsDeactivated = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
 
                 _logger.LogInformation(new EventId(9999, "DeleteDiscountSuccessButSetToDeactivated"), "The discount with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it is now correctly deactivated.", discountId);

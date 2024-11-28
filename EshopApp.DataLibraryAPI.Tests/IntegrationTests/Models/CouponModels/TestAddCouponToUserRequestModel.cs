@@ -3,6 +3,8 @@ internal class TestAddCouponToUserRequestModel
 {
     public string? Code { get; set; }
     public int? TimesUsed { get; set; }
+    public bool? IsDeactivated { get; set; }
+    public bool? ExistsInOrder { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? ExpirationDate { get; set; }
     public string? UserId { get; set; }

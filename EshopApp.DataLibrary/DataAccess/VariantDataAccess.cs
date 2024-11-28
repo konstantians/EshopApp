@@ -365,8 +365,12 @@ public class VariantDataAccess : IVariantDataAccess
 
             if (foundVariant.ExistsInOrder!.Value)
             {
-                foundVariant.IsDeactivated = true;
-                await _appDataDbContext.SaveChangesAsync();
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundVariant.IsDeactivated!.Value)
+                {
+                    foundVariant.IsDeactivated = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
 
                 _logger.LogInformation(new EventId(9999, "DeleteProductSuccessButSetToDeactivated"), "The variant with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it was correctly deactivated.", variantId);

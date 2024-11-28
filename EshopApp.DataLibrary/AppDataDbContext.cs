@@ -41,6 +41,12 @@ public class AppDataDbContext : DbContext
     public DbSet<Discount> Discounts { get; set; }
     public DbSet<Coupon> Coupons { get; set; }
     public DbSet<UserCoupon> UserCoupons { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<PaymentDetails> PaymentDetails { get; set; }
+    public DbSet<PaymentOption> PaymentOptions { get; set; }
+    public DbSet<ShippingOption> ShippingOptions { get; set; }
+    public DbSet<OrderAddress> OrderAddresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,9 +84,6 @@ public class AppDataDbContext : DbContext
 
         modelBuilder.Entity<Product>()
             .Property(product => product.IsDeactivated).IsRequired();
-
-        modelBuilder.Entity<Product>()
-            .Property(product => product.ExistsInOrder).IsRequired();
 
         /******************* Variants *******************/
         //variant can have many images(one to many)
@@ -166,9 +169,6 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<Discount>()
             .Property(discount => discount.IsDeactivated).IsRequired();
 
-        modelBuilder.Entity<Discount>()
-            .Property(discount => discount.ExistsInOrder).IsRequired();
-
         base.OnModelCreating(modelBuilder);
 
         /******************* Coupons *******************/
@@ -189,9 +189,6 @@ public class AppDataDbContext : DbContext
 
         modelBuilder.Entity<Coupon>()
             .Property(coupon => coupon.IsDeactivated).IsRequired();
-
-        modelBuilder.Entity<Coupon>()
-            .Property(coupon => coupon.ExistsInOrder).IsRequired();
 
         modelBuilder.Entity<Coupon>()
             .Property(coupon => coupon.TriggerEvent).HasMaxLength(50).IsRequired();
@@ -222,6 +219,189 @@ public class AppDataDbContext : DbContext
             .Property(userCoupon => userCoupon.UserId).HasMaxLength(50).IsRequired();
 
         modelBuilder.Entity<UserCoupon>()
+            .Property(userCoupon => userCoupon.IsDeactivated).IsRequired();
+
+        modelBuilder.Entity<UserCoupon>()
+                .Property(userCoupon => userCoupon.ExistsInOrder).IsRequired();
+
+        modelBuilder.Entity<UserCoupon>()
             .Property(userCoupon => userCoupon.CouponId).IsRequired();
+
+        /******************* Orders *******************/
+        //order can have many order items and at least one(many to one)
+        modelBuilder.Entity<Order>()
+            .HasMany(order => order.OrderItems)
+            .WithOne(orderItem => orderItem.Order)
+            .HasForeignKey(orderItem => orderItem.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        //order can have many one coupon and a coupon can have many orders(one to many)
+        modelBuilder.Entity<Order>()
+            .HasOne(order => order.UserCoupon)
+            .WithMany(userCoupon => userCoupon.Orders)
+            .HasForeignKey(order => order.UserCouponId);
+
+        //order can have one shippingOption and a shippingOption can have many orders(one to many)
+        modelBuilder.Entity<Order>()
+            .HasOne(order => order.ShippingOption)
+            .WithMany(shippingOption => shippingOption.Orders)
+            .HasForeignKey(order => order.ShippingOptionId);
+
+        //order can have one paymentdetails and a paymentdetails can have one order(one to one)
+        modelBuilder.Entity<Order>()
+            .HasOne(order => order.PaymentDetails)
+            .WithOne(paymentDetails => paymentDetails.Order)
+            .HasForeignKey<PaymentDetails>(paymentDetail => paymentDetail.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        //order can have one paymentdetails and a paymentdetails can have one order(one to one)
+        modelBuilder.Entity<Order>()
+            .HasOne(order => order.OrderAddress)
+            .WithOne(orderAddress => orderAddress.Order)
+            .HasForeignKey<OrderAddress>(orderAddress => orderAddress.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Order>()
+            .Property(order => order.UserId).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<Order>()
+            .Property(order => order.OrderStatus).HasMaxLength(50).IsRequired(); ////Pending - Confirmed - Processing - Shipped - Delivered - Canceled - Refunded - Failed
+
+        modelBuilder.Entity<Order>()
+            .Property(order => order.FinalPrice).IsRequired();
+
+        modelBuilder.Entity<Order>()
+            .Property(order => order.OrderDate).IsRequired();
+
+        /******************* OrderItems *******************/
+        //orderItem can have one image and a image can have many orders(one to many)
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(orderItem => orderItem.Image)
+            .WithMany(image => image.OrderItems)
+            .HasForeignKey(orderItem => orderItem.ImageId);
+
+        //orderItem can have one variant and a variant can have many orders(one to many)
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(orderItem => orderItem.Variant)
+            .WithMany(variant => variant.OrderItems)
+            .HasForeignKey(orderItem => orderItem.VariantId);
+
+        //orderItem can have one discount and a discount can have many orders(one to many)
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(orderItem => orderItem.Discount)
+            .WithMany(discount => discount.OrderItems)
+            .HasForeignKey(orderItem => orderItem.DiscountId);
+
+        modelBuilder.Entity<OrderItem>()
+            .Property(orderItem => orderItem.Quantity).IsRequired();
+
+        modelBuilder.Entity<OrderItem>()
+            .Property(orderItem => orderItem.UnitPriceAtOrder).IsRequired();
+
+        /******************* PaymentDetails *******************/
+        //paymentDetails can have one paymentOption and a paymentOption can have many paymentDetails(one to many)
+        modelBuilder.Entity<PaymentDetails>()
+            .HasOne(paymentDetails => paymentDetails.PaymentOption)
+            .WithMany(paymentOption => paymentOption.PaymentDetails)
+            .HasForeignKey(paymentDetails => paymentDetails.PaymentOptionId);
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentOptionExtraCostAtOrder).IsRequired();
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentStatus).HasMaxLength(50).IsRequired(); //Pending, Paid, Unpaid
+
+        /******************* ShippingOptions *******************/
+        modelBuilder.Entity<PaymentOption>()
+            .HasIndex(paymentOption => paymentOption.Name).IsUnique();
+
+        modelBuilder.Entity<PaymentOption>()
+            .Property(paymentOption => paymentOption.Name).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<PaymentOption>()
+            .HasIndex(paymentOption => paymentOption.NameAlias).IsUnique();
+
+        modelBuilder.Entity<PaymentOption>()
+            .Property(paymentOption => paymentOption.NameAlias).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<PaymentOption>()
+            .Property(paymentOption => paymentOption.ExtraCost).IsRequired();
+
+        modelBuilder.Entity<PaymentOption>()
+            .Property(paymentOption => paymentOption.IsDeactivated).IsRequired();
+
+        modelBuilder.Entity<PaymentOption>()
+            .Property(paymentOption => paymentOption.ExistsInOrder).IsRequired();
+
+        /******************* ShippingOptions *******************/
+        modelBuilder.Entity<ShippingOption>()
+            .HasIndex(shippingOption => shippingOption.Name).IsUnique();
+
+        modelBuilder.Entity<ShippingOption>()
+            .Property(shippingOption => shippingOption.Name).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<ShippingOption>()
+            .Property(shippingOption => shippingOption.ExtraCost).IsRequired();
+
+        modelBuilder.Entity<ShippingOption>()
+            .Property(shippingOption => shippingOption.ContainsDelivery).IsRequired();
+
+        modelBuilder.Entity<ShippingOption>()
+            .Property(shippingOption => shippingOption.IsDeactivated).IsRequired();
+
+        modelBuilder.Entity<ShippingOption>()
+            .Property(shippingOption => shippingOption.ExistsInOrder).IsRequired();
+
+        /******************* OrderAddresses *******************/
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.Email).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.FirstName).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.LastName).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.Country).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.City).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.PostalCode).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.Address).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.PhoneNumber).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.IsShippingAddressDifferent).IsRequired();
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltFirstName).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltLastName).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltCountry).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltCity).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltPostalCode).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltAddress).HasMaxLength(50);
+
+        modelBuilder.Entity<OrderAddress>()
+            .Property(orderAddress => orderAddress.AltPhoneNumber).HasMaxLength(50);
     }
 }

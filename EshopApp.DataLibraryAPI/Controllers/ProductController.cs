@@ -76,7 +76,6 @@ public class ProductController : ControllerBase
             product.Name = createProductRequestModel.Name;
             product.Description = createProductRequestModel.Description;
             product.IsDeactivated = createProductRequestModel.IsDeactivated;
-            product.ExistsInOrder = createProductRequestModel.ExistsInOrder;
             foreach (string categoryId in createProductRequestModel.CategoryIds)
                 product.Categories.Add(new Category() { Id = categoryId });
 
@@ -86,7 +85,6 @@ public class ProductController : ControllerBase
             variant.UnitsInStock = createProductRequestModel.CreateVariantRequestModel!.UnitsInStock;
             variant.IsThumbnailVariant = createProductRequestModel.CreateVariantRequestModel!.IsThumbnailVariant;
             variant.IsDeactivated = createProductRequestModel.IsDeactivated;
-            variant.ExistsInOrder = createProductRequestModel.ExistsInOrder;
             variant.ProductId = createProductRequestModel.CreateVariantRequestModel!.ProductId; //This will be overriden, but that is planned and ok
             variant.DiscountId = createProductRequestModel.CreateVariantRequestModel!.DiscountId;
             foreach (string attributeId in createProductRequestModel.CreateVariantRequestModel.AttributeIds)
@@ -125,7 +123,6 @@ public class ProductController : ControllerBase
             product.Name = updateProductRequestModel.Name;
             product.Description = updateProductRequestModel.Description;
             product.IsDeactivated = updateProductRequestModel.IsDeactivated;
-            product.ExistsInOrder = updateProductRequestModel.ExistsInOrder;
             //if null then null is inserted in variant.Categories otherewise it creates a category object for each categoryId in categoryIds
             product.Categories = updateProductRequestModel.CategoryIds?.Select(categoryId => new Category { Id = categoryId }).ToList()!;
             product.Variants = updateProductRequestModel.VariantIds?.Select(variantId => new Variant { Id = variantId }).ToList()!;

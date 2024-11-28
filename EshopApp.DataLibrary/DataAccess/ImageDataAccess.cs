@@ -201,8 +201,13 @@ public class ImageDataAccess : IImageDataAccess
 
             if (foundImage.ExistsInOrder!.Value)
             {
-                foundImage.ShouldNotShowInGallery = true;
-                await _appDataDbContext.SaveChangesAsync();
+
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundImage.ShouldNotShowInGallery!.Value)
+                {
+                    foundImage.ShouldNotShowInGallery = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
 
                 _logger.LogInformation(new EventId(9999, "DeleteImageSuccessButSetToNotVisible"), "The image with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it will correctly not be shown in the images of the gallery.", imageId);

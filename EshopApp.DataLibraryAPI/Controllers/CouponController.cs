@@ -64,7 +64,6 @@ public class CouponController : ControllerBase
             coupon.DefaultDateIntervalInDays = createCouponRequestModel.DefaultDateIntervalInDays;
             coupon.IsUserSpecific = createCouponRequestModel.IsUserSpecific;
             coupon.IsDeactivated = createCouponRequestModel.IsDeactivated;
-            coupon.ExistsInOrder = createCouponRequestModel.ExistsInOrder;
             coupon.TriggerEvent = createCouponRequestModel.TriggerEvent;
             coupon.StartDate = createCouponRequestModel.StartDate;
             coupon.ExpirationDate = createCouponRequestModel.ExpirationDate;
@@ -96,7 +95,6 @@ public class CouponController : ControllerBase
             updatedCoupon.UsageLimit = updateCouponRequestModel.UsageLimit;
             updatedCoupon.DefaultDateIntervalInDays = updateCouponRequestModel.DefaultDateIntervalInDays;
             updatedCoupon.IsDeactivated = updateCouponRequestModel.IsDeactivated;
-            updatedCoupon.ExistsInOrder = updateCouponRequestModel.ExistsInOrder;
             updatedCoupon.TriggerEvent = updateCouponRequestModel.TriggerEvent;
             updatedCoupon.StartDate = updateCouponRequestModel.StartDate;
             updatedCoupon.ExpirationDate = updateCouponRequestModel.ExpirationDate;
@@ -161,6 +159,8 @@ public class CouponController : ControllerBase
             UserCoupon userCoupon = new UserCoupon();
             userCoupon.Code = addCouponToUserRequestModel.Code;
             userCoupon.TimesUsed = addCouponToUserRequestModel.TimesUsed;
+            userCoupon.IsDeactivated = addCouponToUserRequestModel.IsDeactivated;
+            userCoupon.ExistsInOrder = addCouponToUserRequestModel.ExistInOrder;
             userCoupon.StartDate = addCouponToUserRequestModel.StartDate;
             userCoupon.ExpirationDate = addCouponToUserRequestModel.ExpirationDate;
             userCoupon.UserId = addCouponToUserRequestModel.UserId;
@@ -191,6 +191,8 @@ public class CouponController : ControllerBase
             updatedUserCoupon.Id = updateUserCouponRequestModel.Id;
             updatedUserCoupon.Code = updateUserCouponRequestModel.Code;
             updatedUserCoupon.TimesUsed = updateUserCouponRequestModel.TimesUsed;
+            updatedUserCoupon.IsDeactivated = updateUserCouponRequestModel.IsDeactivated;
+            updatedUserCoupon.ExistsInOrder = updateUserCouponRequestModel.ExistInOrder;
             updatedUserCoupon.StartDate = updateUserCouponRequestModel.StartDate;
             updatedUserCoupon.ExpirationDate = updateUserCouponRequestModel.ExpirationDate;
 
@@ -220,6 +222,8 @@ public class CouponController : ControllerBase
                 return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
             else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
+            else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
+                return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
 
             return NoContent();
         }

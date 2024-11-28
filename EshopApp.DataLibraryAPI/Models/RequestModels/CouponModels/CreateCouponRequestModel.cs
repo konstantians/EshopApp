@@ -17,7 +17,6 @@ public class CreateCouponRequestModel
     public int? DefaultDateIntervalInDays { get; set; }
     public bool? IsUserSpecific { get; set; }
     public bool? IsDeactivated { get; set; }
-    public bool? ExistsInOrder { get; set; }
     [RegularExpression("OnSignUp|OnFirstOrder|OnEveryFiveOrders|OnEveryTenOrders|NoTrigger",
     ErrorMessage = "The trigger event must have one of the following values: OnSignUp, OnFirstOrder, OnEveryFiveOrders, OnEveryTenOrders, NoTrigger.")]
     public string? TriggerEvent { get; set; } //OnSignUp - OnFirstOrder - OnEveryFiveOrders - OnEveryTenOrders - NoTrigger

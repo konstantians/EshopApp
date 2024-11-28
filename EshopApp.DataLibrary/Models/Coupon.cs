@@ -9,7 +9,6 @@ public class Coupon
     public int? DefaultDateIntervalInDays { get; set; }
     public bool? IsUserSpecific { get; set; }
     public bool? IsDeactivated { get; set; }
-    public bool? ExistsInOrder { get; set; }
     public string? TriggerEvent { get; set; } //OnSignUp - OnFirstOrder - OnEveryFiveOrders - OnEveryTenOrders - NoTrigger
     public DateTime? StartDate { get; set; }
     public DateTime? ExpirationDate { get; set; }
