@@ -49,7 +49,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.UsageLimit = 1;
         testCreateCouponRequestModel.IsUserSpecific = false; //it is universal
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.StartDate = DateTime.Now;
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2);
 
@@ -72,7 +71,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.DefaultDateIntervalInDays = 2;
         testCreateCouponRequestModel.IsUserSpecific = false; //it is universal
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.TriggerEvent = "OnSignUp"; //this should become NoTrigger since the event is universal and thus triggered based on date
         testCreateCouponRequestModel.StartDate = DateTime.Now;
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2);
@@ -100,7 +98,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.DefaultDateIntervalInDays = 2;
         testCreateCouponRequestModel.IsUserSpecific = false; //it is universal
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.TriggerEvent = "OnSignUp"; //this should become NoTrigger since the event is universal and thus triggered based on date
         testCreateCouponRequestModel.StartDate = DateTime.Now;
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2);
@@ -127,7 +124,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.DefaultDateIntervalInDays = 2;
         testCreateCouponRequestModel.IsUserSpecific = false; //it is universal
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.TriggerEvent = "OnSignUp"; //this should become NoTrigger since the event is universal and thus triggered based on date
         testCreateCouponRequestModel.StartDate = DateTime.Now;
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2);
@@ -153,7 +149,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.DefaultDateIntervalInDays = 2;
         testCreateCouponRequestModel.IsUserSpecific = false; //it is universal
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.TriggerEvent = "OnSignUp"; //this should become NoTrigger since the event is universal and thus triggered based on date
         testCreateCouponRequestModel.StartDate = DateTime.Now;
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2);
@@ -174,7 +169,6 @@ internal class CouponControllerTests
         testCoupon!.DefaultDateIntervalInDays.Should().BeNull();
         testCoupon!.IsUserSpecific.Should().NotBeNull().And.Be(testCreateCouponRequestModel.IsUserSpecific);
         testCoupon!.IsDeactivated.Should().NotBeNull().And.Be(testCreateCouponRequestModel.IsDeactivated);
-        testCoupon!.ExistsInOrder.Should().NotBeNull().And.Be(testCreateCouponRequestModel.ExistsInOrder);
         testCoupon!.TriggerEvent.Should().NotBeNull().And.Be("NoTrigger");
         testCoupon!.StartDate.Should().NotBeNull().And.Be(testCreateCouponRequestModel.StartDate);
         testCoupon!.ExpirationDate.Should().NotBeNull().And.Be(testCreateCouponRequestModel.ExpirationDate);
@@ -194,7 +188,6 @@ internal class CouponControllerTests
         testCreateCouponRequestModel.DefaultDateIntervalInDays = 4;
         testCreateCouponRequestModel.IsUserSpecific = true; //it is user specific
         testCreateCouponRequestModel.IsDeactivated = false;
-        testCreateCouponRequestModel.ExistsInOrder = false;
         testCreateCouponRequestModel.TriggerEvent = "OnSignUp"; //Now this trigger event is applied correctly
         testCreateCouponRequestModel.StartDate = DateTime.Now; //this should become null, because the coupon is user specific
         testCreateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(2); //this should become null, because the coupon is user specific
@@ -215,7 +208,6 @@ internal class CouponControllerTests
         testCoupon!.DefaultDateIntervalInDays.Should().NotBeNull().And.Be(testCreateCouponRequestModel.DefaultDateIntervalInDays);
         testCoupon!.IsUserSpecific.Should().NotBeNull().And.Be(testCreateCouponRequestModel.IsUserSpecific);
         testCoupon!.IsDeactivated.Should().NotBeNull().And.Be(testCreateCouponRequestModel.IsDeactivated);
-        testCoupon!.ExistsInOrder.Should().NotBeNull().And.Be(testCreateCouponRequestModel.ExistsInOrder);
         testCoupon!.TriggerEvent.Should().NotBeNull().And.Be("OnSignUp");
         testCoupon!.StartDate.Should().BeNull();
         testCoupon!.ExpirationDate.Should().BeNull();
@@ -311,7 +303,6 @@ internal class CouponControllerTests
         testCoupon.DefaultDateIntervalInDays.Should().BeNull();
         testCoupon.IsUserSpecific.Should().NotBeNull().And.Be(false);
         testCoupon.IsDeactivated.Should().NotBeNull();
-        testCoupon.ExistsInOrder.Should().NotBeNull();
         testCoupon.TriggerEvent.Should().NotBeNull().And.Be("NoTrigger");
         testCoupon.StartDate.Should().NotBeNull();
         testCoupon.ExpirationDate.Should().NotBeNull();
@@ -594,6 +585,8 @@ internal class CouponControllerTests
         testUserCoupon!.Id.Should().NotBeNull();
         testUserCoupon!.Code.Should().NotBeNull().And.NotBe(testAddCouponToUserRequestModel.Code);
         testUserCoupon!.TimesUsed.Should().Be(0);
+        testUserCoupon!.IsDeactivated.Should().NotBeNull().And.BeFalse();
+        testUserCoupon!.ExistsInOrder.Should().NotBeNull().And.BeFalse();
         testUserCoupon!.StartDate.Should().NotBeNull().And.NotBe(testAddCouponToUserRequestModel.StartDate);
         testUserCoupon!.ExpirationDate.Should().NotBeNull().And.NotBe(testAddCouponToUserRequestModel.ExpirationDate);
         testUserCoupon!.UserId = testAddCouponToUserRequestModel.UserId;
@@ -627,6 +620,8 @@ internal class CouponControllerTests
         testUserCoupon!.Id.Should().NotBeNull();
         testUserCoupon!.Code.Should().NotBeNull();
         testUserCoupon!.TimesUsed.Should().Be(0);
+        testUserCoupon!.IsDeactivated.Should().NotBeNull().And.BeFalse();
+        testUserCoupon!.ExistsInOrder.Should().NotBeNull().And.BeFalse();
         testUserCoupon!.UserId = testAddCouponToUserRequestModel.UserId;
         testUserCoupon!.CouponId = testAddCouponToUserRequestModel.CouponId;
         testCoupon!.UserCoupons.Should().NotBeNull().And.HaveCount(1);
@@ -660,6 +655,8 @@ internal class CouponControllerTests
         testUserCoupon!.Id.Should().NotBeNull();
         testUserCoupon!.Code.Should().NotBeNull();
         testUserCoupon!.TimesUsed.Should().Be(0);
+        testUserCoupon!.IsDeactivated.Should().NotBeNull().And.BeFalse();
+        testUserCoupon!.ExistsInOrder.Should().NotBeNull().And.BeFalse();
         testUserCoupon!.UserId = testAddCouponToUserRequestModel.UserId;
         testUserCoupon!.CouponId = testAddCouponToUserRequestModel.CouponId;
         testCoupon!.UserCoupons.Should().NotBeNull().And.HaveCount(2);

@@ -13,7 +13,6 @@ public class CreateProductRequestModel
     public string? Name { get; set; }
     public string? Description { get; set; }
     public bool? IsDeactivated { get; set; }
-    public bool? ExistsInOrder { get; set; }
     public List<string> CategoryIds { get; set; } = new List<string>();
     [Required]
     public CreateVariantRequestModel? CreateVariantRequestModel { get; set; }

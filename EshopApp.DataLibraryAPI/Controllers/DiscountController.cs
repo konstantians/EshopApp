@@ -60,7 +60,6 @@ public class DiscountController : ControllerBase
             discount.Name = createDiscountRequestModel.Name;
             discount.Percentage = createDiscountRequestModel.Percentage;
             discount.IsDeactivated = createDiscountRequestModel.IsDeactivated;
-            discount.ExistsInOrder = createDiscountRequestModel.ExistsInOrder;
 
             ReturnDiscountAndCodeResponseModel response = await _discountDataAccess.CreateDiscountAsync(discount);
             if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
@@ -84,7 +83,6 @@ public class DiscountController : ControllerBase
             discount.Name = updateDiscountRequestModel.Name;
             discount.Percentage = updateDiscountRequestModel.Percentage;
             discount.IsDeactivated = updateDiscountRequestModel.IsDeactivated;
-            discount.ExistsInOrder = updateDiscountRequestModel.ExistsInOrder;
             discount.Variants = updateDiscountRequestModel.VariantIds?.Select(variantId => new Variant { Id = variantId }).ToList()!;
 
             DataLibraryReturnedCodes returnedCode = await _discountDataAccess.UpdateDiscountAsync(discount);

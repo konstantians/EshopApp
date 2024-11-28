@@ -161,10 +161,6 @@ namespace EshopApp.DataLibrary.Migrations
                         .IsRequired()
                         .HasColumnType("int");
 
-                    b.Property<bool?>("ExistsInOrder")
-                        .IsRequired()
-                        .HasColumnType("bit");
-
                     b.Property<DateTime?>("ExpirationDate")
                         .HasColumnType("datetime2");
 
@@ -207,9 +203,8 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool?>("ExistsInOrder")
-                        .IsRequired()
-                        .HasColumnType("bit");
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool?>("IsDeactivated")
                         .IsRequired()
@@ -235,6 +230,296 @@ namespace EshopApp.DataLibrary.Migrations
                     b.ToTable("Discounts");
                 });
 
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.Order", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CouponDiscountPercentageAtOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("FinalPrice")
+                        .IsRequired()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("OrderDate")
+                        .IsRequired()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OrderStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal?>("ShippingCostAtOrder")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ShippingOptionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserCouponId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShippingOptionId");
+
+                    b.HasIndex("UserCouponId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.OrderAddress", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltCity")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltCountry")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltFirstName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltLastName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltPhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AltPostalCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool?>("IsShippingAddressDifferent")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasFilter("[OrderId] IS NOT NULL");
+
+                    b.ToTable("OrderAddresses");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.OrderItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DiscountId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("DiscountPercentageAtOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("Quantity")
+                        .IsRequired()
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("UnitPriceAtOrder")
+                        .IsRequired()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("VariantId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscountId");
+
+                    b.HasIndex("ImageId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("VariantId");
+
+                    b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.PaymentDetails", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal?>("AmountPaidInCustomerCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("AmountPaidInEuro")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("NetAmountPaidInEuro")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentCurrency")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("PaymentOptionExtraCostAtOrder")
+                        .IsRequired()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PaymentOptionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentProcessorSessionId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasFilter("[OrderId] IS NOT NULL");
+
+                    b.HasIndex("PaymentOptionId");
+
+                    b.ToTable("PaymentDetails");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.PaymentOption", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("ExistsInOrder")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("ExtraCost")
+                        .IsRequired()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool?>("IsDeactivated")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NameAlias")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("NameAlias")
+                        .IsUnique();
+
+                    b.ToTable("PaymentOptions");
+                });
+
             modelBuilder.Entity("EshopApp.DataLibrary.Models.Product", b =>
                 {
                     b.Property<string>("Id")
@@ -250,10 +535,6 @@ namespace EshopApp.DataLibrary.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool?>("ExistsInOrder")
-                        .IsRequired()
-                        .HasColumnType("bit");
 
                     b.Property<bool?>("IsDeactivated")
                         .IsRequired()
@@ -278,6 +559,49 @@ namespace EshopApp.DataLibrary.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.ShippingOption", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool?>("ContainsDelivery")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("ExistsInOrder")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("ExtraCost")
+                        .IsRequired()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool?>("IsDeactivated")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ShippingOptions");
+                });
+
             modelBuilder.Entity("EshopApp.DataLibrary.Models.UserCoupon", b =>
                 {
                     b.Property<string>("Id")
@@ -295,9 +619,17 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool?>("ExistsInOrder")
+                        .IsRequired()
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("ExpirationDate")
                         .IsRequired()
                         .HasColumnType("datetime2");
+
+                    b.Property<bool?>("IsDeactivated")
+                        .IsRequired()
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
@@ -428,6 +760,75 @@ namespace EshopApp.DataLibrary.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.Order", b =>
+                {
+                    b.HasOne("EshopApp.DataLibrary.Models.ShippingOption", "ShippingOption")
+                        .WithMany("Orders")
+                        .HasForeignKey("ShippingOptionId");
+
+                    b.HasOne("EshopApp.DataLibrary.Models.UserCoupon", "UserCoupon")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserCouponId");
+
+                    b.Navigation("ShippingOption");
+
+                    b.Navigation("UserCoupon");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.OrderAddress", b =>
+                {
+                    b.HasOne("EshopApp.DataLibrary.Models.Order", "Order")
+                        .WithOne("OrderAddress")
+                        .HasForeignKey("EshopApp.DataLibrary.Models.OrderAddress", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.OrderItem", b =>
+                {
+                    b.HasOne("EshopApp.DataLibrary.Models.Discount", "Discount")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("DiscountId");
+
+                    b.HasOne("EshopApp.DataLibrary.Models.AppImage", "Image")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ImageId");
+
+                    b.HasOne("EshopApp.DataLibrary.Models.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("EshopApp.DataLibrary.Models.Variant", "Variant")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("VariantId");
+
+                    b.Navigation("Discount");
+
+                    b.Navigation("Image");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.PaymentDetails", b =>
+                {
+                    b.HasOne("EshopApp.DataLibrary.Models.Order", "Order")
+                        .WithOne("PaymentDetails")
+                        .HasForeignKey("EshopApp.DataLibrary.Models.PaymentDetails", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("EshopApp.DataLibrary.Models.PaymentOption", "PaymentOption")
+                        .WithMany("PaymentDetails")
+                        .HasForeignKey("PaymentOptionId");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PaymentOption");
+                });
+
             modelBuilder.Entity("EshopApp.DataLibrary.Models.UserCoupon", b =>
                 {
                     b.HasOne("EshopApp.DataLibrary.Models.Coupon", "Coupon")
@@ -474,6 +875,8 @@ namespace EshopApp.DataLibrary.Migrations
 
             modelBuilder.Entity("EshopApp.DataLibrary.Models.AppImage", b =>
                 {
+                    b.Navigation("OrderItems");
+
                     b.Navigation("VariantImages");
                 });
 
@@ -484,7 +887,23 @@ namespace EshopApp.DataLibrary.Migrations
 
             modelBuilder.Entity("EshopApp.DataLibrary.Models.Discount", b =>
                 {
+                    b.Navigation("OrderItems");
+
                     b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.Order", b =>
+                {
+                    b.Navigation("OrderAddress");
+
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("PaymentDetails");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.PaymentOption", b =>
+                {
+                    b.Navigation("PaymentDetails");
                 });
 
             modelBuilder.Entity("EshopApp.DataLibrary.Models.Product", b =>
@@ -492,8 +911,20 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Navigation("Variants");
                 });
 
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.ShippingOption", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("EshopApp.DataLibrary.Models.UserCoupon", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
             modelBuilder.Entity("EshopApp.DataLibrary.Models.Variant", b =>
                 {
+                    b.Navigation("OrderItems");
+
                     b.Navigation("VariantImages");
                 });
 #pragma warning restore 612, 618

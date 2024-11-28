@@ -172,7 +172,6 @@ public class ProductDataAccess : IProductDataAccess
 
             product.Description = product.Description ?? "";
             product.IsDeactivated = product.IsDeactivated ?? false;
-            product.ExistsInOrder = product.ExistsInOrder ?? false;
 
             DateTime dateTimeNow = DateTime.Now;
             product.CreatedAt = dateTimeNow;
@@ -299,7 +298,6 @@ public class ProductDataAccess : IProductDataAccess
 
             foundProduct.Description = updatedProduct.Description ?? foundProduct.Description;
             foundProduct.IsDeactivated = updatedProduct.IsDeactivated ?? foundProduct.IsDeactivated;
-            foundProduct.ExistsInOrder = updatedProduct.ExistsInOrder ?? foundProduct.ExistsInOrder;
 
             if (updatedProduct.Categories != null && !updatedProduct.Categories.Any())
             {
@@ -349,17 +347,21 @@ public class ProductDataAccess : IProductDataAccess
     {
         try
         {
-            Product? foundProduct = await _appDataDbContext.Products.FirstOrDefaultAsync(product => product.Id == productId);
+            Product? foundProduct = await _appDataDbContext.Products.Include(product => product.Variants).FirstOrDefaultAsync(product => product.Id == productId);
             if (foundProduct is null)
             {
                 _logger.LogWarning(new EventId(9999, "DeleteProductFailureDueToNullProduct"), "The product with Id={id} was not found and thus the delete could not proceed.", productId);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            if (foundProduct.ExistsInOrder!.Value)
+            if (foundProduct.Variants.Any(variant => variant.ExistsInOrder!.Value))
             {
-                foundProduct.IsDeactivated = true;
-                await _appDataDbContext.SaveChangesAsync();
+                //the if statement here is only for performance, because potentionally a pointless database update is prevented
+                if (!foundProduct.IsDeactivated!.Value)
+                {
+                    foundProduct.IsDeactivated = true;
+                    await _appDataDbContext.SaveChangesAsync();
+                }
 
                 _logger.LogInformation(new EventId(9999, "DeleteProductSuccessButSetToDeactivated"), "The product with Id={id} exists in an order and thus can not be fully deleted until that order is deleted, " +
                     "but it was correctly deactivated.", productId);
