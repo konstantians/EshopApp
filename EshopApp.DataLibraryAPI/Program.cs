@@ -49,6 +49,9 @@ public class Program()
         builder.Services.AddScoped<IDiscountDataAccess, DiscountDataAccess>();
         builder.Services.AddScoped<IAttributeDataAccess, AttributeDataAccess>();
         builder.Services.AddScoped<ICouponDataAccess, CouponDataAccess>();
+        builder.Services.AddScoped<IPaymentOptionDataAccess, PaymentOptionDataAccess>();
+        builder.Services.AddScoped<IShippingOptionDataAccess, ShippingOptionDataAccess>();
+        builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
 
         var app = builder.Build();
 

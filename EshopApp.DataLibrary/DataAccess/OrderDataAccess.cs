@@ -4,9 +4,10 @@ using EshopApp.DataLibrary.Models.ResponseModels.OrderModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Globalization;
 
 namespace EshopApp.DataLibrary.DataAccess;
-public class OrderDataAccess
+public class OrderDataAccess : IOrderDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<OrderDataAccess> _logger;
@@ -134,12 +135,21 @@ public class OrderDataAccess
             order.CreatedAt = dateTimeNow;
             order.ModifiedAt = dateTimeNow;
             order.PaymentDetails.PaymentStatus = "Pending";
+            order.PaymentDetails.PaymentCurrency = "N/A"; //this will change after payment
             order.PaymentDetails!.AmountPaidInCustomerCurrency = 0;
             order.PaymentDetails!.AmountPaidInEuro = 0;
             order.PaymentDetails!.NetAmountPaidInEuro = 0;
-            order.PaymentDetails.CreatedAt = dateTimeNow;
-            order.PaymentDetails.ModifiedAt = dateTimeNow;
             order.OrderAddress.IsShippingAddressDifferent = order.OrderAddress.IsShippingAddressDifferent ?? false;
+
+            order.OrderAddress.Id = Guid.NewGuid().ToString();
+            while (await _appDataDbContext.OrderAddresses.FirstOrDefaultAsync(otherOrderAddress => otherOrderAddress.Id == order.OrderAddress.Id) is not null)
+                order.OrderAddress.Id = Guid.NewGuid().ToString();
+            order.OrderAddress.OrderId = order.Id; //this is not needed here, but I am setting it explicitly
+
+            order.PaymentDetails.Id = Guid.NewGuid().ToString();
+            while (await _appDataDbContext.PaymentDetails.FirstOrDefaultAsync(otherPaymentDetails => otherPaymentDetails.Id == order.PaymentDetails.Id) is not null)
+                order.PaymentDetails.Id = Guid.NewGuid().ToString();
+            order.PaymentDetails.OrderId = order.Id; //this is not needed here, but I am setting it explicitly
 
             if (order.OrderAddress.IsShippingAddressDifferent.Value && (order.OrderAddress.AltFirstName is null || order.OrderAddress.AltLastName is null ||
                 order.OrderAddress.AltCountry is null || order.OrderAddress.City is null || order.OrderAddress.AltPostalCode is null ||
@@ -150,11 +160,15 @@ public class OrderDataAccess
             if (paymentOption is null)
                 return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidPaymentOption);
             order.PaymentDetails.PaymentOptionExtraCostAtOrder = paymentOption.ExtraCost;
+            paymentOption.ExistsInOrder = true;
+            paymentOption.ModifiedAt = dateTimeNow;
 
             ShippingOption? shippingOption = await _appDataDbContext.ShippingOptions.FirstOrDefaultAsync(shippingOption => shippingOption.Id == order.ShippingOptionId);
             if (shippingOption is null)
                 return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidShippingOption);
             order.ShippingCostAtOrder = shippingOption.ExtraCost;
+            shippingOption.ExistsInOrder = true;
+            shippingOption.ModifiedAt = dateTimeNow;
 
             if (order.UserCouponId is not null)
             {
@@ -183,7 +197,7 @@ public class OrderDataAccess
             {
                 Variant? foundVariant = await _appDataDbContext.Variants
                     .Include(variant => variant.VariantImages).ThenInclude(variantImage => variantImage.Image)
-                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.Id);
+                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
 
                 if (foundVariant is null)
                     continue;
@@ -195,13 +209,12 @@ public class OrderDataAccess
                 while (orderItemsIds.Contains(orderItem.Id))
                     orderItem.Id = Guid.NewGuid().ToString();
 
-                orderItem.OrderId = order.Id;
+                orderItem.OrderId = order.Id; //this is not needed here, but I am setting it explicitly
                 orderItem.Variant = foundVariant;
-                orderItem.VariantId = foundVariant.Id;
                 orderItem.Discount = foundVariant.Discount;
                 orderItem.DiscountId = foundVariant.DiscountId;
 
-                orderItem.DiscountPercentageAtOrder = foundVariant.Discount is not null ? foundVariant.Discount.Percentage : 0;
+                orderItem.DiscountPercentageAtOrder = foundVariant.Discount is not null && !foundVariant.Discount.IsDeactivated!.Value ? foundVariant.Discount.Percentage : 0;
                 if (foundVariant.VariantImages is not null && foundVariant.VariantImages.Any())
                 {
                     AppImage? chosenImage = foundVariant.VariantImages.FirstOrDefault(variantImage => variantImage.IsThumbNail)?.Image;
@@ -289,7 +302,6 @@ public class OrderDataAccess
                 foundOrder.PaymentDetails!.AmountPaidInCustomerCurrency = 0;
                 foundOrder.PaymentDetails!.AmountPaidInEuro = 0;
                 foundOrder.PaymentDetails!.NetAmountPaidInEuro = 0;
-                foundOrder.PaymentDetails!.ModifiedAt = dateTimeNow;
                 if (foundOrder.UserCoupon is not null)
                     foundOrder.UserCoupon.TimesUsed--;
             }
@@ -313,8 +325,6 @@ public class OrderDataAccess
     {
         try
         {
-            DateTime dateTimeNow = DateTime.Now;
-
             Order? foundOrder = await _appDataDbContext.Orders
                 .Include(order => order.PaymentDetails)
                 .Include(order => order.OrderItems)
@@ -340,19 +350,22 @@ public class OrderDataAccess
                 _logger.LogWarning(new EventId(9999, "UpdateOrderFailureDueToNullOrder"), "The order with PaymentProcessorSessionId={id} was not found and thus the update could not proceed.", updatedOrder.Id);
                 return DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorSessionId;
             }
-            else if (foundOrder is null) //this logical condition should never be true. I am just leaving it here for syntax reasons and possible debugging
-                return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
+            else if (foundOrder is null)
+                return DataLibraryReturnedCodes.TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull;
 
             if (foundOrder.OrderStatus == "Canceled" || foundOrder.OrderStatus == "NoShow" || foundOrder.OrderStatus == "Completed" || foundOrder.OrderStatus == "Refunded" || foundOrder.OrderStatus == "Failed")
                 return DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered;
 
             //in the case of completed and shipped order statuses only few things can change
+            if (updatedOrder.PaymentDetails!.PaymentCurrency is not null && validateCurrencyISOCode(updatedOrder.PaymentDetails.PaymentCurrency))
+                foundOrder.PaymentDetails!.PaymentCurrency = updatedOrder.PaymentDetails.PaymentCurrency;
+
+            //maybe add chekcs if currency is not set correctly, because it might lead to weird states????
             foundOrder.PaymentDetails!.PaymentStatus = updatedOrder.PaymentDetails?.PaymentStatus ?? foundOrder.PaymentDetails.PaymentStatus;
             foundOrder.PaymentDetails!.AmountPaidInCustomerCurrency = updatedOrder.PaymentDetails?.AmountPaidInCustomerCurrency ?? foundOrder.PaymentDetails.AmountPaidInCustomerCurrency;
             foundOrder.PaymentDetails!.AmountPaidInEuro = updatedOrder.PaymentDetails?.AmountPaidInEuro ?? foundOrder.PaymentDetails.AmountPaidInEuro;
             foundOrder.PaymentDetails!.NetAmountPaidInEuro = updatedOrder.PaymentDetails?.NetAmountPaidInEuro ?? foundOrder.PaymentDetails.NetAmountPaidInEuro;
-            foundOrder.ModifiedAt = dateTimeNow;
-            foundOrder.PaymentDetails.ModifiedAt = dateTimeNow;
+            foundOrder.ModifiedAt = DateTime.Now;
             if (foundOrder.OrderStatus == "Completed" || foundOrder.OrderStatus == "Shipped") //this can happen if the user paid with cash from the administrator, when it comes to shipped I just leave the option open
             {
                 await _appDataDbContext.SaveChangesAsync();
@@ -438,7 +451,7 @@ public class OrderDataAccess
             {
                 Variant? foundVariant = await _appDataDbContext.Variants
                     .Include(variant => variant.VariantImages).ThenInclude(variantImage => variantImage.Image)
-                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.Id);
+                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
 
                 if (foundVariant is null)
                     continue;
@@ -451,10 +464,9 @@ public class OrderDataAccess
 
                 orderItem.OrderId = foundOrder.Id;
                 orderItem.Variant = foundVariant;
-                orderItem.VariantId = foundVariant.Id;
                 orderItem.Discount = foundVariant.Discount;
                 orderItem.DiscountId = foundVariant.DiscountId;
-                orderItem.DiscountPercentageAtOrder = foundVariant.Discount is not null ? foundVariant.Discount.Percentage : 0;
+                orderItem.DiscountPercentageAtOrder = foundVariant.Discount is not null && !foundVariant.Discount.IsDeactivated!.Value ? foundVariant.Discount.Percentage : 0;
                 if (foundVariant.VariantImages is not null && foundVariant.VariantImages.Any())
                 {
                     AppImage? chosenImage = foundVariant.VariantImages.FirstOrDefault(variantImage => variantImage.IsThumbNail)?.Image;
@@ -495,7 +507,7 @@ public class OrderDataAccess
         }
     }
 
-    public async Task<DataLibraryReturnedCodes> DeleteOrder(string orderId)
+    public async Task<DataLibraryReturnedCodes> DeleteOrderAsync(string orderId)
     {
         try
         {
@@ -575,5 +587,18 @@ public class OrderDataAccess
             "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", orderId, ex.Message, ex.StackTrace);
             throw;
         }
+    }
+
+    private bool validateCurrencyISOCode(string givenISOCurrencyCode)
+    {
+        HashSet<string> isoCurrencyCodes = CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+             .Select(culture => new RegionInfo(culture.Name))
+             .Select(region => region.ISOCurrencySymbol.ToLowerInvariant())
+             .Distinct()
+             .ToHashSet();
+
+        isoCurrencyCodes.RemoveWhere(currencyCode => string.IsNullOrWhiteSpace(currencyCode));
+
+        return isoCurrencyCodes.Contains(givenISOCurrencyCode);
     }
 }

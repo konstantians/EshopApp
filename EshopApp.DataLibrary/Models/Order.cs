@@ -7,7 +7,6 @@ public class Order
     public decimal? FinalPrice { get; set; }
     public decimal? ShippingCostAtOrder { get; set; }
     public int? CouponDiscountPercentageAtOrder { get; set; }
-    public DateTime? OrderDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public string? UserId { get; set; }
@@ -16,7 +15,7 @@ public class Order
     public PaymentDetails? PaymentDetails { get; set; }
     public string? ShippingOptionId { get; set; }
     public ShippingOption? ShippingOption { get; set; }
-    public string? UserCouponId { get; set; } //TODO change this to usercoupon
+    public string? UserCouponId { get; set; }
     public UserCoupon? UserCoupon { get; set; }
 }
 

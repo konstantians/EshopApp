@@ -4,6 +4,7 @@ using EshopApp.DataLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.DataLibrary.Migrations
 {
     [DbContext(typeof(AppDataDbContext))]
-    partial class AppDataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241129083037_RemovedModifiedAtAndCreatedAtColumnsFromOrderSupportingEntities")]
+    partial class RemovedModifiedAtAndCreatedAtColumnsFromOrderSupportingEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -251,6 +254,10 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("OrderDate")
+                        .IsRequired()
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("OrderStatus")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -427,8 +434,7 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PaymentCurrency")
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("PaymentOptionExtraCostAtOrder")
                         .IsRequired()

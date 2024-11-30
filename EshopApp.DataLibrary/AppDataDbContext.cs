@@ -270,9 +270,6 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<Order>()
             .Property(order => order.FinalPrice).IsRequired();
 
-        modelBuilder.Entity<Order>()
-            .Property(order => order.OrderDate).IsRequired();
-
         /******************* OrderItems *******************/
         //orderItem can have one image and a image can have many orders(one to many)
         modelBuilder.Entity<OrderItem>()
@@ -304,6 +301,9 @@ public class AppDataDbContext : DbContext
             .HasOne(paymentDetails => paymentDetails.PaymentOption)
             .WithMany(paymentOption => paymentOption.PaymentDetails)
             .HasForeignKey(paymentDetails => paymentDetails.PaymentOptionId);
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentCurrency).HasMaxLength(5);
 
         modelBuilder.Entity<PaymentDetails>()
             .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(50).IsRequired();

@@ -20,7 +20,5 @@ public class OrderAddress
     public string? AltPhoneNumber { get; set; }
     public string? OrderId { get; set; }
     public Order? Order { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime ModifiedAt { get; set; }
 }
 
