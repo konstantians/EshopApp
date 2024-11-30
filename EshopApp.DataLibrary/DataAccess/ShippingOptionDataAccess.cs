@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
-public class ShippingOptionDataAccess
+public class ShippingOptionDataAccess : IShippingOptionDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<ShippingOptionDataAccess> _logger;
@@ -17,7 +17,7 @@ public class ShippingOptionDataAccess
         _logger = logger ?? NullLogger<ShippingOptionDataAccess>.Instance;
     }
 
-    public async Task<ReturnShippingOptionsAndCodeResponseModel> GetShippingOptionsOptionsAsync(int amount, bool includeDeactivated)
+    public async Task<ReturnShippingOptionsAndCodeResponseModel> GetShippingOptionsAsync(int amount, bool includeDeactivated)
     {
         try
         {

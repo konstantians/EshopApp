@@ -33,5 +33,6 @@ public enum DataLibraryReturnedCodes
     InvalidOrderStatus,
     OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered,
     ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid,
-    InvalidNewOrderState
+    InvalidNewOrderState,
+    TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull
 }

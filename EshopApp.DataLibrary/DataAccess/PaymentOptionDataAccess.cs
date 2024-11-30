@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
-public class PaymentOptionDataAccess
+public class PaymentOptionDataAccess : IPaymentOptionDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<PaymentOptionDataAccess> _logger;
