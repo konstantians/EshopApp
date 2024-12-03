@@ -281,7 +281,8 @@ public class AppDataDbContext : DbContext
         modelBuilder.Entity<OrderItem>()
             .HasOne(orderItem => orderItem.Variant)
             .WithMany(variant => variant.OrderItems)
-            .HasForeignKey(orderItem => orderItem.VariantId);
+            .HasForeignKey(orderItem => orderItem.VariantId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         //orderItem can have one discount and a discount can have many orders(one to many)
         modelBuilder.Entity<OrderItem>()

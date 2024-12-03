@@ -29,7 +29,7 @@ internal class ImageControllerTests
 
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions" },
             "Data Database Successfully Cleared!"
         );
 
@@ -39,7 +39,7 @@ internal class ImageControllerTests
         testCreateImageRequestModel.ImagePath = "OtherPath";
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/image", testCreateImageRequestModel);
         string responseBody = await response.Content.ReadAsStringAsync();
-        _otherImageName = JsonSerializer.Deserialize<TestProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Name;
+        _otherImageName = JsonSerializer.Deserialize<TestAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Name;
     }
 
     [Test, Order(10)]
@@ -400,7 +400,7 @@ internal class ImageControllerTests
         httpClient.Dispose();
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions" },
             "Data Database Successfully Cleared!"
         );
     }

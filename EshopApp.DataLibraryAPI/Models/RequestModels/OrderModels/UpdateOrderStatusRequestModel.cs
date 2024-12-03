@@ -2,7 +2,7 @@
 
 namespace EshopApp.DataLibraryAPI.Models.RequestModels.OrderModels;
 
-public class UpdateOrderStatusRequestModels
+public class UpdateOrderStatusRequestModel
 {
     [Required]
     [MaxLength(50)]

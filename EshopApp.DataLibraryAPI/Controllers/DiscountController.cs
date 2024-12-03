@@ -121,5 +121,4 @@ public class DiscountController : ControllerBase
             return StatusCode(500);
         }
     }
-
 }

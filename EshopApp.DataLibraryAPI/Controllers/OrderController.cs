@@ -86,7 +86,7 @@ public class OrderController : ControllerBase
                 PaymentOptionId = createOrderRequestModel.PaymentOptionId
             };
 
-            foreach (OrderItemRequestModel createOrderItemRequestModel in createOrderRequestModel.CreateOrderItemRequestModels)
+            foreach (OrderItemRequestModel createOrderItemRequestModel in createOrderRequestModel.OrderItemRequestModels)
             {
                 OrderItem orderItem = new OrderItem();
                 orderItem.Quantity = createOrderItemRequestModel.Quantity;
@@ -110,8 +110,12 @@ public class OrderController : ControllerBase
                 return NotFound(new { ErrorMessage = "InvalidCouponIdWasGiven" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.CouponCodeCurrentlyDeactivated)
                 return BadRequest(new { ErrorMessage = "CouponCodeCurrentlyDeactivated" });
-            else if (response.ReturnedCode == DataLibraryReturnedCodes.TheOrderItemsOfTheOrderWereAllInvalid)
-                return BadRequest(new { ErrorMessage = "TheOrderItemsOfTheOrderWereAllInvalid" });
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.CouponUsageLimitExceeded)
+                return BadRequest(new { ErrorMessage = "CouponUsageLimitExceeded" });
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.InvalidVariantIdWasGiven)
+                return NotFound(new { ErrorMessage = "InvalidVariantIdWasGiven" });
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
 
             return CreatedAtAction(nameof(GetOrderById), new { id = response.Order!.Id }, response.Order);
         }
@@ -158,7 +162,7 @@ public class OrderController : ControllerBase
                 NetAmountPaidInEuro = updateOrderRequestModel.NetAmountPaidInEuro
             };
 
-            foreach (OrderItemRequestModel createOrderItemRequestModel in updateOrderRequestModel.CreateOrderItemRequestModels ?? Enumerable.Empty<OrderItemRequestModel>())
+            foreach (OrderItemRequestModel createOrderItemRequestModel in updateOrderRequestModel.OrderItemRequestModels ?? Enumerable.Empty<OrderItemRequestModel>())
             {
                 OrderItem orderItem = new OrderItem();
                 orderItem.Quantity = createOrderItemRequestModel.Quantity;
@@ -178,8 +182,16 @@ public class OrderController : ControllerBase
                 return BadRequest(new { ErrorMessage = "TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull" });
             else if (returnedCode == DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered)
                 return BadRequest(new { ErrorMessage = "OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered" });
-            else if (returnedCode == DataLibraryReturnedCodes.TheOrderItemsOfTheOrderWereAllInvalid)
-                return BadRequest(new { ErrorMessage = "TheOrderItemsOfTheOrderWereAllInvalid" });
+            else if (returnedCode == DataLibraryReturnedCodes.InvalidCouponIdWasGiven)
+                return NotFound(new { ErrorMessage = "InvalidCouponIdWasGiven" });
+            else if (returnedCode == DataLibraryReturnedCodes.CouponCodeCurrentlyDeactivated)
+                return BadRequest(new { ErrorMessage = "CouponCodeCurrentlyDeactivated" });
+            else if (returnedCode == DataLibraryReturnedCodes.CouponUsageLimitExceeded)
+                return BadRequest(new { ErrorMessage = "CouponUsageLimitExceeded" });
+            else if (returnedCode == DataLibraryReturnedCodes.InvalidVariantIdWasGiven)
+                return NotFound(new { ErrorMessage = "InvalidVariantIdWasGiven" });
+            else if (returnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
 
             return NoContent();
         }
@@ -189,8 +201,8 @@ public class OrderController : ControllerBase
         }
     }
 
-    [HttpPut]
-    public async Task<IActionResult> UpdateOrderStatus(UpdateOrderStatusRequestModels updateOrderStatusRequestModels)
+    [HttpPut("UpdateOrderStatus")]
+    public async Task<IActionResult> UpdateOrderStatus(UpdateOrderStatusRequestModel updateOrderStatusRequestModels)
     {
         try
         {
@@ -201,6 +213,8 @@ public class OrderController : ControllerBase
                 return BadRequest(new { ErrorMessage = "OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered" });
             else if (returnedCode == DataLibraryReturnedCodes.InvalidOrderStatus)
                 return BadRequest(new { ErrorMessage = "InvalidOrderState" });
+            else if (returnedCode == DataLibraryReturnedCodes.InvalidNewOrderState)
+                return BadRequest(new { ErrorMessage = "InvalidNewOrderState" });
             else if (returnedCode == DataLibraryReturnedCodes.ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid)
                 return BadRequest(new { ErrorMessage = "ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid" });
 
