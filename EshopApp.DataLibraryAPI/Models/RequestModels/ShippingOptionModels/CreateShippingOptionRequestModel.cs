@@ -4,7 +4,6 @@ namespace EshopApp.DataLibraryAPI.Models.RequestModels.ShippingOptionModels;
 
 public class CreateShippingOptionRequestModel
 {
-
     [MaxLength(50)]
     [Required]
     public string? Name { get; set; }

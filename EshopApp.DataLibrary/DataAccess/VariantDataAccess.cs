@@ -294,6 +294,7 @@ public class VariantDataAccess : IVariantDataAccess
             //check if the variantImages is an empty list
             if (updatedVariant.VariantImages != null && !updatedVariant.VariantImages.Any())
             {
+                _appDataDbContext.VariantImages.RemoveRange(foundVariant.VariantImages);
                 foundVariant.VariantImages.Clear();
             }
             else if (updatedVariant.VariantImages != null)
@@ -305,6 +306,7 @@ public class VariantDataAccess : IVariantDataAccess
                     .Where(databaseImage => updatedImagesIds.Contains(databaseImage.Id!))
                     .ToListAsync();
 
+                _appDataDbContext.VariantImages.RemoveRange(foundVariant.VariantImages);
                 foundVariant.VariantImages.Clear(); //remove all the variantImages
                 //and then rebuild them
                 foreach (var filteredImage in filteredImages)

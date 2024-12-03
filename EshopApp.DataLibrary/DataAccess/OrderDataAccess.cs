@@ -23,6 +23,7 @@ public class OrderDataAccess : IOrderDataAccess
         try
         {
             List<Order> orders = await _appDataDbContext.Orders
+                .Include(o => o.OrderAddress)
                 .Include(o => o.PaymentDetails)
                     .ThenInclude(pd => pd!.PaymentOption)
                 .Include(o => o.ShippingOption)
@@ -53,6 +54,7 @@ public class OrderDataAccess : IOrderDataAccess
         try
         {
             List<Order> orders = await _appDataDbContext.Orders
+                .Include(o => o.OrderAddress)
                 .Include(o => o.PaymentDetails)
                     .ThenInclude(pd => pd!.PaymentOption)
                 .Include(o => o.ShippingOption)
@@ -84,6 +86,7 @@ public class OrderDataAccess : IOrderDataAccess
         try
         {
             Order? order = await _appDataDbContext.Orders
+                .Include(o => o.OrderAddress)
                 .Include(o => o.PaymentDetails)
                     .ThenInclude(pd => pd!.PaymentOption)
                 .Include(o => o.ShippingOption)
@@ -172,15 +175,23 @@ public class OrderDataAccess : IOrderDataAccess
 
             if (order.UserCouponId is not null)
             {
-                UserCoupon? foundUserCoupon = await _appDataDbContext.UserCoupons.FirstOrDefaultAsync(userCoupon => userCoupon.Id == order.UserCouponId);
+                UserCoupon? foundUserCoupon = await _appDataDbContext.UserCoupons
+                    .Include(userCoupon => userCoupon.Coupon)
+                    .FirstOrDefaultAsync(userCoupon => userCoupon.Id == order.UserCouponId && userCoupon.UserId == order.UserId); //this also checks that the user owns t he coupon
                 if (foundUserCoupon is null)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidCouponIdWasGiven);
-
-                if (foundUserCoupon.IsDeactivated!.Value || foundUserCoupon.Coupon!.IsDeactivated!.Value)
+                else if (foundUserCoupon.IsDeactivated!.Value || foundUserCoupon.Coupon!.IsDeactivated!.Value)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.CouponCodeCurrentlyDeactivated);
+                else if (foundUserCoupon.TimesUsed >= foundUserCoupon.Coupon.UsageLimit)
+                    return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.CouponUsageLimitExceeded);
 
                 if (foundUserCoupon is not null)
+                {
                     foundUserCoupon.TimesUsed++;
+                    foundUserCoupon.ModifiedAt = dateTimeNow;
+                    foundUserCoupon.ExistsInOrder = true;
+                }
+
                 order.UserCouponId = foundUserCoupon!.Id;
                 order.UserCoupon = foundUserCoupon!;
                 order.CouponDiscountPercentageAtOrder = foundUserCoupon.Coupon!.DiscountPercentage;
@@ -191,17 +202,21 @@ public class OrderDataAccess : IOrderDataAccess
                 order.CouponDiscountPercentageAtOrder = 0;
             }
 
-            List<OrderItem> filteredOrderItems = new List<OrderItem>();
             List<string?> orderItemsIds = _appDataDbContext.OrderItems.Select(orderItem => orderItem.Id).ToList();
             foreach (OrderItem orderItem in order.OrderItems)
             {
                 Variant? foundVariant = await _appDataDbContext.Variants
-                    .Include(variant => variant.VariantImages).ThenInclude(variantImage => variantImage.Image)
+                    .Include(variant => variant.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
+                    .Include(variant => variant.Discount)
                     .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
 
                 if (foundVariant is null)
-                    continue;
+                    return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
+                else if (foundVariant.UnitsInStock < orderItem.Quantity)
+                    return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
 
+                foundVariant.UnitsInStock -= orderItem.Quantity;
                 foundVariant.ExistsInOrder = true;
                 foundVariant.ModifiedAt = dateTimeNow;
 
@@ -229,20 +244,13 @@ public class OrderDataAccess : IOrderDataAccess
                     orderItem.ImageId = null;
                 }
 
-                decimal? discountedUnitPrice = foundVariant.Discount is not null ? foundVariant.Price * foundVariant.Discount.Percentage : 0;
-                orderItem.UnitPriceAtOrder = orderItem.Quantity * (foundVariant.Price - discountedUnitPrice);
-                finalPrice += orderItem.UnitPriceAtOrder;
-
-                filteredOrderItems.Add(orderItem);
+                decimal? discountedUnitPrice = foundVariant.Discount is not null ? foundVariant.Price * foundVariant.Discount.Percentage / 100 : 0;
+                orderItem.UnitPriceAtOrder = foundVariant.Price - discountedUnitPrice;
+                finalPrice += orderItem.UnitPriceAtOrder * orderItem.Quantity;
             }
 
-            if (!filteredOrderItems.Any())
-                return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.TheOrderItemsOfTheOrderWereAllInvalid);
-
-            order.OrderItems = filteredOrderItems;
-
             finalPrice = finalPrice + order.ShippingCostAtOrder + order.PaymentDetails.PaymentOptionExtraCostAtOrder;
-            finalPrice = finalPrice - (finalPrice * order.CouponDiscountPercentageAtOrder);
+            finalPrice = finalPrice - (finalPrice * order.CouponDiscountPercentageAtOrder / 100);
             order.FinalPrice = finalPrice;
 
             await _appDataDbContext.Orders.AddAsync(order);
@@ -325,7 +333,10 @@ public class OrderDataAccess : IOrderDataAccess
     {
         try
         {
+            DateTime dateTimeNow = DateTime.Now;
+
             Order? foundOrder = await _appDataDbContext.Orders
+                .Include(order => order.OrderAddress)
                 .Include(order => order.PaymentDetails)
                 .Include(order => order.OrderItems)
                     .ThenInclude(orderItem => orderItem.Variant)
@@ -357,7 +368,7 @@ public class OrderDataAccess : IOrderDataAccess
                 return DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered;
 
             //in the case of completed and shipped order statuses only few things can change
-            if (updatedOrder.PaymentDetails!.PaymentCurrency is not null && validateCurrencyISOCode(updatedOrder.PaymentDetails.PaymentCurrency))
+            if (updatedOrder.PaymentDetails!.PaymentCurrency is not null && ValidateCurrencyISOCode(updatedOrder.PaymentDetails.PaymentCurrency))
                 foundOrder.PaymentDetails!.PaymentCurrency = updatedOrder.PaymentDetails.PaymentCurrency;
 
             //maybe add chekcs if currency is not set correctly, because it might lead to weird states????
@@ -365,7 +376,7 @@ public class OrderDataAccess : IOrderDataAccess
             foundOrder.PaymentDetails!.AmountPaidInCustomerCurrency = updatedOrder.PaymentDetails?.AmountPaidInCustomerCurrency ?? foundOrder.PaymentDetails.AmountPaidInCustomerCurrency;
             foundOrder.PaymentDetails!.AmountPaidInEuro = updatedOrder.PaymentDetails?.AmountPaidInEuro ?? foundOrder.PaymentDetails.AmountPaidInEuro;
             foundOrder.PaymentDetails!.NetAmountPaidInEuro = updatedOrder.PaymentDetails?.NetAmountPaidInEuro ?? foundOrder.PaymentDetails.NetAmountPaidInEuro;
-            foundOrder.ModifiedAt = DateTime.Now;
+            foundOrder.ModifiedAt = dateTimeNow;
             if (foundOrder.OrderStatus == "Completed" || foundOrder.OrderStatus == "Shipped") //this can happen if the user paid with cash from the administrator, when it comes to shipped I just leave the option open
             {
                 await _appDataDbContext.SaveChangesAsync();
@@ -415,17 +426,32 @@ public class OrderDataAccess : IOrderDataAccess
             if (updatedOrder.UserCouponId is not null && updatedOrder.UserCouponId != foundOrder.UserCouponId)
             {
                 if (foundOrder.UserCoupon is not null)
+                {
                     foundOrder.UserCoupon.TimesUsed--;
+                    foundOrder.UserCoupon.ModifiedAt = dateTimeNow;
 
-                UserCoupon? foundUserCoupon = await _appDataDbContext.UserCoupons.FirstOrDefaultAsync(userCoupon => userCoupon.Id == updatedOrder.UserCouponId);
-                if (foundUserCoupon is not null)
-                    foundUserCoupon.TimesUsed++;
-                foundOrder.UserCouponId = foundUserCoupon is not null ? foundUserCoupon.Id : foundOrder.UserCouponId;
-                foundOrder.UserCoupon = foundUserCoupon is not null ? foundUserCoupon : foundOrder.UserCoupon;
-                foundOrder.CouponDiscountPercentageAtOrder = foundUserCoupon is not null ? foundUserCoupon.Coupon!.DiscountPercentage : foundOrder.CouponDiscountPercentageAtOrder;
+                    UserCoupon? currentCoupon = await _appDataDbContext.UserCoupons.Include(userCoupon => userCoupon.Orders).FirstOrDefaultAsync(userCoupon => foundOrder.UserCoupon.Id == userCoupon.Id); //this always exists obviously
+                    if (currentCoupon!.Orders.Count == 1)
+                        foundOrder.UserCoupon.ExistsInOrder = false;
+                }
+
+                UserCoupon? foundUserCoupon = await _appDataDbContext.UserCoupons.Include(userCoupon => userCoupon.Coupon).FirstOrDefaultAsync(userCoupon => userCoupon.Id == updatedOrder.UserCouponId);
+
+                if (foundUserCoupon is null || foundUserCoupon.UserId != foundOrder.UserId) //this also user owns the coupon
+                    return DataLibraryReturnedCodes.InvalidCouponIdWasGiven;
+                else if (foundUserCoupon.IsDeactivated!.Value || foundUserCoupon.Coupon!.IsDeactivated!.Value)
+                    return DataLibraryReturnedCodes.CouponCodeCurrentlyDeactivated;
+                else if (foundUserCoupon.TimesUsed >= foundUserCoupon.Coupon.UsageLimit)
+                    return DataLibraryReturnedCodes.CouponUsageLimitExceeded;
+
+                foundUserCoupon.ExistsInOrder = true;
+                foundUserCoupon.ModifiedAt = dateTimeNow;
+                foundUserCoupon.TimesUsed++;
+                foundOrder.UserCouponId = foundUserCoupon.Id;
+                foundOrder.UserCoupon = foundUserCoupon;
+                foundOrder.CouponDiscountPercentageAtOrder = foundUserCoupon.Coupon!.DiscountPercentage;
             }
 
-            List<Variant> oldVariants = foundOrder.OrderItems.Select(orderItem => orderItem.Variant!).ToList();
             List<AppImage> oldImages = foundOrder.OrderItems.Where(orderItem => orderItem.Image is not null).Select(orderItem => orderItem.Image!).ToList();
             if (updatedOrder.OrderItems is not null)
             {
@@ -434,34 +460,47 @@ public class OrderDataAccess : IOrderDataAccess
                 {
                     //this means that the image only exists in one order(maybe in multiple order items, but ONLY in one order), which means that if this image/images are removed from the order then the image could be deleted
                     if (orderItemImage.OrderItems.Count == 1 || orderItemImage.OrderItems.All(orderItem => orderItem.OrderId == orderItemImage.OrderItems.FirstOrDefault()?.OrderId))
+                    {
                         orderItemImage.ExistsInOrder = false;
+                        orderItemImage.ModifiedAt = dateTimeNow;
+                    }
                 }
 
-                foreach (Variant orderVariant in oldVariants)
+                foreach (OrderItem orderItem in foundOrder.OrderItems)
                 {
-                    if (orderVariant.OrderItems.Count == 1) //this means that the image only exists in one order
-                        orderVariant.ExistsInOrder = false;
+                    if (orderItem.Variant!.OrderItems.Count == 1)
+                        orderItem.Variant.ExistsInOrder = false;
+
+                    orderItem.Variant.UnitsInStock += orderItem.Quantity;
+                    orderItem.Variant.ModifiedAt = dateTimeNow;
                 }
+
+                _appDataDbContext.OrderItems.RemoveRange(foundOrder.OrderItems);
+                foundOrder.OrderItems.Clear(); //remove the previous order items
             }
 
             //possible changes when it comes to orderItems if the orderItems list of the updatedOrder is not null
-            List<OrderItem> filteredNewOrderItems = new List<OrderItem>();
             List<string?> orderItemsIds = _appDataDbContext.OrderItems.Select(orderItem => orderItem.Id).ToList();
             foreach (OrderItem orderItem in updatedOrder.OrderItems ?? Enumerable.Empty<OrderItem>())
             {
                 Variant? foundVariant = await _appDataDbContext.Variants
-                    .Include(variant => variant.VariantImages).ThenInclude(variantImage => variantImage.Image)
+                    .Include(variant => variant.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
+                    .Include(variant => variant.Discount)
                     .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
 
                 if (foundVariant is null)
-                    continue;
+                    return DataLibraryReturnedCodes.InvalidVariantIdWasGiven;
+                else if (foundVariant.UnitsInStock < orderItem.Quantity)
+                    return DataLibraryReturnedCodes.InsufficientStockForVariant;
 
+                foundVariant.UnitsInStock -= orderItem.Quantity;
                 foundVariant.ExistsInOrder = true;
+                foundVariant.ModifiedAt = dateTimeNow;
 
                 orderItem.Id = Guid.NewGuid().ToString();
                 while (orderItemsIds.Contains(orderItem.Id))
                     orderItem.Id = Guid.NewGuid().ToString();
-
                 orderItem.OrderId = foundOrder.Id;
                 orderItem.Variant = foundVariant;
                 orderItem.Discount = foundVariant.Discount;
@@ -480,18 +519,15 @@ public class OrderDataAccess : IOrderDataAccess
                     orderItem.ImageId = null;
                 }
 
-                decimal? discountedUnitPrice = foundVariant.Discount is not null ? foundVariant.Price * foundVariant.Discount.Percentage : 0;
-                orderItem.UnitPriceAtOrder = orderItem.Quantity * (foundVariant.Price - discountedUnitPrice);
-                finalPrice += orderItem.UnitPriceAtOrder;
+                decimal? discountedUnitPrice = foundVariant.Discount is not null ? foundVariant.Price * foundVariant.Discount.Percentage / 100 : 0;
+                orderItem.UnitPriceAtOrder = foundVariant.Price - discountedUnitPrice;
+                foundOrder.OrderItems.Add(orderItem);
 
-                filteredNewOrderItems.Add(orderItem);
+                finalPrice += orderItem.UnitPriceAtOrder * orderItem.Quantity;
             }
 
-            if (updatedOrder.OrderItems is not null && !filteredNewOrderItems.Any())
-                return DataLibraryReturnedCodes.TheOrderItemsOfTheOrderWereAllInvalid;
-
             finalPrice = finalPrice + foundOrder.ShippingCostAtOrder + foundOrder.PaymentDetails.PaymentOptionExtraCostAtOrder;
-            finalPrice = finalPrice - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder);
+            finalPrice = finalPrice - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);
             foundOrder.FinalPrice = finalPrice;
 
             await _appDataDbContext.SaveChangesAsync();
@@ -533,7 +569,6 @@ public class OrderDataAccess : IOrderDataAccess
             }
 
             DateTime dateTimeNow = DateTime.Now;
-            List<Variant> orderVariants = foundOrder.OrderItems.Select(orderItem => orderItem.Variant!).ToList();
             List<AppImage> orderItemsImages = foundOrder.OrderItems.Where(orderItem => orderItem.Image is not null).Select(orderItem => orderItem.Image!).ToList();
             foreach (AppImage orderItemImage in orderItemsImages)
             {
@@ -545,13 +580,13 @@ public class OrderDataAccess : IOrderDataAccess
                 }
             }
 
-            foreach (Variant orderVariant in orderVariants)
+            foreach (OrderItem orderItem in foundOrder.OrderItems)
             {
-                if (orderVariant.OrderItems.Count == 1) //this means that the image only exists in one order
-                {
-                    orderVariant.ExistsInOrder = false;
-                    orderVariant.ModifiedAt = dateTimeNow;
-                }
+                if (orderItem.Variant!.OrderItems.Count == 1)
+                    orderItem.Variant!.ExistsInOrder = false;
+
+                orderItem.Variant!.UnitsInStock += orderItem.Quantity;
+                orderItem.Variant!.ModifiedAt = dateTimeNow;
             }
 
             if (foundOrder.ShippingOption!.Orders.Count == 1) //this means that the shipping option only exists in one order
@@ -569,10 +604,17 @@ public class OrderDataAccess : IOrderDataAccess
             if (foundOrder.UserCoupon is not null)
             {
                 if (foundOrder.UserCoupon.Orders.Count == 1) //this means that the user coupon only exists in one order
+                {
                     foundOrder.UserCoupon.ExistsInOrder = false;
+                    foundOrder.UserCoupon.ModifiedAt = dateTimeNow;
+                }
 
-                foundOrder.UserCoupon.TimesUsed--;
-                foundOrder.UserCoupon.ModifiedAt = dateTimeNow;
+                //if the order was not in a final state reduce the TimesUsed property on the userCoupon
+                if (foundOrder.OrderStatus != "Canceled" && foundOrder.OrderStatus != "Refunded" && foundOrder.OrderStatus != "NoShow" && foundOrder.OrderStatus != "Failed" && foundOrder.OrderStatus != "Completed")
+                {
+                    foundOrder.UserCoupon.TimesUsed--;
+                    foundOrder.UserCoupon.ModifiedAt = dateTimeNow;
+                }
             }
 
             _appDataDbContext.Orders.Remove(foundOrder);
@@ -589,7 +631,7 @@ public class OrderDataAccess : IOrderDataAccess
         }
     }
 
-    private bool validateCurrencyISOCode(string givenISOCurrencyCode)
+    private bool ValidateCurrencyISOCode(string givenISOCurrencyCode)
     {
         HashSet<string> isoCurrencyCodes = CultureInfo.GetCultures(CultureTypes.SpecificCultures)
              .Select(culture => new RegionInfo(culture.Name))

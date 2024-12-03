@@ -4,6 +4,7 @@ using EshopApp.DataLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.DataLibrary.Migrations
 {
     [DbContext(typeof(AppDataDbContext))]
-    partial class AppDataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241202200456_AddedClientCascadeInsteadOfCascadeToVariantImagesAndOrderItemsEntities")]
+    partial class AddedClientCascadeInsteadOfCascadeToVariantImagesAndOrderItemsEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -783,7 +786,7 @@ namespace EshopApp.DataLibrary.Migrations
                     b.HasOne("EshopApp.DataLibrary.Models.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.ClientCascade);
 
                     b.HasOne("EshopApp.DataLibrary.Models.Variant", "Variant")
                         .WithMany("OrderItems")

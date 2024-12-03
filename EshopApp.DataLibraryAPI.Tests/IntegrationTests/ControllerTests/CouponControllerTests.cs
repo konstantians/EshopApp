@@ -36,10 +36,11 @@ internal class CouponControllerTests
 
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions" },
             "Data Database Successfully Cleared!"
         );
 
+        /*************** Other Coupon ***************/
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         TestCreateCouponRequestModel testCreateCouponRequestModel = new TestCreateCouponRequestModel();
@@ -908,7 +909,7 @@ internal class CouponControllerTests
         httpClient.Dispose();
         TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
-            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Coupons", "dbo.UserCoupons" },
+            new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions" },
             "Data Database Successfully Cleared!"
         );
     }

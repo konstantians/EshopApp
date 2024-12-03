@@ -28,11 +28,13 @@ public enum DataLibraryReturnedCodes
     InvalidPaymentOption,
     InvalidShippingOption,
     CouponCodeCurrentlyDeactivated,
+    CouponUsageLimitExceeded,
     OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered,
     AllTheAltFieldsNeedToBeFilledIfDifferentShippingAddress,
     InvalidOrderStatus,
     OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered,
     ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid,
     InvalidNewOrderState,
-    TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull
+    TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull,
+    InsufficientStockForVariant
 }
