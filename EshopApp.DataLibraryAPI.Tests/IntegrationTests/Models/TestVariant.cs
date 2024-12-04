@@ -16,5 +16,6 @@ internal class TestVariant
     public TestDiscount? Discount { get; set; }
     public List<TestAppAttribute> Attributes { get; set; } = new List<TestAppAttribute>();
     public List<TestVariantImage> VariantImages { get; set; } = new List<TestVariantImage>();
-
+    public List<TestOrderItem> OrderItems { get; set; } = new List<TestOrderItem>();
+    //public List<CartItem> CartItems { get; set; } = new List<CartItem>();
 }

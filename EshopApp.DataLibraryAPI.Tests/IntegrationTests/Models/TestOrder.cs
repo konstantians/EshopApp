@@ -1,6 +1,4 @@
-﻿using EshopApp.DataLibrary.Models;
-
-namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
+﻿namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
 internal class TestOrder
 {
     public string? Id { get; set; }
@@ -12,11 +10,11 @@ internal class TestOrder
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public string? UserId { get; set; }
-    public OrderAddress? OrderAddress { get; set; }
-    public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-    public PaymentDetails? PaymentDetails { get; set; }
+    public TestOrderAddress? OrderAddress { get; set; }
+    public List<TestOrderItem> OrderItems { get; set; } = new List<TestOrderItem>();
+    public TestPaymentDetails? PaymentDetails { get; set; }
     public string? ShippingOptionId { get; set; }
-    public ShippingOption? ShippingOption { get; set; }
+    public TestShippingOption? ShippingOption { get; set; }
     public string? UserCouponId { get; set; }
-    public UserCoupon? UserCoupon { get; set; }
+    public TestUserCoupon? UserCoupon { get; set; }
 }

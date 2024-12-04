@@ -1,6 +1,4 @@
-﻿using EshopApp.DataLibrary.Models;
-
-namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
+﻿namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
 internal class TestShippingOption
 {
     public string? Id { get; set; }
@@ -10,7 +8,7 @@ internal class TestShippingOption
     public bool? ContainsDelivery { get; set; }
     public bool? IsDeactivated { get; set; }
     public bool? ExistsInOrder { get; set; }
-    public List<Order> Orders { get; set; } = new List<Order>();
+    public List<TestOrder> Orders { get; set; } = new List<TestOrder>();
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
 

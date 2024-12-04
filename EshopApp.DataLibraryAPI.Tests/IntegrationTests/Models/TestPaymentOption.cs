@@ -1,6 +1,4 @@
-﻿using EshopApp.DataLibrary.Models;
-
-namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
+﻿namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
 internal class TestPaymentOption
 {
     public string? Id { get; set; }
@@ -12,5 +10,5 @@ internal class TestPaymentOption
     public bool? ExistsInOrder { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? ModifiedAt { get; set; }
-    public List<PaymentDetails> PaymentDetails { get; set; } = new List<PaymentDetails>();
+    public List<TestPaymentDetails> PaymentDetails { get; set; } = new List<TestPaymentDetails>();
 }

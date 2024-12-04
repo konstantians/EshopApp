@@ -36,5 +36,7 @@ public enum DataLibraryReturnedCodes
     ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid,
     InvalidNewOrderState,
     TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull,
-    InsufficientStockForVariant
+    InsufficientStockForVariant,
+    InvalidCartIdWasGiven,
+    UserAlreadyHasACart
 }
