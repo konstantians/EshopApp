@@ -1,6 +1,4 @@
-﻿using EshopApp.DataLibrary.Models;
-
-namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
+﻿namespace EshopApp.DataLibraryAPI.Tests.IntegrationTests.Models;
 internal class TestUserCoupon
 {
     public string? Id { get; set; }
@@ -15,5 +13,5 @@ internal class TestUserCoupon
     public string? UserId { get; set; }
     public string? CouponId { get; set; }
     public TestCoupon? Coupon { get; set; }
-    public List<Order> Orders { get; set; } = new List<Order>();
+    public List<TestOrder> Orders { get; set; } = new List<TestOrder>();
 }

@@ -47,6 +47,8 @@ public class AppDataDbContext : DbContext
     public DbSet<PaymentOption> PaymentOptions { get; set; }
     public DbSet<ShippingOption> ShippingOptions { get; set; }
     public DbSet<OrderAddress> OrderAddresses { get; set; }
+    public DbSet<Cart> Carts { get; set; }
+    public DbSet<CartItem> CartItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -262,7 +264,7 @@ public class AppDataDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Order>()
-            .Property(order => order.UserId).HasMaxLength(50).IsRequired();
+            .Property(order => order.UserId).HasMaxLength(50); //this needs to be not required, because of the guest user
 
         modelBuilder.Entity<Order>()
             .Property(order => order.OrderStatus).HasMaxLength(50).IsRequired(); ////Pending - Confirmed - Processing - Shipped - Delivered - Canceled - Refunded - Failed
@@ -404,5 +406,30 @@ public class AppDataDbContext : DbContext
 
         modelBuilder.Entity<OrderAddress>()
             .Property(orderAddress => orderAddress.AltPhoneNumber).HasMaxLength(50);
+
+        /******************* Carts *******************/
+        //A cart can have many cartItems and a cartItem can have only one cart
+        modelBuilder.Entity<Cart>()
+            .HasMany(cart => cart.CartItems)
+            .WithOne(cartItem => cartItem.Cart)
+            .HasForeignKey(cartItem => cartItem.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Cart>()
+            .Property(cart => cart.UserId).HasMaxLength(50).IsRequired();
+
+        modelBuilder.Entity<Cart>()
+            .Property(cart => cart.CreatedAt).IsRequired();
+
+        /******************* CartItems *******************/
+        //A cart Item can have only one variant and a variant can have 0 or more cartItems
+        modelBuilder.Entity<CartItem>()
+            .HasOne(cartItem => cartItem.Variant)
+            .WithMany(variant => variant.CartItems)
+            .HasForeignKey(cartItem => cartItem.VariantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CartItem>()
+            .Property(cartItem => cartItem.Quantity).IsRequired();
     }
 }

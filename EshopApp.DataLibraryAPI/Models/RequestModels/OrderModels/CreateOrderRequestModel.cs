@@ -44,8 +44,7 @@ public class CreateOrderRequestModel
     public string? AltAddress { get; set; }
     [MaxLength(50)]
     public string? AltPhoneNumber { get; set; }
-    [Required]
-    public string? UserId { get; set; }
+    public string? UserId { get; set; } //this is not required, because it should support guest users also
     [Required]
     public List<OrderItemRequestModel> OrderItemRequestModels { get; set; } = new List<OrderItemRequestModel>();
     [Required]
