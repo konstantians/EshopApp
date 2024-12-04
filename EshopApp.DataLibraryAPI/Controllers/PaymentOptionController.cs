@@ -118,9 +118,7 @@ public class PaymentOptionController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _paymentOptionDataAccess.DeletePaymentOptionAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
             else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });

@@ -122,8 +122,6 @@ public class ImageController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _imageDataAccess.DeleteImageAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
             if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
             else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)

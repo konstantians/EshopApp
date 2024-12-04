@@ -149,9 +149,7 @@ public class ProductController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _productDataAccess.DeleteProductAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
             else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });

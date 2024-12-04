@@ -102,9 +102,7 @@ public class CategoryController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _categoryDataAccess.DeleteCategoryAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
 
             return NoContent();
@@ -114,5 +112,4 @@ public class CategoryController : ControllerBase
             return StatusCode(500);
         }
     }
-
 }

@@ -122,9 +122,7 @@ public class CouponController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _couponDataAccess.DeleteCouponAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
             else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
@@ -218,9 +216,7 @@ public class CouponController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _couponDataAccess.RemoveCouponFromUser(userCouponId);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
             else if (returnedCode == DataLibraryReturnedCodes.NoErrorButNotFullyDeleted)
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
@@ -232,5 +228,4 @@ public class CouponController : ControllerBase
             return StatusCode(500);
         }
     }
-
 }

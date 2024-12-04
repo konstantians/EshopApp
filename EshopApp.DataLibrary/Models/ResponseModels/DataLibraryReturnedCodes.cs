@@ -38,5 +38,6 @@ public enum DataLibraryReturnedCodes
     TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull,
     InsufficientStockForVariant,
     InvalidCartIdWasGiven,
-    UserAlreadyHasACart
+    UserAlreadyHasACart,
+    VariantAlreadyInCartAndThusOnlyTheQuantityValueWasAdjusted
 }
