@@ -416,6 +416,9 @@ public class AppDataDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Cart>()
+            .HasIndex(cart => cart.UserId).IsUnique();
+
+        modelBuilder.Entity<Cart>()
             .Property(cart => cart.UserId).HasMaxLength(50).IsRequired();
 
         modelBuilder.Entity<Cart>()
