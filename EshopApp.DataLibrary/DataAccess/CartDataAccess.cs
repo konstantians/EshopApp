@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
-public class CartDataAccess
+public class CartDataAccess : ICartDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
     private readonly ILogger<CartDataAccess> _logger;
@@ -73,6 +73,8 @@ public class CartDataAccess
             {
                 if (!variantIds.Contains(cartItem.Id))
                     return new ReturnCartAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
+
+                cartItem.CartId = cart.Id; //this is not needed, but I want this to be explicit
             }
 
             DateTime dateTimeNow = DateTime.Now;
@@ -110,7 +112,7 @@ public class CartDataAccess
                 existingVariantAlreadyInCart.Quantity += newCartItem.Quantity;
                 await _appDataDbContext.SaveChangesAsync();
                 _logger.LogInformation(new EventId(9999, "CreateCartItemSuccess"), "The cart item already existed in the cart with CartId={cartId} and thus only the quantity was updated.", newCartItem.CartId);
-                return new ReturnCartItemAndCodeResponseModel(existingVariantAlreadyInCart, DataLibraryReturnedCodes.NoError);
+                return new ReturnCartItemAndCodeResponseModel(existingVariantAlreadyInCart, DataLibraryReturnedCodes.VariantAlreadyInCartAndThusOnlyTheQuantityValueWasAdjusted);
             }
 
             newCartItem.Id = Guid.NewGuid().ToString();

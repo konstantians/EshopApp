@@ -103,8 +103,6 @@ public class AttributeController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _attributeDataAccess.DeleteAttributeAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
             if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
 

@@ -232,9 +232,7 @@ public class OrderController : ControllerBase
         try
         {
             DataLibraryReturnedCodes returnedCode = await _orderDataAccess.DeleteOrderAsync(id);
-            if (returnedCode == DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull)
-                return BadRequest(new { ErrorMessage = "TheIdOfTheEntityCanNotBeNull" });
-            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
 
             return NoContent();

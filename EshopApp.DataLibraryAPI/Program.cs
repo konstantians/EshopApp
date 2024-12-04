@@ -52,6 +52,7 @@ public class Program()
         builder.Services.AddScoped<IPaymentOptionDataAccess, PaymentOptionDataAccess>();
         builder.Services.AddScoped<IShippingOptionDataAccess, ShippingOptionDataAccess>();
         builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
+        builder.Services.AddScoped<ICartDataAccess, CartDataAccess>();
 
         var app = builder.Build();
 
