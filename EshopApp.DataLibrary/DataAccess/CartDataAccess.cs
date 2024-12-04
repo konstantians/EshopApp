@@ -25,6 +25,9 @@ public class CartDataAccess : ICartDataAccess
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Variant)
                         .ThenInclude(v => v!.Discount)
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Variant)
+                        .ThenInclude(v => v!.Product)
                 .FirstOrDefaultAsync(cart => cart.Id == id);
             return new ReturnCartAndCodeResponseModel(foundCart!, DataLibraryReturnedCodes.NoError);
         }
@@ -44,6 +47,9 @@ public class CartDataAccess : ICartDataAccess
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Variant)
                         .ThenInclude(v => v!.Discount)
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Variant)
+                        .ThenInclude(v => v!.Product)
                 .FirstOrDefaultAsync(cart => cart.UserId == userId);
             return new ReturnCartAndCodeResponseModel(foundCart!, DataLibraryReturnedCodes.NoError);
         }
@@ -68,12 +74,20 @@ public class CartDataAccess : ICartDataAccess
             while (await _appDataDbContext.Carts.FirstOrDefaultAsync(otherCart => otherCart.Id == cart.Id) is not null)
                 cart.Id = Guid.NewGuid().ToString();
 
-            List<string?> variantIds = _appDataDbContext.Carts.Select(variant => variant.Id).ToList();
+            List<string?> existingCartItemIds = _appDataDbContext.CartItems.Select(cartItem => cartItem.Id).ToList();
+            List<Variant> variants = _appDataDbContext.Variants.ToList();
             foreach (CartItem cartItem in cart.CartItems)
             {
-                if (!variantIds.Contains(cartItem.Id))
+                Variant? foundVariant = variants.FirstOrDefault(existingVariant => existingVariant.Id == cartItem.VariantId);
+                if (foundVariant is null)
                     return new ReturnCartAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
 
+                if (cartItem.Quantity > foundVariant.UnitsInStock)
+                    return new ReturnCartAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
+
+                cartItem.Id = Guid.NewGuid().ToString();
+                while (existingCartItemIds.Contains(cartItem.Id))
+                    cartItem.Id = Guid.NewGuid().ToString();
                 cartItem.CartId = cart.Id; //this is not needed, but I want this to be explicit
             }
 
@@ -102,18 +116,27 @@ public class CartDataAccess : ICartDataAccess
             if (foundVariant is null)
                 return new ReturnCartItemAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
 
-            Cart? foundCart = await _appDataDbContext.Carts.Include(cart => cart.CartItems).FirstOrDefaultAsync(cart => cart.Id == newCartItem.CartId);
+            Cart? foundCart = await _appDataDbContext.Carts
+                .Include(cart => cart.CartItems)
+                    .ThenInclude(cartItem => cartItem.Variant)
+                .FirstOrDefaultAsync(cart => cart.Id == newCartItem.CartId);
             if (foundCart is null)
                 return new ReturnCartItemAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidCartIdWasGiven);
 
-            CartItem? existingVariantAlreadyInCart = foundCart.CartItems.FirstOrDefault(cartItem => cartItem.Variant!.Id == newCartItem.VariantId);
-            if (existingVariantAlreadyInCart is not null)
+            CartItem? existingCartItemInCartWithGivenVariant = foundCart.CartItems.FirstOrDefault(cartItem => cartItem.Variant!.Id == newCartItem.VariantId);
+            if (existingCartItemInCartWithGivenVariant is not null)
             {
-                existingVariantAlreadyInCart.Quantity += newCartItem.Quantity;
+                if (existingCartItemInCartWithGivenVariant.Quantity + newCartItem.Quantity > foundVariant.UnitsInStock)
+                    return new ReturnCartItemAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
+
+                existingCartItemInCartWithGivenVariant.Quantity += newCartItem.Quantity;
                 await _appDataDbContext.SaveChangesAsync();
                 _logger.LogInformation(new EventId(9999, "CreateCartItemSuccess"), "The cart item already existed in the cart with CartId={cartId} and thus only the quantity was updated.", newCartItem.CartId);
-                return new ReturnCartItemAndCodeResponseModel(existingVariantAlreadyInCart, DataLibraryReturnedCodes.VariantAlreadyInCartAndThusOnlyTheQuantityValueWasAdjusted);
+                return new ReturnCartItemAndCodeResponseModel(existingCartItemInCartWithGivenVariant, DataLibraryReturnedCodes.VariantAlreadyInCartAndThusOnlyTheQuantityValueWasAdjusted);
             }
+
+            if (newCartItem.Quantity > foundVariant.UnitsInStock)
+                return new ReturnCartItemAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
 
             newCartItem.Id = Guid.NewGuid().ToString();
             while (await _appDataDbContext.CartItems.FirstOrDefaultAsync(otherCart => otherCart.Id == newCartItem.Id) is not null)
@@ -140,17 +163,22 @@ public class CartDataAccess : ICartDataAccess
             if (updatedCartItem.Id is null)
                 return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
 
-            CartItem? foundCartItem = await _appDataDbContext.CartItems.FirstOrDefaultAsync(cartItem => cartItem.Id == updatedCartItem.Id);
+            CartItem? foundCartItem = await _appDataDbContext.CartItems
+                .Include(cartItem => cartItem.Variant)
+                .FirstOrDefaultAsync(cartItem => cartItem.Id == updatedCartItem.Id);
+
             if (foundCartItem is null)
             {
                 _logger.LogWarning(new EventId(9999, "UpdateCartItemFailureDueToNullCart"), "The cart item with Id={id} was not found and thus the update could not proceed.", updatedCartItem.Id);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
-            foundCartItem.Quantity = updatedCartItem.Quantity ?? foundCartItem.Quantity;
-            if (updatedCartItem.VariantId is not null) //this is probably useless, because the user will not be able to change the cart item in the UI, but it does not cost me much to leave it here
-                foundCartItem.Variant = _appDataDbContext.Variants.FirstOrDefault(variant => variant.Id == updatedCartItem.VariantId) ?? foundCartItem.Variant;
+            if (updatedCartItem.Quantity is not null && updatedCartItem.Quantity > foundCartItem.Variant!.UnitsInStock)
+                return DataLibraryReturnedCodes.InsufficientStockForVariant;
 
+            foundCartItem.Quantity = updatedCartItem.Quantity ?? foundCartItem.Quantity;
+
+            await _appDataDbContext.SaveChangesAsync();
             _logger.LogInformation(new EventId(9999, "UpdateCartItemSuccess"), "The cart item with Id={id} was successfully updated.", updatedCartItem.Id);
             return DataLibraryReturnedCodes.NoError;
         }

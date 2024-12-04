@@ -20,7 +20,7 @@ public class CartController : ControllerBase
         _cartDataAccess = cartDataAccess;
     }
 
-    [HttpGet("Id/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetCartById(string id)
     {
         try
@@ -73,6 +73,8 @@ public class CartController : ControllerBase
                 return BadRequest(new { ErrorMessage = "UserAlreadyHasACart" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.InvalidVariantIdWasGiven)
                 return NotFound(new { ErrorMessage = "InvalidVariantIdWasGiven" });
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
 
             return CreatedAtAction(nameof(GetCartById), new { id = response.Cart!.Id }, response.Cart);
         }
@@ -97,6 +99,8 @@ public class CartController : ControllerBase
                 return NotFound(new { ErrorMessage = "InvalidVariantIdWasGiven" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.InvalidCartIdWasGiven)
                 return NotFound(new { ErrorMessage = "InvalidCartIdWasGiven" });
+            else if (response.ReturnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.VariantAlreadyInCartAndThusOnlyTheQuantityValueWasAdjusted)
                 return Ok(response.CartItem);
 
@@ -114,13 +118,14 @@ public class CartController : ControllerBase
         try
         {
             CartItem cartItem = new CartItem();
-            cartItem.CartId = updateCartItemRequestModel.CartId;
+            cartItem.Id = updateCartItemRequestModel.CartItemId;
             cartItem.Quantity = updateCartItemRequestModel.Quantity;
-            cartItem.VariantId = updateCartItemRequestModel.VariantId;
 
             DataLibraryReturnedCodes returnedCode = await _cartDataAccess.UpdateCartItemAsync(cartItem);
             if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
+            else if (returnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
 
             return NoContent();
         }
@@ -147,7 +152,7 @@ public class CartController : ControllerBase
         }
     }
 
-    [HttpDelete("Id/{id}")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCartById(string id)
     {
         try
