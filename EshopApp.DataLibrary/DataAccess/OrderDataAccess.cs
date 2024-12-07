@@ -185,9 +185,8 @@ public class OrderDataAccess : IOrderDataAccess
                 else if (foundUserCoupon.TimesUsed >= foundUserCoupon.Coupon.UsageLimit)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.CouponUsageLimitExceeded);
 
-                if (foundUserCoupon is not null)
+                if (foundUserCoupon is not null && !foundUserCoupon.ExistsInOrder!.Value) //The timesUsed property of the user coupon will be updated only when the order is confirmed
                 {
-                    foundUserCoupon.TimesUsed++;
                     foundUserCoupon.ModifiedAt = dateTimeNow;
                     foundUserCoupon.ExistsInOrder = true;
                 }
@@ -216,9 +215,11 @@ public class OrderDataAccess : IOrderDataAccess
                 else if (foundVariant.UnitsInStock < orderItem.Quantity)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
 
-                foundVariant.UnitsInStock -= orderItem.Quantity;
-                foundVariant.ExistsInOrder = true;
-                foundVariant.ModifiedAt = dateTimeNow;
+                if (!foundVariant.ExistsInOrder!.Value) //The variant units in stock will only be updated after the order has been confirmed
+                {
+                    foundVariant.ExistsInOrder = true;
+                    foundVariant.ModifiedAt = dateTimeNow;
+                }
 
                 orderItem.Id = Guid.NewGuid().ToString();
                 while (orderItemsIds.Contains(orderItem.Id))
@@ -273,10 +274,12 @@ public class OrderDataAccess : IOrderDataAccess
         {
             DateTime dateTimeNow = DateTime.Now;
             if (newOrderStatus != "Pending" && newOrderStatus != "Confirmed" && newOrderStatus != "Processed" && newOrderStatus != "Shipped" && newOrderStatus != "Completed"
-                && newOrderStatus != "Canceled" && newOrderStatus != "NoShow" && newOrderStatus != "Refunded" && newOrderStatus != "Failed")
+                && newOrderStatus != "Canceled" && newOrderStatus != "NoShow" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded" && newOrderStatus != "Failed")
                 return DataLibraryReturnedCodes.InvalidOrderStatus;
 
             Order? foundOrder = await _appDataDbContext.Orders
+                .Include(order => order.OrderItems)
+                    .ThenInclude(orderItem => orderItem.Variant)
                 .Include(order => order.PaymentDetails)
                 .Include(order => order.ShippingOption)
                 .Include(order => order.UserCoupon)
@@ -289,20 +292,36 @@ public class OrderDataAccess : IOrderDataAccess
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
 
+            //Because of Stripe the refundpending can be bypassed. This is not the typical case, but to avoid race conditions I allow the bypass of RefundPending
             if (foundOrder.OrderStatus == "Failed" || foundOrder.OrderStatus == "Refunded" || foundOrder.OrderStatus == "NoShow" || foundOrder.OrderStatus == "Canceled")
                 return DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered;
-            else if (foundOrder.OrderStatus == "Completed" && newOrderStatus != "Refunded")
+            else if (foundOrder.OrderStatus == "Completed" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
-            else if (foundOrder.OrderStatus == "Shipped" && newOrderStatus != "NoShow" && newOrderStatus != "Completed" && newOrderStatus != "Refunded")
+            else if (foundOrder.OrderStatus == "Shipped" && newOrderStatus != "NoShow" && newOrderStatus != "Completed" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
-            else if (foundOrder.OrderStatus == "Processed" && newOrderStatus != "Canceled" && newOrderStatus != "Shipped" && newOrderStatus != "Completed" && newOrderStatus != "Refunded")
+            else if (foundOrder.OrderStatus == "Processed" && newOrderStatus != "Canceled" && newOrderStatus != "Shipped" && newOrderStatus != "Completed"
+                && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
-            else if (foundOrder.OrderStatus == "Confirmed" && newOrderStatus != "Canceled" && newOrderStatus != "Processed" && newOrderStatus != "Refunded")
+            else if (foundOrder.OrderStatus == "Confirmed" && newOrderStatus != "Canceled" && newOrderStatus != "Processed" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
-            else if (foundOrder.OrderStatus == "Pending" && newOrderStatus != "Canceled" && newOrderStatus != "Confirmed" && newOrderStatus != "Processed" && newOrderStatus != "Refunded" && newOrderStatus != "Failed")
+            else if (foundOrder.OrderStatus == "Pending" && newOrderStatus != "Confirmed" && newOrderStatus != "Failed")
+                return DataLibraryReturnedCodes.InvalidNewOrderState;
+            else if (foundOrder.OrderStatus == "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
+                return DataLibraryReturnedCodes.InvalidNewOrderState;
+            else if (foundOrder.OrderStatus == "RefundFailed" && newOrderStatus != "RefundPending")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
             else if (foundOrder.OrderStatus == "Processed" && !foundOrder.ShippingOption!.ContainsDelivery!.Value && newOrderStatus == "Shipped")
                 return DataLibraryReturnedCodes.ThisOrderDoesNotContainShippingAndThusTheShippedStatusIsInvalid;
+
+            //the update of the usercoupon and the quantity should only happen after the order has been confirmed
+            if (foundOrder.OrderStatus == "Pending" && newOrderStatus == "Confirmed")
+            {
+                if (foundOrder.UserCoupon is not null)
+                    foundOrder.UserCoupon!.TimesUsed++;
+
+                foreach (OrderItem orderItem in foundOrder.OrderItems)
+                    orderItem.Variant!.UnitsInStock -= orderItem.Quantity;
+            }
 
             if (newOrderStatus == "Canceled" || newOrderStatus == "Refunded" || newOrderStatus == "NoShow" || newOrderStatus == "Failed") //maybe in noshow do not reverse the coupon usage?
             {
@@ -312,6 +331,12 @@ public class OrderDataAccess : IOrderDataAccess
                 foundOrder.PaymentDetails!.NetAmountPaidInEuro = 0;
                 if (foundOrder.UserCoupon is not null)
                     foundOrder.UserCoupon.TimesUsed--;
+
+                if (newOrderStatus != "Refunded") //I will let the admin decide how to handle the inventory in case of refunds, because maybe the products are problematic
+                {
+                    foreach (OrderItem orderItem in foundOrder.OrderItems)
+                        orderItem.Variant!.UnitsInStock += orderItem.Quantity;
+                }
             }
 
             foundOrder.ModifiedAt = dateTimeNow;
@@ -583,10 +608,18 @@ public class OrderDataAccess : IOrderDataAccess
             foreach (OrderItem orderItem in foundOrder.OrderItems)
             {
                 if (orderItem.Variant!.OrderItems.Count == 1)
+                {
                     orderItem.Variant!.ExistsInOrder = false;
+                    orderItem.Variant!.ModifiedAt = dateTimeNow;
+                }
 
-                orderItem.Variant!.UnitsInStock += orderItem.Quantity;
-                orderItem.Variant!.ModifiedAt = dateTimeNow;
+                //foundOrder.OrderStatus != "Refunded"
+                if (foundOrder.OrderStatus != "Canceled" && foundOrder.OrderStatus != "NoShow" && foundOrder.OrderStatus != "Failed"
+                    && foundOrder.OrderStatus != "Completed" && foundOrder.OrderStatus != "Refunded" && foundOrder.OrderStatus != "Pending") //if it is on a final state there is no reason for reversal. The pending will never happen, but who knows
+                {
+                    orderItem.Variant!.UnitsInStock += orderItem.Quantity;
+                    orderItem.Variant!.ModifiedAt = dateTimeNow;
+                }
             }
 
             if (foundOrder.ShippingOption!.Orders.Count == 1) //this means that the shipping option only exists in one order
@@ -610,7 +643,8 @@ public class OrderDataAccess : IOrderDataAccess
                 }
 
                 //if the order was not in a final state reduce the TimesUsed property on the userCoupon
-                if (foundOrder.OrderStatus != "Canceled" && foundOrder.OrderStatus != "Refunded" && foundOrder.OrderStatus != "NoShow" && foundOrder.OrderStatus != "Failed" && foundOrder.OrderStatus != "Completed")
+                if (foundOrder.OrderStatus != "Canceled" && foundOrder.OrderStatus != "Refunded" && foundOrder.OrderStatus != "NoShow"
+                    && foundOrder.OrderStatus != "Failed" && foundOrder.OrderStatus != "Completed" && foundOrder.OrderStatus != "Pending")
                 {
                     foundOrder.UserCoupon.TimesUsed--;
                     foundOrder.UserCoupon.ModifiedAt = dateTimeNow;

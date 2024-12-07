@@ -729,61 +729,15 @@ internal class OrderControllerTests
         testOrder.ShippingOptionId.Should().Be(testCreateOrderRequestModel.ShippingOptionId);
         testOrder.UserCouponId.Should().Be(testCreateOrderRequestModel.UserCouponId);
 
-        testVariant!.UnitsInStock.Should().NotBeNull().And.BeLessThan(10);
+        testVariant!.UnitsInStock.Should().NotBeNull().And.Be(10); //the units in stock will only change after the order has been confirmed by the system
         testVariant.ExistsInOrder.Should().BeTrue();
         testVariant.VariantImages[0].Image!.ExistsInOrder.Should().BeTrue();
 
         TestUserCoupon chosenUserCoupon = testCoupon!.UserCoupons.FirstOrDefault(userCoupon => userCoupon.Id == _chosenUserCouponId)!;
         chosenUserCoupon.ExistsInOrder.Should().BeTrue();
-        chosenUserCoupon.TimesUsed.Should().Be(1);
+        chosenUserCoupon.TimesUsed.Should().Be(0); //the times used will only change after the order has been confirmed by the system
 
         _chosenOrderId = testOrder.Id;
-    }
-
-    [Test, Order(130)]
-    public async Task CreateOrder_ShouldFailAndReturnBadRequest_IfCouponHasUsageHasExceededMaxLimit()
-    {
-        //this is the same order essentially(still valid since there are enought units in stock), but this time the user has exceeded the max usage for the coupon
-
-        //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestCreateOrderRequestModel testCreateOrderRequestModel = new TestCreateOrderRequestModel();
-        testCreateOrderRequestModel.Comment = "UserComment";
-        testCreateOrderRequestModel.Email = "user@gmail.com";
-        testCreateOrderRequestModel.FirstName = "UserFirstName";
-        testCreateOrderRequestModel.LastName = "UserLastName";
-        testCreateOrderRequestModel.Country = "UserCountry";
-        testCreateOrderRequestModel.City = "UserCity";
-        testCreateOrderRequestModel.PostalCode = "UserPostalCode";
-        testCreateOrderRequestModel.Address = "UserAddress";
-        testCreateOrderRequestModel.PhoneNumber = "UserPhoneNumber";
-        testCreateOrderRequestModel.IsShippingAddressDifferent = true;
-        testCreateOrderRequestModel.AltFirstName = "AltUserFirstName";
-        testCreateOrderRequestModel.AltLastName = "AltUserLastName";
-        testCreateOrderRequestModel.AltCountry = "AltUserCountry";
-        testCreateOrderRequestModel.AltCity = "AltUserCity";
-        testCreateOrderRequestModel.AltPostalCode = "AltUserPostalCode";
-        testCreateOrderRequestModel.AltAddress = "AltUserAddress";
-        testCreateOrderRequestModel.AltPhoneNumber = "AltUserPhoneNumber";
-        testCreateOrderRequestModel.UserId = _chosenUserId;
-        testCreateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId";
-        testCreateOrderRequestModel.OrderItemRequestModels.Add(new TestOrderItemRequestModel()
-        {
-            Quantity = 3,
-            VariantId = _chosenVariantId
-        });
-        testCreateOrderRequestModel.PaymentOptionId = _chosenPaymentOptionId;
-        testCreateOrderRequestModel.ShippingOptionId = _chosenShippingOptionId;
-        testCreateOrderRequestModel.UserCouponId = _chosenUserCouponId;
-
-        //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/order", testCreateOrderRequestModel);
-        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
-
-        //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        errorMessage.Should().NotBeNull().And.Be("CouponUsageLimitExceeded");
     }
 
     [Test, Order(140)]
@@ -995,6 +949,52 @@ internal class OrderControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         testOrder!.Should().NotBeNull();
         testOrder!.OrderStatus.Should().NotBeNull().And.Be(testUpdateOrderStatusRequestModel.NewOrderStatus);
+    }
+
+    [Test, Order(235)]
+    public async Task CreateOrder_ShouldFailAndReturnBadRequest_IfCouponHasUsageHasExceededMaxLimit()
+    {
+        //this is the same order essentially(still valid since there are enought units in stock), but this time the user has exceeded the max usage for the coupon
+
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+        TestCreateOrderRequestModel testCreateOrderRequestModel = new TestCreateOrderRequestModel();
+        testCreateOrderRequestModel.Comment = "UserComment";
+        testCreateOrderRequestModel.Email = "user@gmail.com";
+        testCreateOrderRequestModel.FirstName = "UserFirstName";
+        testCreateOrderRequestModel.LastName = "UserLastName";
+        testCreateOrderRequestModel.Country = "UserCountry";
+        testCreateOrderRequestModel.City = "UserCity";
+        testCreateOrderRequestModel.PostalCode = "UserPostalCode";
+        testCreateOrderRequestModel.Address = "UserAddress";
+        testCreateOrderRequestModel.PhoneNumber = "UserPhoneNumber";
+        testCreateOrderRequestModel.IsShippingAddressDifferent = true;
+        testCreateOrderRequestModel.AltFirstName = "AltUserFirstName";
+        testCreateOrderRequestModel.AltLastName = "AltUserLastName";
+        testCreateOrderRequestModel.AltCountry = "AltUserCountry";
+        testCreateOrderRequestModel.AltCity = "AltUserCity";
+        testCreateOrderRequestModel.AltPostalCode = "AltUserPostalCode";
+        testCreateOrderRequestModel.AltAddress = "AltUserAddress";
+        testCreateOrderRequestModel.AltPhoneNumber = "AltUserPhoneNumber";
+        testCreateOrderRequestModel.UserId = _chosenUserId;
+        testCreateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId";
+        testCreateOrderRequestModel.OrderItemRequestModels.Add(new TestOrderItemRequestModel()
+        {
+            Quantity = 3,
+            VariantId = _chosenVariantId
+        });
+        testCreateOrderRequestModel.PaymentOptionId = _chosenPaymentOptionId;
+        testCreateOrderRequestModel.ShippingOptionId = _chosenShippingOptionId;
+        testCreateOrderRequestModel.UserCouponId = _chosenUserCouponId;
+
+        //Act
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/order", testCreateOrderRequestModel);
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        errorMessage.Should().NotBeNull().And.Be("CouponUsageLimitExceeded");
     }
 
     [Test, Order(240)]
@@ -1503,7 +1503,6 @@ internal class OrderControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    //TODO Other than that rerun all the tests and maybe check the other entity controller tests now that the order tests have been added
     [Test, Order(370)]
     public async Task DeleteOrder_ShouldSucceedAndDeleteOrder()
     {

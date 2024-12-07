@@ -3,7 +3,7 @@ public class Order
 {
     public string? Id { get; set; }
     public string? Comment { get; set; }
-    public string? OrderStatus { get; set; } //Pending - Confirmed - Processing - Shipped - Delivered - Canceled - Refunded - Failed
+    public string? OrderStatus { get; set; } //Pending - Confirmed - Processing - Shipped - Delivered - Canceled - RefundPending - RefundFailed - Refunded - Failed
     public decimal? FinalPrice { get; set; }
     public decimal? ShippingCostAtOrder { get; set; }
     public int? CouponDiscountPercentageAtOrder { get; set; }
