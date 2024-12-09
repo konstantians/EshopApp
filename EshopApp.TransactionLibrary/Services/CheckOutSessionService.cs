@@ -16,25 +16,25 @@ public class CheckOutSessionService : ICheckOutSessionService
     }
 
     //probably create the session before the local order is created, because the local order validates pretty much everything here(the gateway api can be trusted to send make the call to the transaction api correctly after testing)
-    public async Task<ReturnCheckOutSessionIdAndCodeResponseModel?> CreateCheckOutSessionAsync(CheckOutSession checkOutSession)
+    public async Task<HandleCheckOutSessionEventResponseModel?> CreateCheckOutSessionAsync(CheckOutSession checkOutSession)
     {
         try
         {
             if (checkOutSession.TransactionOrderItems is null || !checkOutSession.TransactionOrderItems.Any())
-                return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.ThereNeedsToBeAtLeastOneOrderItem);
+                return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.ThereNeedsToBeAtLeastOneOrderItem);
             else if (checkOutSession.CustomerEmail is null)
-                return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.NoCustomerEmailWasProvided);
+                return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.NoCustomerEmailWasProvided);
 
 
             List<SessionLineItemOptions> sessionLineItemOptions = new List<SessionLineItemOptions>();
             foreach (TransactionOrderItem transactionOrderItem in checkOutSession.TransactionOrderItems)
             {
                 if (transactionOrderItem.FinalUnitAmountInEuro <= 0)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.InvalidOrderItemPrice);
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidOrderItemPrice);
                 else if (transactionOrderItem.Name is null)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.OrderItemNameIsMissing);
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.OrderItemNameIsMissing);
                 else if (transactionOrderItem.Quantity <= 0)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.InvalidOrderItemQuantity);
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidOrderItemQuantity);
 
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
@@ -53,12 +53,12 @@ public class CheckOutSessionService : ICheckOutSessionService
                 });
             }
 
-            if (checkOutSession.TransactionPaymentOption is not null)
+            if (checkOutSession.TransactionPaymentOption is not null && checkOutSession.TransactionPaymentOption.CostInEuro != 0)
             {
-                if (checkOutSession.TransactionPaymentOption.CostInEuro <= 0)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.InvalidPaymentOptionPrice);
+                if (checkOutSession.TransactionPaymentOption.CostInEuro < 0)
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidPaymentOptionPrice);
                 else if (checkOutSession.TransactionPaymentOption.Name is null)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.PaymentOptionNameIsMissing);
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.PaymentOptionNameIsMissing);
 
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
@@ -76,12 +76,12 @@ public class CheckOutSessionService : ICheckOutSessionService
                 });
             }
 
-            if (checkOutSession.TransactionShippingOption is not null)
+            if (checkOutSession.TransactionShippingOption is not null && checkOutSession.TransactionShippingOption.CostInEuro != 0)
             {
-                if (checkOutSession.TransactionShippingOption.CostInEuro <= 0)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.InvalidShippingOptionPrice);
+                if (checkOutSession.TransactionShippingOption.CostInEuro < 0)
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidShippingOptionPrice);
                 else if (checkOutSession.TransactionShippingOption.Name is null)
-                    return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.ShippingOptionNameIsMissing);
+                    return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.ShippingOptionNameIsMissing);
 
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
@@ -100,7 +100,7 @@ public class CheckOutSessionService : ICheckOutSessionService
             }
 
             if (checkOutSession.CouponPercentage is not null && checkOutSession.CouponPercentage.Value <= 0)
-                return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.InvalidCouponDiscountPercentage);
+                return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidCouponDiscountPercentage);
 
             CouponCreateOptions? couponCreateOptions = checkOutSession is not null ? new CouponCreateOptions { PercentOff = checkOutSession.CouponPercentage, Duration = "once" } : null;
             List<SessionDiscountOptions> sessionDiscountOptions = new List<SessionDiscountOptions>();
@@ -113,8 +113,9 @@ public class CheckOutSessionService : ICheckOutSessionService
 
             SessionCreateOptions options = new SessionCreateOptions
             {
+                ExpiresAt = checkOutSession!.ExpiresAt,
                 Discounts = sessionDiscountOptions,
-                CustomerEmail = checkOutSession!.CustomerEmail,
+                CustomerEmail = checkOutSession.CustomerEmail,
                 SuccessUrl = checkOutSession.SuccessUrl,
                 CancelUrl = checkOutSession.CancelUrl,
                 PaymentMethodTypes = new List<string>() { checkOutSession.PaymentMethodType ?? "card" },
@@ -126,12 +127,12 @@ public class CheckOutSessionService : ICheckOutSessionService
             Session session = await sessionService.CreateAsync(options);
 
             _logger.LogInformation(new EventId(9999, "CreateCheckOutSessionSuccess"), "The check-out session was successfully created.");
-            return new ReturnCheckOutSessionIdAndCodeResponseModel(session.Id, TransactionLibraryReturnedCodes.NoError);
+            return new HandleCheckOutSessionEventResponseModel(session.Id, session.Url, TransactionLibraryReturnedCodes.NoError);
         }
         catch (StripeException stripeEx)
         {
             _logger.LogError(new EventId(9999, "CreateCheckOutSessionFailureDueToStripeError"), "Stripe API error: {Message}", stripeEx.Message);
-            return new ReturnCheckOutSessionIdAndCodeResponseModel(null!, TransactionLibraryReturnedCodes.StripeApiError);
+            return new HandleCheckOutSessionEventResponseModel(null!, null!, TransactionLibraryReturnedCodes.StripeApiError);
         }
         catch (Exception ex)
         {
@@ -146,13 +147,13 @@ public class CheckOutSessionService : ICheckOutSessionService
     /*    public async Task<Session> GetCheckOutSession(string checkOutSessionId)
         {
 
-            SessionService sessionService = new SessionService();
-            Session? session = await sessionService.GetAsync(checkOutSessionId);
-
-            *//*if (session.Status == "expired")
+           *//*if (session.Status == "expired")
                 return TransactionLibraryReturnedCodes.CheckOutSessionHasExpired;
             if (session.Status == "complete")
-                return TransactionLibraryReturnedCodes.CheckOutSessionAlreadyCompleted;
+               SessionService sessionService = new SessionService();
+            Session? session = await sessionService.GetAsync(checkOutSessionId);
+
+              return TransactionLibraryReturnedCodes.CheckOutSessionAlreadyCompleted;
             *//*
 
             return session;

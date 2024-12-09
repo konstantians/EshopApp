@@ -21,6 +21,7 @@ internal class TestCreateOrderRequestModel
     public string? UserId { get; set; }
     public List<TestOrderItemRequestModel> OrderItemRequestModels { get; set; } = new List<TestOrderItemRequestModel>();
     public string? PaymentProcessorSessionId { get; set; }
+    public string? PaymentProcessorPaymentIntentId { get; set; }
     public string? PaymentOptionId { get; set; }
     public string? ShippingOptionId { get; set; }
     public string? UserCouponId { get; set; }

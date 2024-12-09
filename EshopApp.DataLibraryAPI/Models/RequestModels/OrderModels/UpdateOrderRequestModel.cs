@@ -7,6 +7,7 @@ public class UpdateOrderRequestModel
     [MaxLength(50)]
     public string? Id { get; set; }
     public string? PaymentProcessorSessionId { get; set; }
+    public string? PaymentProcessorPaymentIntentId { get; set; }
     [EmailAddress]
     public string? Email { get; set; }
     [MaxLength(50)]
@@ -43,8 +44,6 @@ public class UpdateOrderRequestModel
     public string? PaymentStatus { get; set; }
     [MaxLength(5)]
     public string? PaymentCurrency { get; set; }
-    [Range(0, int.MaxValue, ErrorMessage = "The AmountPaidInCustomerCurrency property can not be negative")]
-    public decimal? AmountPaidInCustomerCurrency { get; set; }
     [Range(0, int.MaxValue, ErrorMessage = "The AmountPaidInEuro property can not be negative")]
     public decimal? AmountPaidInEuro { get; set; }
     [Range(0, int.MaxValue, ErrorMessage = "The NetAmountPaidInEuro property can not be negative")]

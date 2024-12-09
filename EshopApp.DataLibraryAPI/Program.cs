@@ -41,7 +41,6 @@ public class Program()
         builder.Services.AddDbContext<AppDataDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultData")));
 
-
         builder.Services.AddScoped<ICategoryDataAccess, CategoryDataAccess>();
         builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
         builder.Services.AddScoped<IVariantDataAccess, VariantDataAccess>();

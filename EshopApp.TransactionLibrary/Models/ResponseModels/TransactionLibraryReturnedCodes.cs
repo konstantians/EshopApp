@@ -14,6 +14,7 @@ public enum TransactionLibraryReturnedCodes
     InvalidCouponDiscountPercentage,
     StripeApiError,
     CheckOutSessionNotFoundWithGivenId,
+    PaymentIntentNotFoundWithGivenId,
     CheckOutSessionHasExpired,
     CheckOutSessionAlreadyCompleted,
     RefundInvalidStateAfterCreation

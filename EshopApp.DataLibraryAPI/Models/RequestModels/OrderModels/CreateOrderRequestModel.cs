@@ -47,8 +47,8 @@ public class CreateOrderRequestModel
     public string? UserId { get; set; } //this is not required, because it should support guest users also
     [Required]
     public List<OrderItemRequestModel> OrderItemRequestModels { get; set; } = new List<OrderItemRequestModel>();
-    [Required]
     public string? PaymentProcessorSessionId { get; set; }
+    public string? PaymentProcessorPaymentIntentId { get; set; }
     [Required]
     [MaxLength(50)]
     public string? PaymentOptionId { get; set; }
