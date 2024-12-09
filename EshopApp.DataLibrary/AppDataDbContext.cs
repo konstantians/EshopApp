@@ -267,7 +267,7 @@ public class AppDataDbContext : DbContext
             .Property(order => order.UserId).HasMaxLength(50); //this needs to be not required, because of the guest user
 
         modelBuilder.Entity<Order>()
-            .Property(order => order.OrderStatus).HasMaxLength(50).IsRequired(); ////Pending - Confirmed - Processing - Shipped - Delivered - Canceled - Refunded - Failed
+            .Property(order => order.OrderStatus).HasMaxLength(50).IsRequired(); //Pending - Confirmed - Processing - Shipped - Delivered - Canceled - Refunded - Failed
 
         modelBuilder.Entity<Order>()
             .Property(order => order.FinalPrice).IsRequired();
@@ -306,10 +306,22 @@ public class AppDataDbContext : DbContext
             .HasForeignKey(paymentDetails => paymentDetails.PaymentOptionId);
 
         modelBuilder.Entity<PaymentDetails>()
+            .HasIndex(paymentDetails => paymentDetails.OrderId).IsUnique();
+
+        modelBuilder.Entity<PaymentDetails>()
             .Property(paymentDetails => paymentDetails.PaymentCurrency).HasMaxLength(5);
 
         modelBuilder.Entity<PaymentDetails>()
-            .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(50).IsRequired();
+            .HasIndex(paymentDetails => paymentDetails.PaymentProcessorSessionId).IsUnique();
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(50);
+
+        modelBuilder.Entity<PaymentDetails>()
+            .HasIndex(paymentDetails => paymentDetails.PaymentProcessorPaymentIntentId).IsUnique();
+
+        modelBuilder.Entity<PaymentDetails>()
+            .Property(paymentDetails => paymentDetails.PaymentProcessorPaymentIntentId).HasMaxLength(50);
 
         modelBuilder.Entity<PaymentDetails>()
             .Property(paymentDetails => paymentDetails.PaymentOptionExtraCostAtOrder).IsRequired();
