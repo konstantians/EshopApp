@@ -4,6 +4,7 @@ using EshopApp.DataLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EshopApp.DataLibrary.Migrations
 {
     [DbContext(typeof(AppDataDbContext))]
-    partial class AppDataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241208210311_RemovedAmountPaidInUserCurrencyColumnFromOrderEntity")]
+    partial class RemovedAmountPaidInUserCurrencyColumnFromOrderEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -478,11 +481,8 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<string>("PaymentOptionId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("PaymentProcessorPaymentIntentId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("PaymentProcessorSessionId")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -498,14 +498,6 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasFilter("[OrderId] IS NOT NULL");
 
                     b.HasIndex("PaymentOptionId");
-
-                    b.HasIndex("PaymentProcessorPaymentIntentId")
-                        .IsUnique()
-                        .HasFilter("[PaymentProcessorPaymentIntentId] IS NOT NULL");
-
-                    b.HasIndex("PaymentProcessorSessionId")
-                        .IsUnique()
-                        .HasFilter("[PaymentProcessorSessionId] IS NOT NULL");
 
                     b.ToTable("PaymentDetails");
                 });

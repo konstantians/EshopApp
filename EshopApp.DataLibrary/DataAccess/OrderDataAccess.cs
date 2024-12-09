@@ -139,7 +139,6 @@ public class OrderDataAccess : IOrderDataAccess
             order.ModifiedAt = dateTimeNow;
             order.PaymentDetails.PaymentStatus = "Pending";
             order.PaymentDetails.PaymentCurrency = "N/A"; //this will change after payment
-            order.PaymentDetails!.AmountPaidInCustomerCurrency = 0;
             order.PaymentDetails!.AmountPaidInEuro = 0;
             order.PaymentDetails!.NetAmountPaidInEuro = 0;
             order.OrderAddress.IsShippingAddressDifferent = order.OrderAddress.IsShippingAddressDifferent ?? false;
@@ -326,7 +325,6 @@ public class OrderDataAccess : IOrderDataAccess
             if (newOrderStatus == "Canceled" || newOrderStatus == "Refunded" || newOrderStatus == "NoShow" || newOrderStatus == "Failed") //maybe in noshow do not reverse the coupon usage?
             {
                 foundOrder.PaymentDetails!.PaymentStatus = "Unpaid";
-                foundOrder.PaymentDetails!.AmountPaidInCustomerCurrency = 0;
                 foundOrder.PaymentDetails!.AmountPaidInEuro = 0;
                 foundOrder.PaymentDetails!.NetAmountPaidInEuro = 0;
                 if (foundOrder.UserCoupon is not null)
@@ -353,7 +351,7 @@ public class OrderDataAccess : IOrderDataAccess
         }
     }
 
-    //this update can either find an order based on id or based on payment processor session id
+    //this update can either find an order based on id or based on payment processor session id or the payment processor payment intent id(needed for webhooks)
     public async Task<DataLibraryReturnedCodes> UpdateOrderAsync(Order updatedOrder)
     {
         try
@@ -375,7 +373,8 @@ public class OrderDataAccess : IOrderDataAccess
                 .Include(order => order.UserCoupon)
                     .ThenInclude(userCoupon => userCoupon!.Coupon)
                 .FirstOrDefaultAsync(order => (order.Id != null && order.Id == updatedOrder.Id) ||
-            (updatedOrder.PaymentDetails != null && updatedOrder.PaymentDetails.PaymentProcessorSessionId != null && order.PaymentDetails!.PaymentProcessorSessionId == updatedOrder.PaymentDetails.PaymentProcessorSessionId));
+            (updatedOrder.PaymentDetails != null && updatedOrder.PaymentDetails.PaymentProcessorSessionId != null && order.PaymentDetails!.PaymentProcessorSessionId == updatedOrder.PaymentDetails.PaymentProcessorSessionId) ||
+            (updatedOrder.PaymentDetails != null && updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId != null && order.PaymentDetails!.PaymentProcessorPaymentIntentId == updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId));
             if (foundOrder is null && updatedOrder.Id is not null)
             {
                 _logger.LogWarning(new EventId(9999, "UpdateOrderFailureDueToNullOrder"), "The order with Id={id} was not found and thus the update could not proceed.", updatedOrder.Id);
@@ -386,8 +385,13 @@ public class OrderDataAccess : IOrderDataAccess
                 _logger.LogWarning(new EventId(9999, "UpdateOrderFailureDueToNullOrder"), "The order with PaymentProcessorSessionId={id} was not found and thus the update could not proceed.", updatedOrder.Id);
                 return DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorSessionId;
             }
+            else if (foundOrder is null && updatedOrder.PaymentDetails is not null && updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId is not null)
+            {
+                _logger.LogWarning(new EventId(9999, "UpdateOrderFailureDueToNullOrder"), "The order with PaymentProcessorPaymentIntentId={id} was not found and thus the update could not proceed.", updatedOrder.Id);
+                return DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorPaymentIntentId;
+            }
             else if (foundOrder is null)
-                return DataLibraryReturnedCodes.TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull;
+                return DataLibraryReturnedCodes.TheOrderIdThePaymentProcessorSessionIdAndPaymentIntentIdCanNotBeAllNull;
 
             if (foundOrder.OrderStatus == "Canceled" || foundOrder.OrderStatus == "NoShow" || foundOrder.OrderStatus == "Completed" || foundOrder.OrderStatus == "Refunded" || foundOrder.OrderStatus == "Failed")
                 return DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered;
@@ -398,9 +402,13 @@ public class OrderDataAccess : IOrderDataAccess
 
             //maybe add chekcs if currency is not set correctly, because it might lead to weird states????
             foundOrder.PaymentDetails!.PaymentStatus = updatedOrder.PaymentDetails?.PaymentStatus ?? foundOrder.PaymentDetails.PaymentStatus;
-            foundOrder.PaymentDetails!.AmountPaidInCustomerCurrency = updatedOrder.PaymentDetails?.AmountPaidInCustomerCurrency ?? foundOrder.PaymentDetails.AmountPaidInCustomerCurrency;
             foundOrder.PaymentDetails!.AmountPaidInEuro = updatedOrder.PaymentDetails?.AmountPaidInEuro ?? foundOrder.PaymentDetails.AmountPaidInEuro;
             foundOrder.PaymentDetails!.NetAmountPaidInEuro = updatedOrder.PaymentDetails?.NetAmountPaidInEuro ?? foundOrder.PaymentDetails.NetAmountPaidInEuro;
+            if (foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId is null && updatedOrder.PaymentDetails is not null)
+                foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId = updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId;
+            if (foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId is null && updatedOrder.PaymentDetails is not null)
+                foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId = updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId;
+
             foundOrder.ModifiedAt = dateTimeNow;
             if (foundOrder.OrderStatus == "Completed" || foundOrder.OrderStatus == "Shipped") //this can happen if the user paid with cash from the administrator, when it comes to shipped I just leave the option open
             {
