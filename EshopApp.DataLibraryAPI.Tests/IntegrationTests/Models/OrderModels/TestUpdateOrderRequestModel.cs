@@ -3,6 +3,7 @@ internal class TestUpdateOrderRequestModel
 {
     public string? Id { get; set; }
     public string? PaymentProcessorSessionId { get; set; }
+    public string? PaymentProcessorPaymentIntentId { get; set; }
     public string? Email { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
@@ -21,7 +22,6 @@ internal class TestUpdateOrderRequestModel
     public string? AltPhoneNumber { get; set; }
     public string? PaymentStatus { get; set; }
     public string? PaymentCurrency { get; set; }
-    public decimal? AmountPaidInCustomerCurrency { get; set; }
     public decimal? AmountPaidInEuro { get; set; }
     public decimal? NetAmountPaidInEuro { get; set; }
     public List<TestOrderItemRequestModel>? OrderItemRequestModels { get; set; }

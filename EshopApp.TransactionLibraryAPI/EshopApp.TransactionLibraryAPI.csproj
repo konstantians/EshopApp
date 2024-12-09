@@ -15,8 +15,4 @@
     <ProjectReference Include="..\EshopApp.TransactionLibrary\EshopApp.TransactionLibrary.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>

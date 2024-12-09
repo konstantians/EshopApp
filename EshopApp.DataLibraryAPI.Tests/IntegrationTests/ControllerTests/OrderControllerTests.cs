@@ -717,7 +717,6 @@ internal class OrderControllerTests
         testOrder.UserId.Should().Be(testCreateOrderRequestModel.UserId);
         testOrder.PaymentDetails.Should().NotBeNull();
         testOrder.PaymentDetails!.PaymentCurrency.Should().Be("N/A");
-        testOrder.PaymentDetails!.AmountPaidInCustomerCurrency.Should().Be(0);
         testOrder.PaymentDetails!.AmountPaidInEuro.Should().Be(0);
         testOrder.PaymentDetails!.NetAmountPaidInEuro.Should().Be(0);
         testOrder.PaymentDetails!.PaymentProcessorSessionId.Should().Be(testCreateOrderRequestModel.PaymentProcessorSessionId);
@@ -843,7 +842,6 @@ internal class OrderControllerTests
         testOrder.UserId.Should().NotBeNull();
         testOrder.PaymentDetails.Should().NotBeNull();
         testOrder.PaymentDetails!.PaymentCurrency.Should().Be("N/A");
-        testOrder.PaymentDetails!.AmountPaidInCustomerCurrency.Should().Be(0);
         testOrder.PaymentDetails!.AmountPaidInEuro.Should().Be(0);
         testOrder.PaymentDetails!.NetAmountPaidInEuro.Should().Be(0);
         testOrder.PaymentDetails!.PaymentProcessorSessionId.Should().NotBeNull();
@@ -1023,7 +1021,6 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1062,10 +1059,10 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = -150;
-        testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
+        testUpdateOrderRequestModel.AmountPaidInEuro = -150;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
         testUpdateOrderRequestModel.UserCouponId = _otherChosenUserCouponId;
@@ -1098,10 +1095,10 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltPostalCode = "UpdatedAltUserPostalCode";
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.Id = "bogusOrderId";
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m; //this was the amount?
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1137,10 +1134,10 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltPostalCode = "UpdatedAltUserPostalCode";
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "bogusPaymentProcessorSessionId";
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m; //this was the amount?
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1155,8 +1152,46 @@ internal class OrderControllerTests
         errorMessage.Should().NotBeNull().And.Be("OrderNotFoundWithGivenPaymentProcessorSessionId");
     }
 
+    [Test, Order(275)]
+    public async Task UpdateOrder_ShouldFailAndReturnNotFound_IfOrderNotInSystemBasedOnPaymentProcessorPaymentIntentId()
+    {
+        //Arrange
+        TestUpdateOrderRequestModel testUpdateOrderRequestModel = new TestUpdateOrderRequestModel();
+        testUpdateOrderRequestModel.Email = "updatedUser@gmail.com";
+        testUpdateOrderRequestModel.FirstName = "UpdatedUserFirstName";
+        testUpdateOrderRequestModel.LastName = "UpdatedUserLastName";
+        testUpdateOrderRequestModel.Country = "UpdatedUserCountry";
+        testUpdateOrderRequestModel.City = "UpdatedUserCity";
+        testUpdateOrderRequestModel.PostalCode = "UpdatedUserPostalCode";
+        testUpdateOrderRequestModel.Address = "UpdatedUserAddress";
+        testUpdateOrderRequestModel.PhoneNumber = "UpdatedUserPhoneNumber";
+        testUpdateOrderRequestModel.IsShippingAddressDifferent = true;
+        testUpdateOrderRequestModel.AltFirstName = "UpdatedAltUserFirstName";
+        testUpdateOrderRequestModel.AltLastName = "UpdatedAltUserLastName";
+        testUpdateOrderRequestModel.AltCountry = "UpdatedAltUserCountry";
+        testUpdateOrderRequestModel.AltCity = "UpdatedAltUserCity";
+        testUpdateOrderRequestModel.AltPostalCode = "UpdatedAltUserPostalCode";
+        testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
+        testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "bogusPaymentProcessorPaymentIntentId";
+        testUpdateOrderRequestModel.PaymentStatus = "Paid";
+        testUpdateOrderRequestModel.PaymentCurrency = "eur";
+        testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
+        testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
+        testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
+        testUpdateOrderRequestModel.UserCouponId = _otherChosenUserCouponId;
+
+        //Act
+        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/order", testUpdateOrderRequestModel);
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        errorMessage.Should().NotBeNull().And.Be("OrderNotFoundWithGivenPaymentProcessorPaymentIntentId");
+    }
+
     [Test, Order(280)]
-    public async Task UpdateOrder_ShouldFailAndReturnBadRequest_IfBothOrderIdAndPaymentProcessorSessionIdAreNull()
+    public async Task UpdateOrder_ShouldFailAndReturnBadRequest_IfTheOrderIdThePaymentProcessorSessionIdAndPaymentIntentIdAreAllNull()
     {
         //Arrange
         TestUpdateOrderRequestModel testUpdateOrderRequestModel = new TestUpdateOrderRequestModel();
@@ -1178,7 +1213,6 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1190,7 +1224,7 @@ internal class OrderControllerTests
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        errorMessage.Should().NotBeNull().And.Be("TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull");
+        errorMessage.Should().NotBeNull().And.Be("TheOrderIdThePaymentProcessorSessionIdAndPaymentIntentIdCanNotBeAllNull");
     }
 
     [Test, Order(290)]
@@ -1217,9 +1251,9 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1258,9 +1292,9 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = "bogusVariantId" } };
@@ -1299,9 +1333,9 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 1000000, VariantId = _otherChosenVariantId } };
@@ -1340,9 +1374,9 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.AltAddress = "UpdatedAltUserAddress";
         testUpdateOrderRequestModel.AltPhoneNumber = "UpdatedAltUserPhoneNumber";
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
+        testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId = "paymentProcessorPaymentIntentId"; //update the payment processor payment intent id
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };
@@ -1384,10 +1418,10 @@ internal class OrderControllerTests
         testOrder!.OrderAddress.AltPhoneNumber.Should().Be(testUpdateOrderRequestModel.AltPhoneNumber);
         testOrder.PaymentDetails.Should().NotBeNull();
         testOrder.PaymentDetails!.PaymentCurrency.Should().Be(testUpdateOrderRequestModel.PaymentCurrency);
-        testOrder.PaymentDetails!.AmountPaidInCustomerCurrency.Should().Be(testUpdateOrderRequestModel.AmountPaidInCustomerCurrency);
         testOrder.PaymentDetails!.AmountPaidInEuro.Should().Be(testUpdateOrderRequestModel.AmountPaidInEuro);
         testOrder.PaymentDetails!.NetAmountPaidInEuro.Should().Be(testUpdateOrderRequestModel.NetAmountPaidInEuro);
         testOrder.PaymentDetails!.PaymentProcessorSessionId.Should().Be(testUpdateOrderRequestModel.PaymentProcessorSessionId);
+        testOrder.PaymentDetails!.PaymentProcessorPaymentIntentId.Should().Be(testUpdateOrderRequestModel.PaymentProcessorPaymentIntentId);
         testOrder.PaymentDetails!.PaymentStatus.Should().Be(testUpdateOrderRequestModel.PaymentStatus);
         testOrder.OrderItems.Should().HaveCount(1);
         testOrder.OrderItems[0].Discount.Should().BeNull();
@@ -1430,7 +1464,6 @@ internal class OrderControllerTests
         testUpdateOrderRequestModel.PaymentProcessorSessionId = "paymentProcessorSessionId"; //find the order based on the paymentProcessorSessionId
         testUpdateOrderRequestModel.PaymentStatus = "Paid";
         testUpdateOrderRequestModel.PaymentCurrency = "eur";
-        testUpdateOrderRequestModel.AmountPaidInCustomerCurrency = 193.5m;
         testUpdateOrderRequestModel.AmountPaidInEuro = 193.5m;
         testUpdateOrderRequestModel.NetAmountPaidInEuro = 170m; //theoretically this is calculated after stripe fee
         testUpdateOrderRequestModel.OrderItemRequestModels = new List<TestOrderItemRequestModel>() { new TestOrderItemRequestModel() { Quantity = 5, VariantId = _otherChosenVariantId } };

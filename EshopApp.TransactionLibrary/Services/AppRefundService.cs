@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Stripe;
-using Stripe.Checkout;
+using System.Net;
 
 namespace EshopApp.TransactionLibrary.Services;
 public class AppRefundService : IAppRefundService
@@ -13,25 +13,17 @@ public class AppRefundService : IAppRefundService
         _logger = logger ?? NullLogger<AppRefundService>.Instance;
     }
 
-    public async Task<TransactionLibraryReturnedCodes> IssueRefundAsync(string sessionId)
+    public async Task<TransactionLibraryReturnedCodes> IssueRefundAsync(string paymentIntentId)
     {
         try
         {
-            SessionService sessionService = new SessionService();
-            Session? session = await sessionService.GetAsync(sessionId);
-            if (session is null)
-            {
-                _logger.LogWarning(new EventId(9999, "IssueRefundFailureDueToNullCheckOutSession"), "There is no corresponding checkoutsession in Stripe with Id={sessionId} and thus the refund process could not proceed", sessionId);
-                return TransactionLibraryReturnedCodes.CheckOutSessionNotFoundWithGivenId;
-            }
-
-            string paymentIntentId = session.PaymentIntentId;
-            var amountPaidByUser = session.PaymentIntent.AmountReceived;
+            PaymentIntentService paymentIntentService = new PaymentIntentService();
+            PaymentIntent? paymentIntent = await paymentIntentService.GetAsync(paymentIntentId); //we check for null in the exception
 
             var options = new RefundCreateOptions
             {
                 PaymentIntent = paymentIntentId,
-                Amount = amountPaidByUser
+                Amount = paymentIntent.AmountReceived
             };
 
             RefundService refundService = new RefundService();
@@ -44,6 +36,12 @@ public class AppRefundService : IAppRefundService
         }
         catch (StripeException stripeEx)
         {
+            if (stripeEx.HttpStatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(new EventId(9999, "IssueRefundFailureDueToNullPaymentIntent"), "There is no corresponding payment intent in Stripe with Id={paymentIntentId} and thus the refund process could not proceed", paymentIntentId);
+                return TransactionLibraryReturnedCodes.PaymentIntentNotFoundWithGivenId;
+            }
+
             _logger.LogError(new EventId(9999, "IssueRefundFailureDueToStripeError"), "Stripe API error: {Message}", stripeEx.Message);
             return TransactionLibraryReturnedCodes.StripeApiError;
         }

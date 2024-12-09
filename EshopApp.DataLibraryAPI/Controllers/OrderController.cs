@@ -83,6 +83,7 @@ public class OrderController : ControllerBase
             PaymentDetails paymentDetails = new PaymentDetails()
             {
                 PaymentProcessorSessionId = createOrderRequestModel.PaymentProcessorSessionId,
+                PaymentProcessorPaymentIntentId = createOrderRequestModel.PaymentProcessorPaymentIntentId,
                 PaymentOptionId = createOrderRequestModel.PaymentOptionId
             };
 
@@ -155,9 +156,9 @@ public class OrderController : ControllerBase
             PaymentDetails paymentDetails = new PaymentDetails()
             {
                 PaymentProcessorSessionId = updateOrderRequestModel.PaymentProcessorSessionId,
+                PaymentProcessorPaymentIntentId = updateOrderRequestModel.PaymentProcessorPaymentIntentId,
                 PaymentStatus = updateOrderRequestModel.PaymentStatus,
                 PaymentCurrency = updateOrderRequestModel.PaymentCurrency,
-                AmountPaidInCustomerCurrency = updateOrderRequestModel.AmountPaidInCustomerCurrency,
                 AmountPaidInEuro = updateOrderRequestModel.AmountPaidInEuro,
                 NetAmountPaidInEuro = updateOrderRequestModel.NetAmountPaidInEuro
             };
@@ -178,8 +179,10 @@ public class OrderController : ControllerBase
                 return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
             else if (returnedCode == DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorSessionId)
                 return NotFound(new { ErrorMessage = "OrderNotFoundWithGivenPaymentProcessorSessionId" });
-            else if (returnedCode == DataLibraryReturnedCodes.TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull)
-                return BadRequest(new { ErrorMessage = "TheOrderIdAndThePaymentProcessorSessionIdCanNotBeBothNull" });
+            else if (returnedCode == DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorPaymentIntentId)
+                return NotFound(new { ErrorMessage = "OrderNotFoundWithGivenPaymentProcessorPaymentIntentId" });
+            else if (returnedCode == DataLibraryReturnedCodes.TheOrderIdThePaymentProcessorSessionIdAndPaymentIntentIdCanNotBeAllNull)
+                return BadRequest(new { ErrorMessage = "TheOrderIdThePaymentProcessorSessionIdAndPaymentIntentIdCanNotBeAllNull" });
             else if (returnedCode == DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered)
                 return BadRequest(new { ErrorMessage = "OrderStatusHasBeenFinalizedAndThusTheOrderCanNotBeAltered" });
             else if (returnedCode == DataLibraryReturnedCodes.InvalidCouponIdWasGiven)
