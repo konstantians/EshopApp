@@ -11,6 +11,7 @@ public interface ICouponDataAccess
     Task<ReturnCouponAndCodeResponseModel> GetCouponByIdAsync(string id, bool includeDeactivated);
     Task<ReturnCouponsAndCodeResponseModel> GetCouponsAsync(int amount, bool includeDeactivated);
     Task<ReturnUserCouponsAndCodeResponseModel> GetCouponsOfUserAsync(string userId, bool includeDeactivated);
+    Task<DataLibraryReturnedCodes> RemoveAllCouponsOfUser(string userId);
     Task<DataLibraryReturnedCodes> RemoveCouponFromUser(string userCouponId);
     Task<DataLibraryReturnedCodes> UpdateCouponAsync(Coupon updatedCoupon);
     Task<DataLibraryReturnedCodes> UpdateUserCouponAsync(UserCoupon updatedUserCoupon);

@@ -436,4 +436,32 @@ public class CouponDataAccess : ICouponDataAccess
         }
     }
 
+    public async Task<DataLibraryReturnedCodes> RemoveAllCouponsOfUser(string userId)
+    {
+        try
+        {
+            if (userId is null)
+                return DataLibraryReturnedCodes.TheIdOfTheEntityCanNotBeNull;
+
+            // If they exist in order change their deactivated value
+            await _appDataDbContext.UserCoupons
+                .Where(coupon => coupon.UserId == userId && coupon.ExistsInOrder!.Value && !coupon.IsDeactivated!.Value)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(coupon => coupon.IsDeactivated, true));
+
+            // For the rest remove simply remove them
+            await _appDataDbContext.UserCoupons
+                .Where(coupon => coupon.UserId == userId && !coupon.ExistsInOrder!.Value)
+                .ExecuteDeleteAsync();
+
+            _logger.LogInformation(new EventId(9999, "RemoveAllTheCouponsOfUserSuccess"), "The coupons of the user with UserId={UserId} have all been removed or set to deactivated.", userId);
+            return DataLibraryReturnedCodes.NoError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "RemoveAllTheCouponsOfUserFailure"), ex, "An error occurred while deleting coupons of the user with UserId={UserId}. " +
+            "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", userId, ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
 }

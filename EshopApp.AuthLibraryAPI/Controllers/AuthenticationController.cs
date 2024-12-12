@@ -1,6 +1,7 @@
 ﻿using EshopApp.AuthLibrary.AuthLogic;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
+using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
 using EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
 using EshopApp.AuthLibraryAPI.Models.ResponseModels;
 using Microsoft.AspNetCore.Authentication;
@@ -82,24 +83,6 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new { ErrorMessage = "UnknownError" });
 
             return Ok(new ApiSignUpResponseModel(signUpResponseModel.UserId!, signUpResponseModel.Token!));
-
-            //The following needs to be done from the Gateway API
-            /*string message = "Click on the following link to confirm your email:";
-            string link = $"{_configuration["WebClientOriginUrl"]}/Account/ConfirmEmail?userId={userId}&confirmEmailToken={WebUtility.UrlEncode(confirmationToken)}";
-            string? confirmationLink = $"{message} {link}";
-
-            var apiSendEmailModel = new Dictionary<string, string>
-            {
-                { "receiver", user.Email! },
-                { "title", "Email Confirmation" },
-                { "message", confirmationLink }
-            };
-
-            var response = await httpClient.PostAsJsonAsync("Emails", apiSendEmailModel);
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Ok(new { Warning = "ConfirmationEmailNotSent" });
-
-            return Ok(new { Warning = "None" });*/
         }
         catch
         {
@@ -305,31 +288,13 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.CreateResetPasswordTokenAsync(forgotPasswordModel.Email!);
-            if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenEmail)
+            ReturnTokenUserIdAndCodeResponseModel returnTokenUserIdAndCodeResponseModel = await _authenticationProcedures.CreateResetPasswordTokenAsync(forgotPasswordModel.Email!);
+            if (returnTokenUserIdAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenEmail)
                 return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
-            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
+            else if (returnTokenUserIdAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return BadRequest(new { ErrorMessage = "UserAccountNotActivated" });
 
-            return Ok(new { PasswordResetToken = returnCodeAndTokenResponseModel.Token });
-
-            //TODO add this in the gateway API
-            /*string message = "Click on the following link to reset your account password:";
-            string? link = $"{_configuration["WebClientOriginUrl"]}/Account/ResetPassword?userId={user.Id}&confirmEmailToken={WebUtility.UrlEncode(passwordResetToken)}";
-            string? confirmationLink = $"{message} {link}";
-
-            var apiSendEmailModel = new Dictionary<string, string>
-            {
-                { "title", "Reset Password Confirmation" },
-                { "message", confirmationLink },
-                { "receiver", user.Email! }
-            };
-
-            var response = await httpClient.PostAsJsonAsync("Emails", apiSendEmailModel);
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Ok(new { Warning = "ResetEmailNotSent" });
-
-            return Ok(new { Warning = "None" });*/
+            return Ok(new ApiForgotPasswordResponseModel(returnTokenUserIdAndCodeResponseModel.Token!, returnTokenUserIdAndCodeResponseModel.UserId!));
         }
         catch
         {
@@ -486,28 +451,6 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
 
             return Ok(new { ChangeEmailToken = returnCodeAndTokenResponseModel.Token });
-
-            //TODO add this to the Gateway API
-            /*string message = "Click on the following link to confirm your account's new email:";
-            string? link =
-                $"{_configuration["WebClientOriginUrl"]}/Account/ConfirmChangeEmail?userId={user.Id}&newEmail={changeEmailModel.NewEmail}&confirmEmailToken={WebUtility.UrlEncode(passwordResetToken)}";
-
-            string? confirmationLink = $"{message} {link}";
-
-            var apiSendEmailModel = new Dictionary<string, string>
-            {
-                { "title", "Email Change Confirmation" },
-                { "message", confirmationLink },
-                { "receiver", user.Email! }
-            };
-
-            var response = await httpClient.PostAsJsonAsync("Emails", apiSendEmailModel);
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Ok(new { Warning = "EmailNotSent" });
-
-            user.EmailConfirmed = false;
-            await _authenticationProcedures.UpdateAccountAsync(user);
-            return Ok(new { Warning = "None" });*/
         }
         catch
         {

@@ -1,5 +1,4 @@
 ﻿using EshopApp.AuthLibrary.AuthLogic;
-using EshopApp.AuthLibrary.Models;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.RoleManagementModels;
 using EshopApp.AuthLibraryAPI.Models;
@@ -131,7 +130,7 @@ public class RoleController : ControllerBase
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
-            ReturnRolesAndCodeResponseModel returnRolesAndCodeResponseModel = await _roleManagementProcedures.GetRolesOfUserAsync(accessToken, 
+            ReturnRolesAndCodeResponseModel returnRolesAndCodeResponseModel = await _roleManagementProcedures.GetRolesOfUserAsync(accessToken,
                 new List<Claim>() { new Claim("Permission", "CanManageRoles") }, userId);
             if (returnRolesAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
@@ -281,7 +280,7 @@ public class RoleController : ControllerBase
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageRoles") };
-            LibraryReturnedCodes returnedCode = await _roleManagementProcedures.AddRoleToUserAsync(accessToken, expectedClaims, 
+            LibraryReturnedCodes returnedCode = await _roleManagementProcedures.AddRoleToUserAsync(accessToken, expectedClaims,
                 apiAddRoleToUserRequestModel.UserId!, apiAddRoleToUserRequestModel.RoleId!);
 
             if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
@@ -362,7 +361,6 @@ public class RoleController : ControllerBase
     }
 
     [HttpDelete("RemoveRoleFromUser/{userId}/role/{roleId}")]
-    //[HttpDelete("RemoveRoleFromUser/{userId}/role/{roldId}")]
     [Authorize(Policy = "CanManageRolesPolicy")]
     public async Task<IActionResult> RemoveRoleFromUser(string userId, string roleId)
     {
@@ -441,7 +439,7 @@ public class RoleController : ControllerBase
         {
             string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-            
+
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageRoles") };
 
             List<CustomClaim> newCustomClaims = new List<CustomClaim>();

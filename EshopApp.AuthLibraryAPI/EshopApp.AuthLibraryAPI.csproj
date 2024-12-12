@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <Folder Include="Models\RequestModels\RoleModels\" />
-    <Folder Include="Models\ResponseModels\" />
   </ItemGroup>
 
 </Project>
