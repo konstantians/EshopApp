@@ -298,7 +298,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
-        string? passwordResetToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "passwordResetToken");
+        string? passwordResetToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "token"); //TODO maybe use the whole model here
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

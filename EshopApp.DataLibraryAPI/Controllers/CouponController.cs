@@ -228,4 +228,18 @@ public class CouponController : ControllerBase
             return StatusCode(500);
         }
     }
+
+    [HttpDelete("RemoveAllUserCoupons/userId/{userId}")]
+    public async Task<IActionResult> RemoveAllUserCoupons(string userId)
+    {
+        try
+        {
+            DataLibraryReturnedCodes returnedCode = await _couponDataAccess.RemoveAllCouponsOfUser(userId);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
 }

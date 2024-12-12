@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using EshopApp.AuthLibrary.Models;
+using EshopApp.AuthLibrary.Models.ResponseModels;
+using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
+using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using EshopApp.AuthLibrary.Models;
-using Microsoft.AspNetCore.Authentication;
-using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
-using EshopApp.AuthLibrary.Models.ResponseModels;
 
 namespace EshopApp.AuthLibrary.AuthLogic;
 
@@ -20,7 +21,7 @@ namespace EshopApp.AuthLibrary.AuthLogic;
 public class AuthenticationProcedures : IAuthenticationProcedures
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly SignInManager<AppUser> _signInManager; 
+    private readonly SignInManager<AppUser> _signInManager;
     private readonly ILogger<AuthenticationProcedures> _logger;
     private readonly IConfiguration _config;
     private readonly AppIdentityDbContext _identityDbContext;
@@ -69,7 +70,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             //make sure that the guid is unique(extreme edge case)
             AppUser? otherUser = await _userManager.FindByIdAsync(appUser.Id);
             while (otherUser is not null)
-                appUser.Id = Guid.NewGuid().ToString();  
+                appUser.Id = Guid.NewGuid().ToString();
 
             appUser.UserName = email;
             appUser.Email = email;
@@ -78,7 +79,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var result = await _userManager.CreateAsync(appUser, password);
             if (!result.Succeeded)
             {
-                _logger.LogWarning(new EventId(3204, "SignUpFailureUnknownError"), "An error occurred while creating user account, but an exception was not thrown. Email={Email}, Errors={Errors}.", 
+                _logger.LogWarning(new EventId(3204, "SignUpFailureUnknownError"), "An error occurred while creating user account, but an exception was not thrown. Email={Email}, Errors={Errors}.",
                     appUser.Email, result.Errors);
                 return new LibSignUpResponseModel(null!, null!, LibraryReturnedCodes.UnknownError);
             }
@@ -181,7 +182,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
 
 
-            if(await _helperMethods.IsAccountLockedOut(user, new EventId(3213, "SignInFailureDueToAccountBeingLocked"), "User with locked account tried to sign in. Email={Email}."))
+            if (await _helperMethods.IsAccountLockedOut(user, new EventId(3213, "SignInFailureDueToAccountBeingLocked"), "User with locked account tried to sign in. Email={Email}."))
                 return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountLocked);
 
             var result = await _userManager.CheckPasswordAsync(user!, password)!;
@@ -293,7 +294,8 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             List<string> userRoles = new List<string>(await _userManager.GetRolesAsync(user));
 
             //Try to see if a local account and an external login already exist by trying to loging 
-            if(await _userManager.FindByLoginAsync(loginInfo.LoginProvider, loginInfo.ProviderKey) is not null){
+            if (await _userManager.FindByLoginAsync(loginInfo.LoginProvider, loginInfo.ProviderKey) is not null)
+            {
 
                 //then if both exist, try to login using that external login
                 var externalLoginSignInResult = await _signInManager.ExternalLoginSignInAsync(loginInfo.LoginProvider, loginInfo.ProviderKey, isPersistent: false, bypassTwoFactor: false);
@@ -357,7 +359,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    public async Task<ReturnTokenAndCodeResponseModel> CreateResetPasswordTokenAsync(string email)
+    public async Task<ReturnTokenUserIdAndCodeResponseModel> CreateResetPasswordTokenAsync(string email)
     {
         try
         {
@@ -366,16 +368,16 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             if (appUser is null)
             {
                 _logger.LogWarning(new EventId(3225, "CreateResetPasswordTokenFailureDueToNullUser"), "Tried to create reset password token for null user. Email={Email}.", email);
-                return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenEmail);
+                return new ReturnTokenUserIdAndCodeResponseModel(null!, null!, LibraryReturnedCodes.UserNotFoundWithGivenEmail);
             }
 
             if (!_helperMethods.IsEmailConfirmed(appUser, new EventId(3226, "CreateResetPasswordPasswordFailureDueToUnconfirmedEmail"), "The create reset password token process could not continue, because the user account is not activated. Email= {Email}"))
-                return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
+                return new ReturnTokenUserIdAndCodeResponseModel(null!, null!, LibraryReturnedCodes.UserAccountNotActivated);
 
             string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(appUser);
             _logger.LogInformation(new EventId(2208, "UserResetTokenCreationSuccess"), "Successfully created password reset token. UserId={UserId}, Email={Email}.", appUser.Id, appUser.Email);
 
-            return new ReturnTokenAndCodeResponseModel(passwordResetToken, LibraryReturnedCodes.NoError);
+            return new ReturnTokenUserIdAndCodeResponseModel(passwordResetToken, appUser.Id, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
         {
@@ -418,7 +420,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         catch (Exception ex)
         {
             _logger.LogError(new EventId(4210, "UserPasswordResetFailure"), ex, "An error occurred while trying reset user's account password. " +
-                "UserId={UserId}. ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}." , userId, ex.Message, ex.StackTrace);
+                "UserId={UserId}. ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", userId, ex.Message, ex.StackTrace);
             throw;
         }
     }
@@ -451,7 +453,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 _logger.LogWarning(new EventId(3230, "EmailChangeTokenCreationFailureDueToAccountDeactivationFailure"), "The deactivation of the account could not be completed and thus for security reason the whole process had to " +
                     "be terminated. NewEmail={NewEmail}. Errors={Errors}", newEmail, result.Errors);
             }
-            
+
             _logger.LogInformation(new EventId(2210, "EmailChangeTokenCreationSuccess"), "Successfully created email change token. " +
                     "UserId={UserId}, Email={Email}, NewEmail={NewEmail}.", appUser.Id, appUser.Email, newEmail);
 
@@ -575,7 +577,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         foreach (string roleName in roleNames)
         {
             var role = await _roleManager.FindByNameAsync(roleName);
-            if(role is not null)
+            if (role is not null)
             {
                 claims.Add(new Claim(ClaimTypes.Role, roleName));
                 userRoles.Add(role);
@@ -587,7 +589,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             var roleClaims = await _roleManager.GetClaimsAsync(userRole);
             if (roleClaims is null)
                 continue;
-            
+
             claims.AddRange(roleClaims);
         }
 
