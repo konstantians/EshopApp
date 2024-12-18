@@ -1,3 +1,4 @@
+using EshopApp.GatewayAPI.HelperMethods;
 using EshopApp.GatewayAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -41,6 +42,8 @@ public class Program()
                 options.Window = TimeSpan.FromMinutes(1);
             });
         });
+
+        builder.Services.AddSingleton<IUtilityMethods, UtilityMethods>();
 
         List<string> apiKeys = new List<string>();
         if (configuration["ApiKeys"] is not null)

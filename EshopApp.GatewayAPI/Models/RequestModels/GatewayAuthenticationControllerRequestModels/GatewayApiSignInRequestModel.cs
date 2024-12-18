@@ -1,4 +1,4 @@
-﻿namespace EshopApp.GatewayAPI.Models.RequestModels;
+﻿namespace EshopApp.GatewayAPI.Models.RequestModels.GatewayAuthenticationControllerRequestModels;
 
 public class GatewayApiSignInRequestModel
 {

@@ -1,12 +1,12 @@
-﻿using EshopApp.GatewayAPI.Models;
-using EshopApp.GatewayAPI.Models.RequestModels;
+﻿using EshopApp.GatewayAPI.HelperMethods;
+using EshopApp.GatewayAPI.Models;
+using EshopApp.GatewayAPI.Models.RequestModels.GatewayAuthenticationControllerRequestModels;
 using EshopApp.GatewayAPI.Models.ServiceRequestModels;
 using EshopApp.GatewayAPI.Models.ServiceResponseModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -22,10 +22,12 @@ public class GatewayAuthenticationController : ControllerBase
     private readonly HttpClient emailHttpClient;
     private readonly HttpClient dataHttpClient;
     private readonly IConfiguration _configuration;
+    private readonly IUtilityMethods _utilityMethods;
 
-    public GatewayAuthenticationController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public GatewayAuthenticationController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods)
     {
         _configuration = configuration;
+        _utilityMethods = utilityMethods;
         authHttpClient = httpClientFactory.CreateClient("AuthApiClient");
         emailHttpClient = httpClientFactory.CreateClient("EmailApiClient");
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
@@ -35,7 +37,7 @@ public class GatewayAuthenticationController : ControllerBase
     public async Task<IActionResult> GetUserByAccessToken()
     {
         //request to get the user
-        SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+        _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
         HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetUserByAccessToken");
 
         //validate that getting the user has worked
@@ -69,7 +71,7 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //check the redirect URL
-            if (!CheckIfUrlIsTrusted(signUpModel.ClientUrl!))
+            if (!_utilityMethods.CheckIfUrlIsTrusted(signUpModel.ClientUrl!, _configuration))
                 return BadRequest(new { ErrorMessage = "OriginForRedirectUrlIsNotTrusted" });
 
             //remove the trailing slash from the client url
@@ -77,7 +79,7 @@ public class GatewayAuthenticationController : ControllerBase
                 signUpModel.ClientUrl = signUpModel.ClientUrl.Substring(0, signUpModel.ClientUrl.Length - 1);
 
             //start by doing healthchecks for the endpoints this is calling
-            if (!await CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient }))
+            if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //sign up user
@@ -86,7 +88,7 @@ public class GatewayAuthenticationController : ControllerBase
             signUpRequestModel.Password = signUpModel.Password!;
             signUpRequestModel.PhoneNumber = signUpModel.PhoneNumber;
 
-            SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/SignUp", signUpRequestModel);
 
             //validation that sign up has worked
@@ -107,7 +109,7 @@ public class GatewayAuthenticationController : ControllerBase
             GatewayApiSignUpServiceResponseModel? signupResponseModel = JsonSerializer.Deserialize<GatewayApiSignUpServiceResponseModel>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             //create cart for user
-            SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await dataHttpClient.PostAsJsonAsync("cart", new { UserId = signupResponseModel!.UserId });
 
             //validation that cart has been added to user
@@ -137,8 +139,8 @@ public class GatewayAuthenticationController : ControllerBase
             };
             _ = Task.Run(async () =>
             {
-                SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
-                await AttemptToSendEmailAsync(3, apiSendEmailModel);
+                _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
+                await _utilityMethods.AttemptToSendEmailAsync(emailHttpClient, 3, apiSendEmailModel);
             });
 
             return NoContent();
@@ -159,7 +161,7 @@ public class GatewayAuthenticationController : ControllerBase
             signInRequestModel.Email = signInModel.Email;
             signInRequestModel.Password = signInModel.Password;
             signInRequestModel.RememberMe = signInModel.RememberMe;
-            SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/SignIn", signInRequestModel);
 
             //validation that sign in has worked
@@ -195,7 +197,7 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //check the redirect URL
-            if (!CheckIfUrlIsTrusted(forgotPasswordModel.ClientUrl!))
+            if (!_utilityMethods.CheckIfUrlIsTrusted(forgotPasswordModel.ClientUrl!, _configuration))
                 return BadRequest(new { ErrorMessage = "OriginForRedirectUrlIsNotTrusted" });
 
             //remove the trailing slash from the client url
@@ -203,11 +205,11 @@ public class GatewayAuthenticationController : ControllerBase
                 forgotPasswordModel.ClientUrl = forgotPasswordModel.ClientUrl.Substring(0, forgotPasswordModel.ClientUrl.Length - 1);
 
             //start by doing healthchecks for the endpoints this is calling
-            if (!await CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, emailHttpClient }))
+            if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, emailHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //request signin in the user
-            SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ForgotPassword", new { Email = forgotPasswordModel.Email });
 
             //validation that requesting forgot password has worked
@@ -238,8 +240,8 @@ public class GatewayAuthenticationController : ControllerBase
             };
             _ = Task.Run(async () =>
             {
-                SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
-                await AttemptToSendEmailAsync(3, apiSendEmailModel);
+                _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
+                await _utilityMethods.AttemptToSendEmailAsync(emailHttpClient, 3, apiSendEmailModel);
             });
 
             return NoContent();
@@ -256,7 +258,7 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //request the reset of the password of the user
-            SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ResetPassword",
                 new { UserId = resetPasswordModel.UserId, Password = resetPasswordModel.Password, Token = resetPasswordModel.Token });
 
@@ -291,7 +293,7 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //request to change the password of the user
-            SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ChangePassword",
                 new { CurrentPassword = changePasswordModel.CurrentPassword, NewPassword = changePasswordModel.NewPassword });
 
@@ -326,7 +328,7 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //check the redirect URL
-            if (!CheckIfUrlIsTrusted(changeEmailModel.ClientUrl!))
+            if (!_utilityMethods.CheckIfUrlIsTrusted(changeEmailModel.ClientUrl!, _configuration))
                 return BadRequest(new { ErrorMessage = "OriginForRedirectUrlIsNotTrusted" });
 
             //remove the trailing slash from the client url
@@ -334,11 +336,11 @@ public class GatewayAuthenticationController : ControllerBase
                 changeEmailModel.ClientUrl = changeEmailModel.ClientUrl.Substring(0, changeEmailModel.ClientUrl.Length - 1);
 
             //start by doing healthchecks for the endpoints this is calling
-            if (!await CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, emailHttpClient }))
+            if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, emailHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //request to change the email of the user
-            string accessToken = SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!)!;
+            string accessToken = _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request)!;
             HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/RequestChangeAccountEmail", new { NewEmail = changeEmailModel.NewEmail });
 
             //validate that changing the email has worked
@@ -376,8 +378,8 @@ public class GatewayAuthenticationController : ControllerBase
             };
             _ = Task.Run(async () =>
             {
-                SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
-                await AttemptToSendEmailAsync(3, apiSendEmailModel);
+                _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
+                await _utilityMethods.AttemptToSendEmailAsync(emailHttpClient, 3, apiSendEmailModel);
             });
 
             return NoContent();
@@ -394,11 +396,11 @@ public class GatewayAuthenticationController : ControllerBase
         try
         {
             //start by doing healthchecks for the endpoints this is calling
-            if (!await CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient }))
+            if (!await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient }))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //request to delete the account of the user
-            string accessToken = SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!)!;
+            string accessToken = _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request)!;
             HttpResponseMessage? response = await authHttpClient.DeleteAsync("Authentication/DeleteAccount");
 
             //validate that deleting the user account has worked
@@ -422,7 +424,7 @@ public class GatewayAuthenticationController : ControllerBase
             string email = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value!;
 
             //request to delete the user's cart
-            SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await dataHttpClient.DeleteAsync($"Cart/UserId/{userId}");
 
             //validate the deletion of the user's cart
@@ -465,8 +467,8 @@ public class GatewayAuthenticationController : ControllerBase
             };
             _ = Task.Run(async () =>
             {
-                SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
-                await AttemptToSendEmailAsync(3, apiSendEmailModel);
+                _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
+                await _utilityMethods.AttemptToSendEmailAsync(emailHttpClient, 3, apiSendEmailModel);
             });
 
             return NoContent();
@@ -475,36 +477,6 @@ public class GatewayAuthenticationController : ControllerBase
         {
             return StatusCode(500, "Internal Server Error");
         }
-    }
-
-    private async Task AttemptToSendEmailAsync(int retries, Dictionary<string, string> jsonObject)
-    {
-        if (retries == 0)
-            return;
-
-        HttpResponseMessage response = await emailHttpClient.PostAsJsonAsync("Emails", jsonObject);
-        if (response.StatusCode == HttpStatusCode.OK)
-            return;
-
-        await Task.Delay(1000);
-        retries--;
-        await AttemptToSendEmailAsync(retries, jsonObject);
-    }
-
-    private string? SetDefaultHeadersForClient(bool includeJWTAuthenticationHeaders, HttpClient httpClient, string apiKey, string rateLimitingBypassCode)
-    {
-        string? returnedAccessToken = null;
-        if (includeJWTAuthenticationHeaders)
-        {
-            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
-            string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            returnedAccessToken = accessToken;
-        }
-
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", apiKey);
-        httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", rateLimitingBypassCode);
-        return returnedAccessToken;
     }
 
     private async Task<IActionResult> CommonValidationForRequestClientErrorCodesAsync(HttpResponseMessage response)
@@ -553,43 +525,5 @@ public class GatewayAuthenticationController : ControllerBase
             return StatusCode(StatusCodes.Status405MethodNotAllowed);
 
         return BadRequest(); //this will probably never happen
-    }
-
-    private bool CheckIfUrlIsTrusted(string redirectUrl)
-    {
-        List<string> trustedDomains = _configuration["TrustedOrigins"]!.Split(" ").ToList();
-        var redirectUri = new Uri(redirectUrl);
-
-        foreach (string trustedDomain in trustedDomains)
-        {
-            var trustedUri = new Uri(trustedDomain);
-            if (Uri.Compare(redirectUri, trustedUri, UriComponents.SchemeAndServer, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) == 0)
-                return true;
-        }
-
-        return false;
-    }
-
-    private async Task<bool> CheckIfMicroservicesFullyOnlineAsync(List<HttpClient> httpClients)
-    {
-        try
-        {
-            if (httpClients is null || !httpClients.Any())
-                return true;
-
-            foreach (HttpClient client in httpClients)
-            {
-                var healthResponse = await authHttpClient.GetAsync("Health");
-                if (healthResponse.StatusCode != HttpStatusCode.OK)
-                    return false;
-            }
-
-            return true;
-        }
-        //the exception can happen if one of the microservices are not online. In this case just return false
-        catch
-        {
-            return false;
-        }
     }
 }
