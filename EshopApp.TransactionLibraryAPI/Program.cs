@@ -1,6 +1,8 @@
 using EshopApp.TransactionLibrary.Services;
+using EshopApp.TransactionLibraryAPI.HealthChecks;
 using EshopApp.TransactionLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Stripe;
 
 public class Program()
@@ -42,6 +44,11 @@ public class Program()
 
         StripeConfiguration.ApiKey = configuration["SecretKey"];
 
+        //microservice health check endpoint service
+        builder.Services.AddHealthChecks()
+            .AddCheck("ApiHealthCheck", () => HealthCheckResult.Healthy("MicroserviceFullyOnline"))
+            .AddCheck<StripeHealthCheck>("StripeAccountHealthCheck");
+
         builder.Services.AddScoped<ICheckOutSessionService, CheckOutSessionService>();
         builder.Services.AddScoped<IAppRefundService, AppRefundService>();
 
@@ -63,6 +70,8 @@ public class Program()
                 appBuilder.UseRateLimiter();
             }
         );
+
+        app.UseHealthChecks("/api/health");
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

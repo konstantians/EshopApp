@@ -38,7 +38,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
 
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
             "Auth Database Successfully Cleared!"
@@ -580,6 +580,7 @@ internal class AuthenticationControllerTests
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         accessToken.Should().NotBeNull();
+        _chosenAccessToken = accessToken;
     }
 
     [Test, Order(32)]
@@ -660,7 +661,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         string? userId = _chosenUserId;
         string? emailConfirmationToken = WebUtility.UrlEncode(_chosenConfirmationEmailToken);
-        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7255/handleRedirect?returnUrl=https://localhost:7255/home");
+        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7070/handleRedirect?returnUrl=https://localhost:7070/home");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmemail?userid={userId}&confirmEmailToken={emailConfirmationToken}&redirectUrl={redirectUrl}");
@@ -709,7 +710,7 @@ internal class AuthenticationControllerTests
         string? userId = _chosenUserId;
         string? newEmail = "newotheremail@gmail.com";
         string? changeEmailToken = WebUtility.UrlEncode(_chosenEmailChangeToken);
-        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7255/handleRedirect?returnUrl=https://localhost:7255/home");
+        string? redirectUrl = WebUtility.UrlEncode("https://localhost:7070/handleRedirect?returnUrl=https://localhost:7070/home");
 
         //Act
         HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/confirmchangeemail?userId={userId}&newEmail={newEmail}&changeEmailToken={changeEmailToken}&redirectUrl={redirectUrl}");
@@ -806,7 +807,7 @@ internal class AuthenticationControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
         testExternalSignInRequestModel.IdentityProviderName = "Google";
-        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7255/home";
+        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7070/home";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
@@ -841,7 +842,7 @@ internal class AuthenticationControllerTests
     public void OneTimeTearDown()
     {
         httpClient.Dispose();
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
             "Auth Database Successfully Cleared!"

@@ -3,6 +3,7 @@ using EshopApp.DataLibrary.DataAccess;
 using EshopApp.DataLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json.Serialization;
 
 namespace EshopApp.DataLibraryAPI;
@@ -41,6 +42,11 @@ public class Program()
         builder.Services.AddDbContext<AppDataDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultData")));
 
+        //microservice health check endpoint service
+        builder.Services.AddHealthChecks()
+            .AddCheck("ApiAndDatabaseHealthCheck", () => HealthCheckResult.Healthy("MicroserviceFullyOnline"))
+            .AddDbContextCheck<AppDataDbContext>();
+
         builder.Services.AddScoped<ICategoryDataAccess, CategoryDataAccess>();
         builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
         builder.Services.AddScoped<IVariantDataAccess, VariantDataAccess>();
@@ -71,6 +77,8 @@ public class Program()
                 appBuilder.UseRateLimiter();
             }
         );
+
+        app.UseHealthChecks("/api/health");
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

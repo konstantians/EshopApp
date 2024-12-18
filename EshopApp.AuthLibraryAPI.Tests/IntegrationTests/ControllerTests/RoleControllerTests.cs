@@ -41,7 +41,7 @@ internal class RoleControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
 
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
             "Auth Database Successfully Cleared!"
@@ -1185,7 +1185,7 @@ internal class RoleControllerTests
     public void OnTimeTearDown()
     {
         httpClient.Dispose();
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppAuthDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.AspNetUserTokens", "dbo.AspNetUserRoles", "dbo.AspNetUserLogins", "dbo.AspNetRoles", "dbo.AspNetUsers" },
             "Auth Database Successfully Cleared!"

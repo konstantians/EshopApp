@@ -1,23 +1,27 @@
-﻿using EshopApp.EmailLibrary.DataAccessLogic;
-using EshopApp.EmailLibrary;
-using Microsoft.AspNetCore.Mvc;
-using EshopApp.EmailLibrary.Models.ResponseModels;
+﻿using EshopApp.EmailLibrary;
+using EshopApp.EmailLibrary.DataAccessLogic;
 using EshopApp.EmailLibrary.Models.RequestModels;
+using EshopApp.EmailLibrary.Models.ResponseModels;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace EshopApp.EmailLibraryAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("DefaultWindowLimiter")]
 public class EmailsController : ControllerBase
 {
     private readonly IEmailDataAccess _emailDataAccess;
     private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public EmailsController(IEmailDataAccess emailDataAccess, IEmailService emailService)
+    public EmailsController(IEmailDataAccess emailDataAccess, IEmailService emailService, IConfiguration configuration)
     {
         _emailDataAccess = emailDataAccess;
         _emailService = emailService;
+        _configuration = configuration;
     }
 
     [HttpGet("{id}")]
