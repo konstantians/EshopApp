@@ -103,8 +103,8 @@ public class AuthenticationController : ControllerBase
     /// <param name="redirectUrl">Optional parameter that specifies the redirectUrl that the endpoint will redirect the user to with its given response.</param>
     /// <returns>It returns multiple status codes that indicate whether or not the operation was successful or not. If the redirectUrl parameter is not null it will return a Redirect result
     /// which will redirect the user to the given url with the appropriate arguements, otherwise it will return Ok status code with the newly created access confirmEmailToken</returns>
-    //redirectUrl contains as a query parameter the returnUrl and thus what is sent is something like the following
-    //https://myapp/specificendpointthathandlesredirect?returnUrl=https://myapp/wherethewholethingwasstartedfrom
+    //redirectUrl can contain as a query parameter the returnUrl(if the client wishes for it) and thus what is sent is something like the following
+    //https://myapp/endpointThatHandlesRedirect?returnUrl=https://myapp/endpointTheClientWishesToRedirectAfterConfirmingEmailHasBeenDone
     [HttpGet("ConfirmEmail")]
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string userId, string confirmEmailToken, string? redirectUrl = null)
@@ -115,6 +115,7 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
 
             ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ConfirmEmailAsync(userId, confirmEmailToken);
+            //this appends in the end of the redirectUrl either an errorMesage or an accessToken depending on whether or not the confirming of the email was completed successfully
             if (redirectUrl is not null)
             {
                 var uribBuilder = new UriBuilder(redirectUrl);
@@ -265,6 +266,12 @@ public class AuthenticationController : ControllerBase
                 return Redirect($"{returnUrl}?errorMessage=LoginInfoNotReceivedFromIdentityProvider");
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.EmailClaimNotReceivedFromIdentityProvider)
                 return Redirect($"{returnUrl}?errorMessage=EmailClaimNotReceivedFromIdentityProvider");
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
+                return Redirect($"{returnUrl}?errorMessage=UserAccountNotActivated");
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
+                return Redirect($"{returnUrl}?errorMessage=UserAccountLocked");
+            else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
+                return Redirect($"{returnUrl}?errorMessage=UnknownError");
 
             return Redirect($"{returnUrl}?accessToken={returnCodeAndTokenResponseModel.Token}");
         }

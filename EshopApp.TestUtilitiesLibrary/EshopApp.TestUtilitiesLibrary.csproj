@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.12.1" />
     <PackageReference Include="microsoft.data.sqlclient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.11" />
   </ItemGroup>
 
 </Project>

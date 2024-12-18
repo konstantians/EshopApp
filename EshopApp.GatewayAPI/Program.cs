@@ -1,7 +1,7 @@
 using EshopApp.GatewayAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 
-class Program()
+public class Program()
 {
     public static void Main(string[] args)
     {
@@ -37,7 +37,6 @@ class Program()
             options.RejectionStatusCode = 429;
             options.AddFixedWindowLimiter("DefaultWindowLimiter", options =>
             {
-                //test value
                 options.PermitLimit = 100;
                 options.Window = TimeSpan.FromMinutes(1);
             });
@@ -49,7 +48,7 @@ class Program()
 
         var app = builder.Build();
 
-        // Define a condition for applying rate limiting
+        // Condition for applying rate limiting
         app.UseWhen(
             context =>
             {
@@ -66,7 +65,6 @@ class Program()
             }
         );
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -75,7 +73,7 @@ class Program()
 
         app.UseHttpsRedirection();
 
-        app.UseMiddleware<ApiKeyProtectionMiddleware>();
+        app.UseMiddleware<ApiKeyProtectionMiddleware>(apiKeys);
 
         app.MapControllers();
 

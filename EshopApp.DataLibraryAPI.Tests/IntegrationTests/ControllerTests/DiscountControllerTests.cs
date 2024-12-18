@@ -32,7 +32,7 @@ internal class DiscountControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "user_e1f7b8c0-3c79-4a1b-9e7a-9d8b1d4a5c6e");
         _chosenApiKey = "user_e1f7b8c0-3c79-4a1b-9e7a-9d8b1d4a5c6e";
 
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions",
                 "dbo.CartItems", "dbo.Carts" },
@@ -445,7 +445,7 @@ internal class DiscountControllerTests
     public void OnTimeTearDown()
     {
         httpClient.Dispose();
-        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlAuthDatabase(
+        TestUtilitiesLibrary.DatabaseUtilities.ResetSqlDatabase(
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EshopAppDataDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
             new string[] { "dbo.Attributes", "dbo.Categories", "dbo.Products", "dbo.Variants", "dbo.Discounts", "dbo.Images", "dbo.VariantImages", "dbo.Orders", "dbo.Coupons", "dbo.UserCoupons", "dbo.ShippingOptions", "dbo.PaymentOptions",
                 "dbo.CartItems", "dbo.Carts" },

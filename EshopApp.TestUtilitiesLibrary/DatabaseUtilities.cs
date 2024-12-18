@@ -1,9 +1,10 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Data.SqlClient;
 
 namespace EshopApp.TestUtilitiesLibrary;
 public class DatabaseUtilities
 {
-    public static void ResetSqlAuthDatabase(string connectionString, string[] tables, string consoleMessage)
+    public static void ResetSqlDatabase(string connectionString, string[] tables, string consoleMessage)
     {
         List<string> excludedIds = new List<string>();
         using SqlConnection connection = new SqlConnection(connectionString);
@@ -54,6 +55,38 @@ public class DatabaseUtilities
         }
 
         connection.Close();
+
+        Console.WriteLine(consoleMessage);
+    }
+
+    public static async Task ResetNoSqlDatabaseAsync(string[] containers, string consoleMessage)
+    {
+        string cosmosDbConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+
+        CosmosClient cosmosClient = new CosmosClient(cosmosDbConnectionString);
+        Database database = cosmosClient.GetDatabase("GlobalDb");
+
+        List<Microsoft.Azure.Cosmos.Container> containerObjects = new List<Microsoft.Azure.Cosmos.Container>();
+        foreach (string container in containers)
+            containerObjects.Add(database.GetContainer(container));
+
+        foreach (Microsoft.Azure.Cosmos.Container containerObject in containerObjects)
+        {
+            //all the documents of the containerObject
+            FeedIterator<dynamic> resultSetIterator = containerObject.GetItemQueryIterator<dynamic>("SELECT * FROM c");
+
+            while (resultSetIterator.HasMoreResults)
+            {
+                //a batch of the documents that are loaded from resultSetIterator
+                FeedResponse<dynamic> response = await resultSetIterator.ReadNextAsync();
+
+                foreach (var document in response)
+                {
+                    await containerObject.DeleteItemAsync<dynamic>(id: document.id.ToString(),
+                        partitionKey: new PartitionKey(document.Id.ToString()));
+                }
+            }
+        }
 
         Console.WriteLine(consoleMessage);
     }

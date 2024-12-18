@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Reflection;
 using System.Text;
@@ -120,6 +121,11 @@ public class Program()
             options.AddPolicy("CanManageRolesPolicy", policy => policy.RequireClaim("Permission", "CanManageRoles"));
         });
 
+        //microservice health check endpoint service
+        builder.Services.AddHealthChecks()
+            .AddCheck("ApiAndDatabaseHealthCheck", () => HealthCheckResult.Healthy("MicroserviceFullyOnline"))
+            .AddDbContextCheck<AppIdentityDbContext>();
+
         builder.Services.AddScoped<IAuthenticationProcedures, AuthenticationProcedures>();
         builder.Services.AddScoped<IAdminProcedures, AdminProcedures>();
         builder.Services.AddScoped<IRoleManagementProcedures, RoleManagementProcedures>();
@@ -143,6 +149,8 @@ public class Program()
                 appBuilder.UseRateLimiter();
             }
         );
+
+        app.UseHealthChecks("/api/health");
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

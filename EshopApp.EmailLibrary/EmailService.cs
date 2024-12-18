@@ -1,8 +1,10 @@
-﻿using System.Net.Mail;
-using System.Net;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Net;
+using System.Net.Mail;
+using System.Net.Sockets;
+using System.Text;
 
 namespace EshopApp.EmailLibrary;
 
@@ -143,4 +145,47 @@ public class EmailService : IEmailService
         }
     }
 
+    public bool ValidateSmtpServer()
+    {
+        try
+        {
+            SmtpSettings? smtpSettings = _configuration.GetSection("SmtpSettings").Get<SmtpSettings>();
+
+            using var client = new TcpClient(smtpSettings!.Host!, smtpSettings!.Port);
+            using var stream = client.GetStream();
+            using var reader = new StreamReader(stream, Encoding.ASCII);
+            using var writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
+
+            // Read server response (greeting message)
+            Console.WriteLine(reader.ReadLine());
+
+            // Send EHLO command to the server
+            writer.WriteLine($"EHLO {smtpSettings!.Host!}");
+            Console.WriteLine(reader.ReadLine());
+
+            // Send AUTH LOGIN command to start authentication
+            writer.WriteLine("AUTH LOGIN");
+            Console.WriteLine(reader.ReadLine());
+
+            // Send base64-encoded username
+            writer.WriteLine(Convert.ToBase64String(Encoding.ASCII.GetBytes(smtpSettings!.Username!)));
+            Console.WriteLine(reader.ReadLine());
+
+            // Send base64-encoded password
+            writer.WriteLine(Convert.ToBase64String(Encoding.ASCII.GetBytes(smtpSettings!.Password!)));
+            var response = reader.ReadLine();
+            Console.WriteLine(response);
+
+            // Check if authentication succeeded (successful response usually starts with "235"). I have also left here the 250 status code as valid for papercut
+            string? returnedStatusCode = response?.Substring(0, 3);
+            if (returnedStatusCode is null || (returnedStatusCode != "235" && returnedStatusCode != "250"))
+                return false;
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
