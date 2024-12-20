@@ -1,9 +1,9 @@
 ﻿using EshopApp.AuthLibrary.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 using EshopApp.AuthLibrary.Models.ResponseModels;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Security.Claims;
 
 namespace EshopApp.AuthLibrary.AuthLogic;
@@ -44,7 +44,7 @@ public class AdminProcedures : IAdminProcedures
             IList<Claim>? editorUserClaims = editorUserRole is null ? null : await _roleManager.GetClaimsAsync(editorUserRole);
 
             //if the user that called the endpoint has elevated access just return all users
-            if(editorUserClaims is not null && editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedUsers"))
+            if (editorUserClaims is not null && editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedUsers"))
                 return new ReturnUsersAndCodeResponseModel(foundUsers, LibraryReturnedCodes.NoError);
 
             //otherwise just return users who do not have elevated protections
@@ -58,7 +58,7 @@ public class AdminProcedures : IAdminProcedures
                 if (editedUserClaims is null || !editedUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
                     filteredFoundUsers.Add(foundUser);
             }
-            
+
             return new ReturnUsersAndCodeResponseModel(filteredFoundUsers, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
@@ -259,7 +259,8 @@ public class AdminProcedures : IAdminProcedures
                     //password update if a new password is provided
                     if (password is not null)
                     {
-                        bool checkPasswordResult = await _userManager.CheckPasswordAsync(userToBeUpdated, password);
+                        bool checkPasswordResult = await _userManager.CheckPasswordAsync(userToBeUpdated, password); //this just checks if the password that was given is the same password that the user already has
+                        //if that is the case then do not go the extra mile to do the update
                         if (!checkPasswordResult)
                         {
                             string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(userToBeUpdated);
