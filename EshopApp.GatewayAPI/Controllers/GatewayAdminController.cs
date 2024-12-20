@@ -31,7 +31,6 @@ public class GatewayAdminController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
-        //maybe add the user carts and their coupons? Probably only for single user since the performance hit might be significant
         try
         {
             //get the users
@@ -69,10 +68,6 @@ public class GatewayAdminController : ControllerBase
         //eventually get user coupons and cart
         try
         {
-            //start by doing healthchecks for the endpoints this is calling
-            //if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient })))
-            //    return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
-
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await authHttpClient.GetAsync($"Admin/GetUserById/{userId}");
 
@@ -107,10 +102,6 @@ public class GatewayAdminController : ControllerBase
         //eventually get user coupons and cart
         try
         {
-            //start by doing healthchecks for the endpoints this is calling
-            //if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient })))
-            //    return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
-
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await authHttpClient.GetAsync($"Admin/GetUserByEmail/{email}");
 
@@ -147,7 +138,8 @@ public class GatewayAdminController : ControllerBase
             //start by doing healthchecks for the endpoints this is calling
             if (gatewayApiCreateUserRequestModel.SendEmailNotification && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
-            else if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
+            //sendEmailNotification == false check is made to avoid an uneccesary http call
+            else if (!gatewayApiCreateUserRequestModel.SendEmailNotification && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //send request to create the user
@@ -174,8 +166,8 @@ public class GatewayAdminController : ControllerBase
             GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             //send request to create the user cart
-            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await authHttpClient.PostAsJsonAsync("Cart", new { UserId = appUser!.Id });
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await dataHttpClient.PostAsJsonAsync("Cart", new { UserId = appUser!.Id });
 
             //validate that creating the user cart has worked
             retries = 3;
@@ -184,7 +176,7 @@ public class GatewayAdminController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.PostAsJsonAsync("Cart", new { UserId = appUser!.Id });
+                response = await dataHttpClient.PostAsJsonAsync("Cart", new { UserId = appUser!.Id });
                 retries--;
             }
 
@@ -255,15 +247,16 @@ public class GatewayAdminController : ControllerBase
         }
     }
 
-    [HttpDelete("{userId}/userEmail/{userEmail}/sendEmailNotification/{sendEmailNotification}")]
-    public async Task<IActionResult> DeleteUserAccount(string userId, string userEmail, bool sendEmailNotification)
+    [HttpDelete("{userId}")]
+    [HttpDelete("{userId}/userEmail/{userEmail}")]
+    public async Task<IActionResult> DeleteUserAccount(string userId, string? userEmail)
     {
         try
         {
             //start by doing healthchecks for the endpoints this is calling
-            if (sendEmailNotification && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
+            if (userEmail is not null && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
-            else if (!(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, emailHttpClient })))
+            else if (userEmail is null && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient }))) //userEmail is null check is made to avoid an uneccesary http call
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
             //send request to delete the user
@@ -284,9 +277,9 @@ public class GatewayAdminController : ControllerBase
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return await CommonValidationForRequestClientErrorCodesAsync(response);
 
-            //send request to delete the user cart
-            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await authHttpClient.DeleteAsync($"Cart/UserId/{userId}");
+            //send request to delete the user cart. Important note: Do not set the default headers for client twice for the same httpclient
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await dataHttpClient.DeleteAsync($"Cart/UserId/{userId}");
 
             //validate that deleting the user cart has worked
             retries = 3;
@@ -295,7 +288,7 @@ public class GatewayAdminController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.DeleteAsync($"Cart/UserId/{userId}");
+                response = await dataHttpClient.DeleteAsync($"Cart/UserId/{userId}");
                 retries--;
             }
 
@@ -303,8 +296,7 @@ public class GatewayAdminController : ControllerBase
                 return await CommonValidationForRequestClientErrorCodesAsync(response);
 
             //send request to delete the coupons of the user
-            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await authHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
+            response = await dataHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
 
             //validate that deleting the coupons of the user has worked
             retries = 3;
@@ -313,7 +305,7 @@ public class GatewayAdminController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
+                response = await dataHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
                 retries--;
             }
 
@@ -321,7 +313,7 @@ public class GatewayAdminController : ControllerBase
                 return await CommonValidationForRequestClientErrorCodesAsync(response);
 
             //send an email to the user to notify them that their account has been deleted
-            if (sendEmailNotification)
+            if (userEmail is not null)
             {
                 var apiSendEmailModel = new Dictionary<string, string>
                 {

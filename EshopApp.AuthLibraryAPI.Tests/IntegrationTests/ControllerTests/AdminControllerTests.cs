@@ -397,7 +397,7 @@ internal class AdminControllerTests
     }
 
     [Test, Order(23)]
-    public async Task UpdateUserAccount_ShouldReturnBadRequest_IfUserWithGivenIdIsNotFound()
+    public async Task UpdateUserAccount_ShouldReturnNotFound_IfUserWithGivenIdIsNotFound()
     {
         //Arrange
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
@@ -410,7 +410,7 @@ internal class AdminControllerTests
         string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         errorMessage.Should().NotBeNull();
         errorMessage.Should().Be("UserNotFoundWithGivenId");
     }
@@ -478,7 +478,7 @@ internal class AdminControllerTests
     }
 
     [Test, Order(28)]
-    public async Task DeleteUserAccount_ShouldReturnBadRequest_IfUserWithGivenIdIsNotFound()
+    public async Task DeleteUserAccount_ShouldReturnNotFound_IfUserWithGivenIdIsNotFound()
     {
         //Arrange
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
@@ -489,7 +489,7 @@ internal class AdminControllerTests
         string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         errorMessage.Should().NotBeNull();
         errorMessage.Should().Be("UserNotFoundWithGivenId");
     }

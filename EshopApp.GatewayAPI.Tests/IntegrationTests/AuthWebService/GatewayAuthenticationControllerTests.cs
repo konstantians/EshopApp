@@ -1,5 +1,5 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.Models;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels.TestGatewayAdminControllerRequestModels;
 using EshopApp.GatewayAPI.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -197,7 +197,7 @@ internal class GatewayAuthenticationControllerTests
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", signUpModel);
         await Task.Delay(waitTimeInMillisecond);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink();
+        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
 
         //Assert
@@ -210,10 +210,7 @@ internal class GatewayAuthenticationControllerTests
             using HttpClient tempHttpClient = new HttpClient();
             await tempHttpClient.GetAsync(confirmationEmailLink);
         }
-        catch
-        {
-
-        }
+        catch { }
     }
 
     [Test, Order(60)]
@@ -431,7 +428,7 @@ internal class GatewayAuthenticationControllerTests
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/GatewayAuthentication/forgotpassword", testGatewayApiForgotPasswordRequestModel);
         await Task.Delay(waitTimeInMillisecond);
-        string? resetPasswordEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink();
+        string? resetPasswordEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
         //Assert
         resetPasswordEmailLink.Should().NotBeNull().And.StartWith(testGatewayApiForgotPasswordRequestModel.ClientUrl);
@@ -683,7 +680,7 @@ internal class GatewayAuthenticationControllerTests
         var signUpResponse = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", testGatewayApiSignUpRequestModel);
 
         await Task.Delay(waitTimeInMillisecond);
-        TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(); //just remove the last email from papercut
+        TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true); //just remove the last email from papercut
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/requestchangeaccountemail", testChangeEmailRequestModel);
@@ -711,7 +708,7 @@ internal class GatewayAuthenticationControllerTests
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/requestchangeaccountemail", testChangeEmailRequestModel);
 
         await Task.Delay(waitTimeInMillisecond);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink();
+        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
 
         //Assert
@@ -724,10 +721,7 @@ internal class GatewayAuthenticationControllerTests
             using HttpClient tempHttpClient = new HttpClient();
             await tempHttpClient.GetAsync(confirmationEmailLink);
         }
-        catch
-        {
-
-        }
+        catch { }
 
         HttpResponseMessage signInResponse = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signin", testGatewayApiSignInRequestModel);
         _chosenAccessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(signInResponse, "accessToken");
@@ -775,6 +769,8 @@ internal class GatewayAuthenticationControllerTests
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
+
+    //TODO add rate limiting test
 
     [OneTimeTearDown]
     public async Task OnTimeTearDown()

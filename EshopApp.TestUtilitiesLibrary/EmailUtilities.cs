@@ -1,30 +1,34 @@
 ﻿namespace EshopApp.TestUtilitiesLibrary;
 public class EmailUtilities
 {
-    public static List<string>? ReadLastEmailFile()
+    public static string? ReadLastEmailFile(bool deleteEmailFile)
     {
         string directoryPath = @"C:\ProgramData\Changemaker Studios\Papercut SMTP\Incoming";
 
         List<string> emlFiles = Directory.GetFiles(directoryPath, "*.eml")
-                                .OrderByDescending(f => new FileInfo(f).LastWriteTime)
-                                .ToList();
+            .OrderByDescending(f => new FileInfo(f).LastWriteTime)
+            .ToList();
 
         string? lastEmailFile = emlFiles.FirstOrDefault();
         if (lastEmailFile == null)
             return null;
 
-        List<string> emailFileLines = File.ReadAllLines(lastEmailFile).ToList();
-        return emailFileLines;
+        string emailFileContent = File.ReadAllText(lastEmailFile);
+
+        if (deleteEmailFile)
+            File.Delete(lastEmailFile);
+
+        return emailFileContent;
     }
 
-    public static string? GetLastEmailLink()
+    public static string? GetLastEmailLink(bool deleteEmailFile)
     {
         string directoryPath = @"C:\ProgramData\Changemaker Studios\Papercut SMTP\Incoming";
 
         // Get all .eml files in the directory
         List<string> emlFiles = Directory.GetFiles(directoryPath, "*.eml")
-                                .OrderByDescending(f => new FileInfo(f).LastWriteTime)
-                                .ToList();
+            .OrderByDescending(f => new FileInfo(f).LastWriteTime)
+            .ToList();
 
         // Get the last one
         string? lastEmailFile = emlFiles.FirstOrDefault();
@@ -46,11 +50,11 @@ public class EmailUtilities
         link = link.Replace("=3D", "=");
 
         // Delete the file now that we have the link
-        File.Delete(lastEmailFile);
+        if (deleteEmailFile)
+            File.Delete(lastEmailFile);
 
         return link;
     }
-
 
     public static void DeleteAllEmailFiles()
     {

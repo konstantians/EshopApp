@@ -179,7 +179,7 @@ public class AdminController : ControllerBase
             else if (returnedCode == LibraryReturnedCodes.UserAccountLocked)
                 return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
             else if (returnedCode == LibraryReturnedCodes.UserNotFoundWithGivenId)
-                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
+                return NotFound(new { ErrorMessage = "UserNotFoundWithGivenId" });
             else if (returnedCode == LibraryReturnedCodes.DuplicateEmail)
                 return BadRequest(new { ErrorMessage = "DuplicateEmail" });
             else if (returnedCode == LibraryReturnedCodes.UnknownError)
@@ -218,7 +218,7 @@ public class AdminController : ControllerBase
             else if (returnedCode == LibraryReturnedCodes.UserAccountLocked)
                 return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
             else if (returnedCode == LibraryReturnedCodes.UserNotFoundWithGivenId)
-                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenId" });
+                return NotFound(new { ErrorMessage = "UserNotFoundWithGivenId" });
             else if (returnedCode == LibraryReturnedCodes.UnknownError)
                 return BadRequest(new { ErrorMessage = "UnknownError" });
 
