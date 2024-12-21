@@ -51,11 +51,11 @@ public class AdminProcedures : IAdminProcedures
             var filteredFoundUsers = new List<AppUser>();
             foreach (AppUser foundUser in foundUsers)
             {
-                IList<string> editedUserRoleNames = await _userManager.GetRolesAsync(foundUser);
-                AppRole? editedUserRole = editedUserRoleNames is null || editedUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editedUserRoleNames.FirstOrDefault()!);
-                IList<Claim>? editedUserClaims = editedUserRole is null ? null : await _roleManager.GetClaimsAsync(editedUserRole);
+                IList<string> foundUserRoleNames = await _userManager.GetRolesAsync(foundUser);
+                AppRole? foundUserRole = foundUserRoleNames is null || foundUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(foundUserRoleNames.FirstOrDefault()!);
+                IList<Claim>? foundUserClaims = foundUserRole is null ? null : await _roleManager.GetClaimsAsync(foundUserRole);
 
-                if (editedUserClaims is null || !editedUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
+                if (foundUserClaims is null || !foundUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
                     filteredFoundUsers.Add(foundUser);
             }
 
