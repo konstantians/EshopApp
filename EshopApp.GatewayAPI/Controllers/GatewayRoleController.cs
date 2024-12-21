@@ -1,7 +1,6 @@
 ﻿using EshopApp.GatewayAPI.HelperMethods;
 using EshopApp.GatewayAPI.Models;
 using EshopApp.GatewayAPI.Models.RequestModels.GatewayRoleControllerRequestModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net;
@@ -15,22 +14,17 @@ namespace EshopApp.GatewayAPI.Controllers;
 public class GatewayRoleController : ControllerBase
 {
     private readonly HttpClient authHttpClient;
-    //private readonly HttpClient dataHttpClient;
-    //private readonly HttpClient emailHttpClient;
     private readonly IUtilityMethods _utilityMethods;
     private readonly IConfiguration _configuration;
 
     public GatewayRoleController(IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods, IConfiguration configuration)
     {
         authHttpClient = httpClientFactory.CreateClient("AuthApiClient");
-        //dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
-        //emailHttpClient = httpClientFactory.CreateClient("EmailApiClient");
         _utilityMethods = utilityMethods;
         _configuration = configuration;
     }
 
     [HttpGet]
-    [Authorize(Policy = "CanManageRolesPolicy")]
     public async Task<IActionResult> GetRoles()
     {
         try
@@ -194,7 +188,7 @@ public class GatewayRoleController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppRole appRole = JsonSerializer.Deserialize<GatewayAppRole>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
 
-            return Ok(appRole);
+            return CreatedAtAction(nameof(GetRoleById), new { roleId = appRole!.Id }, appRole);
         }
         catch (Exception)
         {

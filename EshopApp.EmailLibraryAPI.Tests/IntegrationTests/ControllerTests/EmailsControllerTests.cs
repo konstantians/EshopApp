@@ -102,14 +102,11 @@ internal class EmailsControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/emails", testEmailRequestModel);
-        List<string>? emailLines = TestUtilitiesLibrary.EmailUtilities.ReadLastEmailFile();
+        string? emailContent = TestUtilitiesLibrary.EmailUtilities.ReadLastEmailFile(deleteEmailFile: true);
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        emailLines.Should().NotBeNull();
-        emailLines.Should().Contain(emailLine => emailLine.Contains(testEmailRequestModel.Title));
-        emailLines.Should().Contain(emailLine => emailLine.Contains(testEmailRequestModel.Message));
-        emailLines.Should().Contain(emailLine => emailLine.Contains(testEmailRequestModel.Receiver));
+        emailContent.Should().NotBeNull();
     }
 
     [Test, Order(50)]

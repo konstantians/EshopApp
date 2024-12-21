@@ -1,4 +1,4 @@
-﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels.TestGatewayAuthenticationControllerRequestModels;
+﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAuthenticationControllerRequestModels;
 internal class TestGatewayApiCreateUserRequestModel
 {
     public string? Email { get; set; }

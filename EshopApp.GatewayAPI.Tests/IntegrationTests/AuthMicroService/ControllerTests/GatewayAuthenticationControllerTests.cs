@@ -1,5 +1,5 @@
-﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.Models;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels.TestGatewayAdminControllerRequestModels;
+﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAdminControllerRequestModels;
 using EshopApp.GatewayAPI.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,7 +8,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Web;
 
-namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthWebService;
+namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.ControllerTests;
 
 [TestFixture]
 [Category("Integration")]
@@ -770,7 +770,22 @@ internal class GatewayAuthenticationControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
-    //TODO add rate limiting test
+    //Rate Limit Test
+    [Test, Order(500)]
+    public async Task GetUserByAccessToken_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-Bypass-Rate-Limiting");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
+
+        //Act
+        HttpResponseMessage response = new();
+        for (int i = 0; i < 101; i++)
+            response = await httpClient.GetAsync("api/gatewayAuthentication/GetUserByAccessToken");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+    }
 
     [OneTimeTearDown]
     public async Task OnTimeTearDown()

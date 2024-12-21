@@ -1,7 +1,7 @@
 ﻿using EshopApp.GatewayAPI.Models;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.Models;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels.TestGatewayAdminControllerRequestModels;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.Models.RequestModels.TestGatewayAuthenticationControllerRequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAdminControllerRequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAuthenticationControllerRequestModels;
 using EshopApp.GatewayAPI.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,7 +9,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthWebService;
+namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.ControllerTests;
 
 [TestFixture]
 [Category("Integration")]
@@ -616,6 +616,23 @@ internal class GatewayAdminControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         secondDeleteResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
         emailContent.Should().BeNull();
+    }
+
+    //Rate Limit Test
+    [Test, Order(500)]
+    public async Task GetUsers_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-Bypass-Rate-Limiting");
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
+
+        //Act
+        HttpResponseMessage response = new();
+        for (int i = 0; i < 101; i++)
+            response = await httpClient.GetAsync("api/GatewayAdmin");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
     }
 
     [OneTimeTearDown]
