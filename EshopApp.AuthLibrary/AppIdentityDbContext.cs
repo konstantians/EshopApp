@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using EshopApp.AuthLibrary.Models;
+﻿using EshopApp.AuthLibrary.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace EshopApp.AuthLibrary;
 
@@ -49,14 +49,32 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
 
         string managerUserGuid = Guid.NewGuid().ToString();
         builder.Entity<AppUser>().HasData(
-            new AppUser() { Id = managerUserGuid, UserName = "manager@hotmail.com", Email = "manager@hotmail.com", NormalizedUserName = "MANAGER@HOTMAIL.COM", 
-                NormalizedEmail = "MANAGER@HOTMAIL.COM", EmailConfirmed = true, PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "CIiyyBRXjTGac7j!"), SecurityStamp = Guid.NewGuid().ToString()}
+            new AppUser()
+            {
+                Id = managerUserGuid,
+                UserName = "manager@hotmail.com",
+                Email = "manager@hotmail.com",
+                NormalizedUserName = "MANAGER@HOTMAIL.COM",
+                NormalizedEmail = "MANAGER@HOTMAIL.COM",
+                EmailConfirmed = true,
+                PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "CIiyyBRXjTGac7j!"),
+                SecurityStamp = Guid.NewGuid().ToString()
+            }
         );
 
         string adminUserGuid = Guid.NewGuid().ToString();
         builder.Entity<AppUser>().HasData(
-            new AppUser() { Id = adminUserGuid, UserName = "admin@hotmail.com", Email = "admin@hotmail.com", NormalizedUserName = "ADMIN@HOTMAIL.COM", 
-                NormalizedEmail = "ADMIN@HOTMAIL.COM", EmailConfirmed = true, PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "0XfN725l5EwSTIk!"), SecurityStamp = Guid.NewGuid().ToString()}
+            new AppUser()
+            {
+                Id = adminUserGuid,
+                UserName = "admin@hotmail.com",
+                Email = "admin@hotmail.com",
+                NormalizedUserName = "ADMIN@HOTMAIL.COM",
+                NormalizedEmail = "ADMIN@HOTMAIL.COM",
+                EmailConfirmed = true,
+                PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, "0XfN725l5EwSTIk!"),
+                SecurityStamp = Guid.NewGuid().ToString()
+            }
         );
 
         builder.Entity<IdentityUserRole<string>>().HasData(
@@ -69,16 +87,22 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
 
         builder.Entity<IdentityRoleClaim<string>>().HasData(
             new IdentityRoleClaim<string> { Id = 1, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageUsers" },
-            new IdentityRoleClaim<string> { Id = 2, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" }
+            new IdentityRoleClaim<string> { Id = 2, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" },
+            new IdentityRoleClaim<string> { Id = 3, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageProducts" },
+            new IdentityRoleClaim<string> { Id = 4, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrdersOptions" },
+            new IdentityRoleClaim<string> { Id = 5, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrders" }
         );
 
         builder.Entity<IdentityRoleClaim<string>>().HasData(
-            new IdentityRoleClaim<string> { Id = 3, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageUsers" },
-            new IdentityRoleClaim<string> { Id = 4, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedUsers" },
-            new IdentityRoleClaim<string> { Id = 5, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" },
-            new IdentityRoleClaim<string> { Id = 6, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedRoles" },
-            new IdentityRoleClaim<string> { Id = 7, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByElevatedUsers" },
-            new IdentityRoleClaim<string> { Id = 8, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles" }
+            new IdentityRoleClaim<string> { Id = 6, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageUsers" },
+            new IdentityRoleClaim<string> { Id = 7, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedUsers" },
+            new IdentityRoleClaim<string> { Id = 8, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageRoles" },
+            new IdentityRoleClaim<string> { Id = 9, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedRoles" },
+            new IdentityRoleClaim<string> { Id = 10, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByElevatedUsers" },
+            new IdentityRoleClaim<string> { Id = 11, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles" },
+            new IdentityRoleClaim<string> { Id = 12, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageProducts" },
+            new IdentityRoleClaim<string> { Id = 13, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrdersOptions" },
+            new IdentityRoleClaim<string> { Id = 14, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrders" }
         );
     }
 }

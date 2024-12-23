@@ -2,6 +2,7 @@
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
 using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace EshopApp.AuthLibrary.AuthLogic;
 
@@ -21,4 +22,5 @@ public interface IAuthenticationProcedures
     AuthenticationProperties GetExternalIdentityProvidersProperties(string identityProviderName, string redirectUrl);
     Task<ReturnTokenAndCodeResponseModel> HandleExternalSignInCallbackAsync();
     Task<IEnumerable<AuthenticationScheme>> GetExternalIdentityProvidersAsync();
+    Task<ReturnUserAndCodeResponseModel> GetCurrentUserWithValidatedClaimsByTokenAsync(string accessToken, List<Claim> expectedClaims);
 }

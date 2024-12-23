@@ -537,6 +537,20 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         });
     }
 
+    public async Task<ReturnUserAndCodeResponseModel> GetCurrentUserWithValidatedClaimsByTokenAsync(string accessToken, List<Claim> expectedClaims)
+    {
+        try
+        {
+            return await _helperMethods.StandardTokenValidationAuthenticationAndAuthorizationProcedures(accessToken, expectedClaims, new EventId(3235, "GetCurrentUserWithValidatedClaimsByTokenAsync"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(4200, "GetCurrentUserWithValidatedClaimsByTokenAsync"), ex, "An error occurred while retrieving logged in user and validating their expected claims. " +
+                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
     //TODO Think about how to do this...
     /*public async Task<bool> UpdateAccountAsync(AppUser appUser)
     {
