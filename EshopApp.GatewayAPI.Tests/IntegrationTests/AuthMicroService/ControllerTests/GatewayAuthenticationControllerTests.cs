@@ -53,6 +53,7 @@ internal class GatewayAuthenticationControllerTests
         errorMessage.Should().NotBeNull().And.Be("OneOrMoreMicroservicesAreUnavailable");
 
         //check what happens if microservices are down for requestChangeAccountEmail
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "Bearer "); //this is needed to bypass the simple access token checks
         var testChangeEmailRequestModel = new TestGatewayApiChangeEmailRequestModel() { NewEmail = "realag58@gmail.com", ClientUrl = "https://localhost:7070/controller/clientAction" };
         response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/requestchangeaccountemail", testChangeEmailRequestModel);
         errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
@@ -60,6 +61,7 @@ internal class GatewayAuthenticationControllerTests
         errorMessage.Should().NotBeNull().And.Be("OneOrMoreMicroservicesAreUnavailable");
 
         //check what happens if microservices are down for deleteAccount
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "Bearer "); //this is needed to bypass the simple access token checks
         response = await httpClient.DeleteAsync($"api/gatewayAuthentication/deleteaccount");
         errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);

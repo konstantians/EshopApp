@@ -3,11 +3,12 @@ using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
 using EshopApp.AuthLibraryAPI.Models.RequestModels.AuthenticationModels;
-using EshopApp.AuthLibraryAPI.Models.ResponseModels;
+using EshopApp.AuthLibraryAPI.Models.ResponseModels.AuthenticationModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 using System.Web;
 
 namespace EshopApp.AuthLibraryAPI.Controllers;
@@ -52,6 +53,42 @@ public class AuthenticationController : ControllerBase
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
                 return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
+
+            return Ok(returnCodeAndUserResponseModel.AppUser);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpGet("GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/{claimType}/ClaimValue/{claimValue}")]
+    [HttpGet("GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken(string claimType, string claimValue, string? secondClaimType, string? secondClaimValue)
+    {
+        try
+        {
+            // Retrieve the Authorization header from the HTTP request
+            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
+            string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+            List<Claim> expectedClaims = new List<Claim>() { new Claim(claimType, claimValue) };
+            if (secondClaimType is not null && secondClaimValue is not null)
+                expectedClaims.Add(new Claim(secondClaimType, secondClaimValue));
+
+            ReturnUserAndCodeResponseModel returnCodeAndUserResponseModel = await _authenticationProcedures.GetCurrentUserWithValidatedClaimsByTokenAsync(token, expectedClaims);
+            if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
+                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
+            else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
+                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+            else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
+                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+            else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
+                return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
+            else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)
+                return Unauthorized(new { ErrorMessage = "UserAccountLocked" });
+
 
             return Ok(returnCodeAndUserResponseModel.AppUser);
         }

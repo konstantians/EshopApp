@@ -12,7 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\ResponseModels\" />
+    <Folder Include="DataMicroService\GatewayAttribute\Models\" />
+    <Folder Include="DataMicroService\GatewayImage\Models\" />
+    <Folder Include="DataMicroService\GatewayProduct\Models\" />
+    <Folder Include="DataMicroService\GatewayVariant\Models\" />
   </ItemGroup>
 
 </Project>

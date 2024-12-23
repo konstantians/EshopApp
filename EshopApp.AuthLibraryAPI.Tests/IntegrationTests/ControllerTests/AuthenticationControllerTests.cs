@@ -1,6 +1,6 @@
 ﻿using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels.AdminModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;

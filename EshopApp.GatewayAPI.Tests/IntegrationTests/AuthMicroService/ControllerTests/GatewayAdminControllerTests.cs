@@ -1,4 +1,4 @@
-﻿using EshopApp.GatewayAPI.Models;
+﻿using EshopApp.GatewayAPI.AuthMicroService.Models;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAdminControllerRequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.Models.RequestModels.TestGatewayAuthenticationControllerRequestModels;
@@ -44,12 +44,14 @@ internal class GatewayAdminControllerTests
         testGatewayApiCreateUserRequestModel.PhoneNumber = "6943655624";
         testGatewayApiCreateUserRequestModel.SendEmailNotification = true;
 
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "Bearer "); //this is needed to bypass the simple access token checks
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAdmin", testGatewayApiCreateUserRequestModel);
         string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         errorMessage.Should().NotBeNull().And.Be("OneOrMoreMicroservicesAreUnavailable");
 
         //check what happens if microservices are down for deleteUser
+        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "Bearer "); //this is needed to bypass the simple access token checks
         response = await httpClient.DeleteAsync($"api/gatewayAdmin/userId");
         errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);

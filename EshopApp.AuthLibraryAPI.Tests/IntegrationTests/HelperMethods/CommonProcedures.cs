@@ -1,6 +1,6 @@
 ﻿using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models;
 using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.RequestModels.AuthenticationModels;
-using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels;
+using EshopApp.AuthLibraryAPI.Tests.IntegrationTests.Models.ResponseModels.AdminModels;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;

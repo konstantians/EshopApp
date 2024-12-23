@@ -8,5 +8,4 @@ public class CreateVariantImageRequestModel
     [Required]
     [MaxLength(50)]
     public string? ImageId { get; set; }
-
 }
