@@ -13,8 +13,8 @@ public class GatewayVariant
     public DateTime ModifiedAt { get; set; }
     public string? ProductId { get; set; }
     public GatewayProduct? Product { get; set; }
-    //public string? DiscountId { get; set; }
-    //public Discount? Discount { get; set; }
+    public string? DiscountId { get; set; }
+    public GatewayDiscount? Discount { get; set; }
     public List<GatewayAppAttribute> Attributes { get; set; } = new List<GatewayAppAttribute>();
     public List<GatewayVariantImage> VariantImages { get; set; } = new List<GatewayVariantImage>();
     //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

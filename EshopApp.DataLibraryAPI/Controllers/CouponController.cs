@@ -229,6 +229,7 @@ public class CouponController : ControllerBase
         }
     }
 
+    //this is only used when the user is deleted, I do not think this should be added in the gateway api as a standalone action
     [HttpDelete("RemoveAllUserCoupons/userId/{userId}")]
     public async Task<IActionResult> RemoveAllUserCoupons(string userId)
     {

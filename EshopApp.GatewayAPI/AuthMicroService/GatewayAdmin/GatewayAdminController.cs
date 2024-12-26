@@ -1,5 +1,6 @@
 ﻿using EshopApp.GatewayAPI.AuthMicroService.GatewayAdmin.Models.RequestModels;
 using EshopApp.GatewayAPI.AuthMicroService.Models;
+using EshopApp.GatewayAPI.DataMicroService.SharedModels;
 using EshopApp.GatewayAPI.HelperMethods;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -97,6 +98,29 @@ public class GatewayAdminController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+            //get the user coupons
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await dataHttpClient.GetAsync($"Coupon/userId/{userId}/includeDeactivated/true");
+
+            //validate that getting the user coupons has worked
+            retries = 3;
+            while ((int)response.StatusCode >= 500)
+            {
+                if (retries == 0)
+                    return StatusCode(500, "Internal Server Error");
+
+                response = await dataHttpClient.GetAsync($"Coupon/userId/{userId}/includeDeactivated/true");
+                retries--;
+            }
+
+            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            appUser!.UserCoupons = userCoupons!;
+
             return Ok(appUser);
         }
         catch (Exception)
@@ -135,6 +159,29 @@ public class GatewayAdminController : ControllerBase
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            //get the user coupons
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true");
+
+            //validate that getting the user coupons has worked
+            retries = 3;
+            while ((int)response.StatusCode >= 500)
+            {
+                if (retries == 0)
+                    return StatusCode(500, "Internal Server Error");
+
+                response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser.Id}/includeDeactivated/true");
+                retries--;
+            }
+
+            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            appUser!.UserCoupons = userCoupons!;
 
             return Ok(appUser);
         }
