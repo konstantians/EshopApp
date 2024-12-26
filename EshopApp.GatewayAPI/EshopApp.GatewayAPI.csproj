@@ -7,15 +7,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+    <Compile Remove="DataMicroService\GatewayAttribute\**" />
+    <Compile Remove="DataMicroService\GatewayImage\**" />
+    <Compile Remove="DataMicroService\GatewayProduct\**" />
+    <Compile Remove="DataMicroService\GatewayVariant\**" />
+    <Content Remove="DataMicroService\GatewayAttribute\**" />
+    <Content Remove="DataMicroService\GatewayImage\**" />
+    <Content Remove="DataMicroService\GatewayProduct\**" />
+    <Content Remove="DataMicroService\GatewayVariant\**" />
+    <EmbeddedResource Remove="DataMicroService\GatewayAttribute\**" />
+    <EmbeddedResource Remove="DataMicroService\GatewayImage\**" />
+    <EmbeddedResource Remove="DataMicroService\GatewayProduct\**" />
+    <EmbeddedResource Remove="DataMicroService\GatewayVariant\**" />
+    <None Remove="DataMicroService\GatewayAttribute\**" />
+    <None Remove="DataMicroService\GatewayImage\**" />
+    <None Remove="DataMicroService\GatewayProduct\**" />
+    <None Remove="DataMicroService\GatewayVariant\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataMicroService\GatewayAttribute\Models\" />
-    <Folder Include="DataMicroService\GatewayImage\Models\" />
-    <Folder Include="DataMicroService\GatewayProduct\Models\" />
-    <Folder Include="DataMicroService\GatewayVariant\Models\" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
   </ItemGroup>
 
 </Project>

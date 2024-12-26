@@ -34,7 +34,7 @@ public class GatewayProductController : ControllerBase
         {
             //get the products
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeSoftDeleted/{includeDeactivated}");
+            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeDeactivated/{includeDeactivated}");
 
             //validate that getting the products has worked
             int retries = 3;
@@ -43,7 +43,7 @@ public class GatewayProductController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeSoftDeleted/{includeDeactivated}");
+                response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeDeactivated/{includeDeactivated}");
                 retries--;
             }
 
@@ -68,7 +68,7 @@ public class GatewayProductController : ControllerBase
         {
             //get the products of the given category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeSoftDeleted/{includeDeactivated}");
+            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeDeactivated/{includeDeactivated}");
 
             //validate that getting the products of the given category has worked
             int retries = 3;
@@ -77,7 +77,7 @@ public class GatewayProductController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeSoftDeleted/{includeDeactivated}");
+                response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeDeactivated/{includeDeactivated}");
                 retries--;
             }
 
@@ -134,6 +134,11 @@ public class GatewayProductController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -174,7 +179,7 @@ public class GatewayProductController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayProduct? product = JsonSerializer.Deserialize<GatewayProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return Ok(product);
+            return CreatedAtAction(nameof(GetProductById), new { id = product!.Id, includeDeactivated = true }, product);
         }
         catch (Exception)
         {
@@ -187,6 +192,11 @@ public class GatewayProductController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -237,6 +247,11 @@ public class GatewayProductController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -258,7 +273,7 @@ public class GatewayProductController : ControllerBase
 
             //delete the product
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.GetAsync($"Product/{id}");
+            response = await dataHttpClient.DeleteAsync($"Product/{id}");
 
             //validate that deleting the product has worked
             retries = 3;
@@ -267,7 +282,7 @@ public class GatewayProductController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Product/{id}");
+                response = await dataHttpClient.DeleteAsync($"Product/{id}");
                 retries--;
             }
 

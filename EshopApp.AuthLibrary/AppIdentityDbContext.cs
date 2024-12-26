@@ -100,9 +100,9 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
             new IdentityRoleClaim<string> { Id = 9, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageElevatedRoles" },
             new IdentityRoleClaim<string> { Id = 10, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByElevatedUsers" },
             new IdentityRoleClaim<string> { Id = 11, RoleId = adminRoleGuid, ClaimType = "Protection", ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles" },
-            new IdentityRoleClaim<string> { Id = 12, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageProducts" },
-            new IdentityRoleClaim<string> { Id = 13, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrdersOptions" },
-            new IdentityRoleClaim<string> { Id = 14, RoleId = managerRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrders" }
+            new IdentityRoleClaim<string> { Id = 12, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageProducts" },
+            new IdentityRoleClaim<string> { Id = 13, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrdersOptions" },
+            new IdentityRoleClaim<string> { Id = 14, RoleId = adminRoleGuid, ClaimType = "Permission", ClaimValue = "CanManageOrders" }
         );
     }
 }

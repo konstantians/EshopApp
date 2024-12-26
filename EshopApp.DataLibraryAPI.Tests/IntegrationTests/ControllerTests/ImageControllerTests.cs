@@ -84,6 +84,7 @@ internal class ImageControllerTests
     public async Task CreateImage_ShouldFailAndReturnBadRequest_IfInvalidRequestModelFormatInImageEntity()
     {
         //Arrange
+
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         TestCreateImageRequestModels testCreateImageRequestModel = new TestCreateImageRequestModels();

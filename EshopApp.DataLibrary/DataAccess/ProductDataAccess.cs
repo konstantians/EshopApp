@@ -316,10 +316,20 @@ public class ProductDataAccess : IProductDataAccess
 
             if (updatedProduct.Variants != null && !updatedProduct.Variants.Any())
             {
-                foundProduct.Variants.Clear();
+                //the variant depend on product, so if they connection is severed then they must also be deleted
+                List<Variant> variantsToDelete = foundProduct.Variants.Where(variant => !variant.ExistsInOrder!.Value).ToList(); //the variants that do not exist in an order can be deleted
+                foundProduct.Variants.RemoveAll(variant => !variant.ExistsInOrder!.Value); // Remove these variants from the product's variant list
+                foundProduct.Variants.ForEach(variant => variant.IsDeactivated = true); // Mark remaining variants as deactivated(those that can not be removed, because they are in at least one order)
+
+                // Delete the variants that are not part of an order
+                if (variantsToDelete.Any())
+                    _appDataDbContext.Variants.RemoveRange(variantsToDelete);
             }
             else if (updatedProduct.Variants != null)
             {
+                List<Variant> updatedProductVariantsThatExistInOrder = foundProduct.Variants.Where(variant => variant.ExistsInOrder!.Value).ToList();
+                List<Variant> variantsToDelete = foundProduct.Variants.Where(variant => !variant.ExistsInOrder!.Value).ToList();
+
                 List<string> updatedProductVariants = updatedProduct.Variants.Select(variant => variant.Id!).ToList(); // just add them here, for filtering below
                 List<Variant> filteredVariants = await _appDataDbContext.Variants
                     .Where(databaseVariant => updatedProductVariants.Contains(databaseVariant.Id!))
@@ -327,6 +337,19 @@ public class ProductDataAccess : IProductDataAccess
 
                 foundProduct.Variants.Clear();
                 foundProduct.Variants.AddRange(filteredVariants);
+                // Delete the variants that are not part of an order
+                if (variantsToDelete.Any())
+                    _appDataDbContext.Variants.RemoveRange(variantsToDelete);
+
+                // Add back the variants that are part of the order and are not already part of the new product variants
+                foreach (Variant updatedProductVariantThatExistsInOrder in updatedProductVariantsThatExistInOrder)
+                {
+                    if (foundProduct.Variants.Any(foundProduct => foundProduct.Id == updatedProductVariantThatExistsInOrder.Id))
+                    {
+                        updatedProductVariantThatExistsInOrder.IsDeactivated = true;
+                        foundProduct.Variants.Add(updatedProductVariantThatExistsInOrder);
+                    }
+                }
             }
 
             foundProduct.ModifiedAt = DateTime.Now;

@@ -81,9 +81,9 @@ public class AuthenticationController : ControllerBase
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInRoleInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButUserNotInRoleInSystem" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButClaimNotInSystem)
-                return Unauthorized(new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
+                return StatusCode(403, new { ErrorMessage = "ValidTokenButClaimNotInSystem" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
                 return Unauthorized(new { ErrorMessage = "UserAccountNotActivated" });
             else if (returnCodeAndUserResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountLocked)

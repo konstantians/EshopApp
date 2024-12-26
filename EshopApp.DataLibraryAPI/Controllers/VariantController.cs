@@ -113,6 +113,8 @@ public class VariantController : ControllerBase
             variant.Price = updateVariantRequestModel.Price;
             variant.UnitsInStock = updateVariantRequestModel.UnitsInStock;
             variant.IsThumbnailVariant = updateVariantRequestModel.IsThumbnailVariant;
+            variant.IsDeactivated = updateVariantRequestModel.IsDeactivated;
+            variant.ExistsInOrder = updateVariantRequestModel.ExistsInOrder;
             variant.DiscountId = updateVariantRequestModel.DiscountId;
             //if null then null is inserted in variant.Attributes otherewise it creates an appattribute object for each attribute id
             variant.Attributes = updateVariantRequestModel.AttributeIds?.Select(attributeId => new AppAttribute { Id = attributeId }).ToList()!;
