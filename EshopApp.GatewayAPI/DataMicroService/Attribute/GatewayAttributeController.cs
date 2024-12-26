@@ -99,6 +99,11 @@ public class GatewayAttributeController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -139,7 +144,7 @@ public class GatewayAttributeController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppAttribute? attribute = JsonSerializer.Deserialize<GatewayAppAttribute>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return Ok(attribute);
+            return CreatedAtAction(nameof(GetAttributeById), new { id = attribute!.Id }, attribute);
         }
         catch (Exception)
         {
@@ -152,6 +157,11 @@ public class GatewayAttributeController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -204,6 +214,11 @@ public class GatewayAttributeController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -225,7 +240,7 @@ public class GatewayAttributeController : ControllerBase
 
             //delete the attribute
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.GetAsync($"Attribute/{id}");
+            response = await dataHttpClient.DeleteAsync($"Attribute/{id}");
 
             //validate that deleting the attribute has worked
             retries = 3;
@@ -234,7 +249,7 @@ public class GatewayAttributeController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Attribute/{id}");
+                response = await dataHttpClient.DeleteAsync($"Attribute/{id}");
                 retries--;
             }
 

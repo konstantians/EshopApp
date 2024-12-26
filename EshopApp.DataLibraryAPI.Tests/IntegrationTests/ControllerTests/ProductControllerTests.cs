@@ -93,7 +93,6 @@ internal class ProductControllerTests
         response = await httpClient.PostAsJsonAsync("api/image", testCreateImageRequestModel);
         responseBody = await response.Content.ReadAsStringAsync();
         _chosenImageId = JsonSerializer.Deserialize<TestAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
-
     }
 
     [Test, Order(10)]

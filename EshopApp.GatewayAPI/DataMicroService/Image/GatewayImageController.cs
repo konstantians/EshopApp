@@ -100,6 +100,11 @@ public class GatewayImageController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -152,7 +157,7 @@ public class GatewayImageController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppImage? image = JsonSerializer.Deserialize<GatewayAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return Ok(image);
+            return CreatedAtAction(nameof(GetImageById), new { id = image!.Id, includeSoftDeleted = false }, image);
         }
         catch (Exception)
         {
@@ -165,6 +170,11 @@ public class GatewayImageController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -229,6 +239,11 @@ public class GatewayImageController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -276,6 +291,11 @@ public class GatewayImageController : ControllerBase
     {
         try
         {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
@@ -297,7 +317,7 @@ public class GatewayImageController : ControllerBase
 
             //delete the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.GetAsync($"Image/{id}");
+            response = await dataHttpClient.DeleteAsync($"Image/{id}");
 
             //validate that deleting the image has worked
             retries = 3;
@@ -306,7 +326,7 @@ public class GatewayImageController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Image/{id}");
+                response = await dataHttpClient.DeleteAsync($"Image/{id}");
                 retries--;
             }
 

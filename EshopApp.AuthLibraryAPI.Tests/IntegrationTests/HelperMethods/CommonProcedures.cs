@@ -10,7 +10,7 @@ namespace EshopApp.AuthLibraryAPI.Tests.IntegrationTests.HelperMethods;
 
 internal class CommonProcedures
 {
-    internal static async Task<(string userId, string adminId, string userAccessToken, string managerAccessToken, string adminAccessToken)> commonAdminManagerAndUserSetup(HttpClient httpClient)
+    internal static async Task<(string userId, string adminId, string userAccessToken, string managerAccessToken, string adminAccessToken)> CommonAdminManagerAndUserSetup(HttpClient httpClient)
     {
         //set up the admin
         TestSignInRequestModel testSignInRequestModel = new TestSignInRequestModel(email: "admin@hotmail.com", password: "0XfN725l5EwSTIk!", rememberMe: true);

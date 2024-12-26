@@ -87,6 +87,7 @@ public class ProductController : ControllerBase
             variant.IsDeactivated = createProductRequestModel.IsDeactivated;
             variant.ProductId = createProductRequestModel.CreateVariantRequestModel!.ProductId; //This will be overriden, but that is planned and ok
             variant.DiscountId = createProductRequestModel.CreateVariantRequestModel!.DiscountId;
+            variant.ExistsInOrder = createProductRequestModel.CreateVariantRequestModel!.ExistsInOrder; //this might not be needed, but I allow the option
             foreach (string attributeId in createProductRequestModel.CreateVariantRequestModel.AttributeIds)
                 variant.Attributes.Add(new AppAttribute() { Id = attributeId });
             foreach (CreateVariantImageRequestModel createVariantImageRequestModel in createProductRequestModel.CreateVariantRequestModel.VariantImageRequestModels)

@@ -47,7 +47,7 @@ internal class RoleControllerTests
             "Auth Database Successfully Cleared!"
         );
 
-        (_userId, _adminId, _userAccessToken, _managerAccessToken, _adminAccessToken) = await CommonProcedures.commonAdminManagerAndUserSetup(httpClient);
+        (_userId, _adminId, _userAccessToken, _managerAccessToken, _adminAccessToken) = await CommonProcedures.CommonAdminManagerAndUserSetup(httpClient);
     }
 
     [Test, Order(1)]
