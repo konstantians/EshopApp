@@ -22,7 +22,6 @@ public class CreateVariantRequestModel
     public string? ProductId { get; set; }
     [MaxLength(50)]
     public string? DiscountId { get; set; }
-    //TODO can not validate individually each stupid element maybe do something about it in the future..
     public List<string> AttributeIds { get; set; } = new List<string>();
     public List<CreateVariantImageRequestModel> VariantImageRequestModels { get; set; } = new List<CreateVariantImageRequestModel>();
 }

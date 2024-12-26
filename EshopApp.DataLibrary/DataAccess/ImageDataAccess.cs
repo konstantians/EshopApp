@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
 
-//TODO update this class when orders entity is also added
 public class ImageDataAccess : IImageDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
