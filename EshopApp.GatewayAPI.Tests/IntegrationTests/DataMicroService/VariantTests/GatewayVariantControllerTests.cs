@@ -1,4 +1,5 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.AttributeTests.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.DiscountTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ImageTests.Models;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
@@ -81,15 +82,14 @@ internal class GatewayVariantControllerTests
         responseBody = await response.Content.ReadAsStringAsync();
         _otherImageId = JsonSerializer.Deserialize<TestGatewayAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
 
-        //TODO add this later
         /*************** Discount ***************/
-        /*TestCreateDiscountRequestModel testCreateDiscountRequestModel = new TestCreateDiscountRequestModel();
+        TestGatewayCreateDiscountRequestModel testCreateDiscountRequestModel = new TestGatewayCreateDiscountRequestModel();
         testCreateDiscountRequestModel.Name = "MyDiscount";
         testCreateDiscountRequestModel.Percentage = 10;
-        response = await httpClient.PostAsJsonAsync("api/discount", testCreateDiscountRequestModel);
+        response = await httpClient.PostAsJsonAsync("api/gatewayDiscount", testCreateDiscountRequestModel);
         responseBody = await response.Content.ReadAsStringAsync();
-        _chosenDiscountId = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
-        */
+        _chosenDiscountId = JsonSerializer.Deserialize<TestGatewayDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
+
 
         /*************** Attribute ***************/
         TestGatewayCreateAttributeRequestModel testCreateAttributeRequestModel = new TestGatewayCreateAttributeRequestModel();
@@ -117,7 +117,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -144,7 +144,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -170,7 +170,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.Price = 30m;
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -195,7 +195,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -220,7 +220,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -245,7 +245,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = "bogusProductId";
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -272,7 +272,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -299,7 +299,7 @@ internal class GatewayVariantControllerTests
         testGatewayCreateVariantRequestModel.UnitsInStock = 5;
         testGatewayCreateVariantRequestModel.IsThumbnailVariant = true;
         testGatewayCreateVariantRequestModel.ProductId = _chosenProductId;
-        //testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId; //TODO
+        testGatewayCreateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayCreateVariantRequestModel.AttributeIds.Add(_chosenAttributeId!);
         var testGatewayCreateVariantImageRequestModel = new TestGatewayCreateVariantImageRequestModel();
         testGatewayCreateVariantImageRequestModel.IsThumbNail = true;
@@ -323,9 +323,8 @@ internal class GatewayVariantControllerTests
         testVariant!.UnitsInStock.Should().Be(testGatewayCreateVariantRequestModel.UnitsInStock);
         testVariant!.IsThumbnailVariant.Should().Be(testGatewayCreateVariantRequestModel.IsThumbnailVariant);
 
-        //TODO add those later
-        //testVariant!.Discount.Should().NotBeNull();
-        //testVariant!.Discount!.Id.Should().NotBeNull().And.Be(_chosenDiscountId);
+        testVariant!.Discount.Should().NotBeNull();
+        testVariant!.Discount!.Id.Should().NotBeNull().And.Be(_chosenDiscountId);
 
         testVariant!.Attributes.Should().HaveCount(1);
         testVariant!.Attributes[0].Should().NotBeNull();
@@ -428,6 +427,7 @@ internal class GatewayVariantControllerTests
         testVariant!.Id.Should().NotBeNull().And.Be(variantId);
         testVariant!.SKU.Should().NotBeNull().And.Be(_chosenVariantSku);
         testVariant!.ProductId.Should().NotBeNull().And.Be(_chosenProductId);
+        testVariant!.DiscountId.Should().NotBeNull().And.Be(_chosenDiscountId);
     }
 
     [Test, Order(140)]
@@ -481,6 +481,7 @@ internal class GatewayVariantControllerTests
         testVariant!.Id.Should().NotBeNull().And.Be(_chosenVariantId);
         testVariant!.SKU.Should().NotBeNull().And.Be(variantSku);
         testVariant!.ProductId.Should().NotBeNull().And.Be(_chosenProductId);
+        testVariant!.DiscountId.Should().NotBeNull().And.Be(_chosenDiscountId);
     }
 
     [Test, Order(170)]
@@ -494,7 +495,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -518,7 +519,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -541,7 +542,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -564,7 +565,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -587,7 +588,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -612,7 +613,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -637,7 +638,7 @@ internal class GatewayVariantControllerTests
         testGatewayUpdateVariantRequestModel.Price = 20;
         testGatewayUpdateVariantRequestModel.IsThumbnailVariant = false;
         testGatewayUpdateVariantRequestModel.UnitsInStock = 30;
-        //testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId; TODO add this later
+        testGatewayUpdateVariantRequestModel.DiscountId = _chosenDiscountId;
         testGatewayUpdateVariantRequestModel.AttributeIds = new List<string>() { _otherAttributeId! };
         testGatewayUpdateVariantRequestModel.ImagesIds = new() { _otherImageId! };
         testGatewayUpdateVariantRequestModel.ImageIdThatShouldBeThumbnail = _otherImageId!;
@@ -658,8 +659,8 @@ internal class GatewayVariantControllerTests
         testVariant.IsThumbnailVariant.Should().Be(testGatewayUpdateVariantRequestModel.IsThumbnailVariant);
         testVariant.UnitsInStock.Should().Be(testGatewayUpdateVariantRequestModel.UnitsInStock);
 
-        //testVariant.Discount.Should().NotBeNull();
-        //testVariant.Discount!.Id.Should().NotBeNull().And.Be(_chosenDiscountId);
+        testVariant.Discount.Should().NotBeNull();
+        testVariant.Discount!.Id.Should().NotBeNull().And.Be(_chosenDiscountId);
 
         testVariant.Attributes.Should().NotBeNull().And.HaveCount(1);
         testVariant.Attributes[0].Id.Should().Be(_otherAttributeId);
@@ -693,28 +694,28 @@ internal class GatewayVariantControllerTests
         testVariant!.VariantImages.Should().NotBeNull().And.HaveCount(0);
     }
 
-    /*[Test, Order(250)] //TODO add this later
+    [Test, Order(250)]
     public async Task UpdateVariant_ShouldSucceedAndRemoveDiscountFromVariant()
     {
         //Arrange
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestGatewayUpdateVariantRequestModel testUpdateVariantRequestModel = new TestGatewayUpdateVariantRequestModel();
         testUpdateVariantRequestModel.Id = _chosenVariantId;
-        //testUpdateVariantRequestModel.DiscountId = ""; //null would ignore it, but empty string means remove it
+        testUpdateVariantRequestModel.DiscountId = ""; //null would ignore it, but empty string means remove it
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayVariant", testUpdateVariantRequestModel);
         HttpResponseMessage getResponse = await httpClient.GetAsync($"api/gatewayVariant/id/{_chosenVariantId}/includeDeactivated/true");
         string? responseBody = await getResponse.Content.ReadAsStringAsync();
-        TestVariant? testVariant = JsonSerializer.Deserialize<TestVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        TestGatewayVariant? testVariant = JsonSerializer.Deserialize<TestGatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         testVariant.Should().NotBeNull();
         testVariant!.Discount.Should().BeNull();
-    }*/
+    }
 
-    [Test, Order(250)]
+    [Test, Order(260)]
     public async Task UpdateVariant_ShouldSucceedAndRemoveAttributesFromVariant()
     {
         //Arrange
@@ -734,14 +735,14 @@ internal class GatewayVariantControllerTests
         testVariant!.Attributes.Should().NotBeNull().And.HaveCount(0);
     }
 
-    [Test, Order(260)]
+    [Test, Order(270)]
     public async Task UpdateVariant_ShouldSucceedButNotAddAttributesAndImagesThatAreInvalid()
     {
         //Arrange
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestGatewayUpdateVariantRequestModel testUpdateVariantRequestModel = new TestGatewayUpdateVariantRequestModel();
         testUpdateVariantRequestModel.Id = _chosenVariantId;
-        //testUpdateVariantRequestModel.DiscountId = "bogusDiscountId"; TODO add this later
+        testUpdateVariantRequestModel.DiscountId = "bogusDiscountId";
         testUpdateVariantRequestModel.AttributeIds = new List<string>() { "bogusAttributeId1", "bogusAttributeId2" };
         testUpdateVariantRequestModel.ImagesIds = new List<string>() { "bogusImageId1", "bogusImageId2", "bogusImageId3" };
 
@@ -753,12 +754,12 @@ internal class GatewayVariantControllerTests
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        //testVariant!.Discount.Should().BeNull(); //because we removed the discount before. If there was a discount here that would remain.
+        testVariant!.Discount.Should().BeNull(); //because we removed the discount before. If there was a discount here that would remain.
         testVariant!.Attributes.Should().NotBeNull().And.HaveCount(0);
         testVariant.VariantImages.Should().NotBeNull().And.HaveCount(0);
     }
 
-    [Test, Order(270)]
+    [Test, Order(280)]
     public async Task DeleteVariant_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -774,7 +775,7 @@ internal class GatewayVariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(280)]
+    [Test, Order(290)]
     public async Task DeleteVariant_ShouldFailAndReturnNotFound_IfVariantNotInSystem()
     {
         //Arrange
@@ -788,7 +789,7 @@ internal class GatewayVariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Test, Order(290)]
+    [Test, Order(300)]
     public async Task DeleteVariant_ShouldFailAndReturnUnauthorized_IfUserNotAuthenticated()
     {
         //Arrange
@@ -802,7 +803,7 @@ internal class GatewayVariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    [Test, Order(300)]
+    [Test, Order(310)]
     public async Task DeleteVariant_ShouldFailAndReturnForbidden_IfUserAuthenticatedButDoesNotHaveCorrectClaims()
     {
         //Arrange
@@ -816,7 +817,7 @@ internal class GatewayVariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    [Test, Order(310)]
+    [Test, Order(320)]
     public async Task DeleteVariant_ShouldSucceedAndDeleteVariant()
     {
         //Arrange

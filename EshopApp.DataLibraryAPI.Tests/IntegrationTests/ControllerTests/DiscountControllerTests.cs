@@ -18,9 +18,7 @@ internal class DiscountControllerTests
     private HttpClient httpClient;
     private string? _chosenApiKey;
     private string? _chosenDiscountId;
-    private string? _otherDiscountId;
     private string? _otherDiscountName;
-    private string? _chosenProductId;
     private string? _chosenVariantId;
 
     [OneTimeSetUp]
@@ -51,7 +49,6 @@ internal class DiscountControllerTests
         testCreateProductRequestModel.CreateVariantRequestModel = testCreateVariantRequestModel;
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/product", testCreateProductRequestModel);
         string? responseBody = await response.Content.ReadAsStringAsync();
-        _chosenProductId = JsonSerializer.Deserialize<TestProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
         _chosenVariantId = JsonSerializer.Deserialize<TestProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Variants[0].Id;
 
         /*************** Other Discount ***************/
@@ -60,7 +57,6 @@ internal class DiscountControllerTests
         testCreateDiscountRequestModel.Percentage = 10;
         response = await httpClient.PostAsJsonAsync("api/discount", testCreateDiscountRequestModel);
         responseBody = await response.Content.ReadAsStringAsync();
-        _otherDiscountId = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
         _otherDiscountName = JsonSerializer.Deserialize<TestDiscount>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Name;
     }
 

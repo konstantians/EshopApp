@@ -12,8 +12,8 @@ internal class TestGatewayVariant
     public DateTime ModifiedAt { get; set; }
     public string? ProductId { get; set; }
     public TestGatewayProduct? Product { get; set; }
-    //public string? DiscountId { get; set; }
-    //public Discount? Discount { get; set; }
+    public string? DiscountId { get; set; }
+    public TestGatewayDiscount? Discount { get; set; }
     public List<TestGatewayAppAttribute> Attributes { get; set; } = new List<TestGatewayAppAttribute>();
     public List<TestGatewayVariantImage> VariantImages { get; set; } = new List<TestGatewayVariantImage>();
     //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
