@@ -73,19 +73,37 @@ public class GatewayAuthenticationController : ControllerBase
             if (retries == 0)
                 return StatusCode(500, "Internal Server Error");
 
-            response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true");
+            response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser.Id}/includeDeactivated/true");
             retries--;
         }
-
-        //TODO also return the cart maybe here...
 
         if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
             return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
         responseBody = await response.Content.ReadAsStringAsync();
         List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
         appUser.UserCoupons = userCoupons!;
+
+        //get the user cart
+        response = await dataHttpClient.GetAsync($"Cart/UserId/{appUser.Id}");
+
+        //validate that getting the user cart has worked
+        retries = 3;
+        while ((int)response.StatusCode >= 500)
+        {
+            if (retries == 0)
+                return StatusCode(500, "Internal Server Error");
+
+            response = await dataHttpClient.GetAsync($"Cart/UserId/{appUser.Id}");
+            retries--;
+        }
+
+        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+            return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+
+        responseBody = await response.Content.ReadAsStringAsync();
+        GatewayCart? userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        appUser.Cart = userCart!;
 
         return Ok(appUser);
     }

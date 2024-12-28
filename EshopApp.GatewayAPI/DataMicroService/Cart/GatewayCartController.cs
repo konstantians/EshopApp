@@ -4,6 +4,7 @@ using EshopApp.GatewayAPI.DataMicroService.SharedModels;
 using EshopApp.GatewayAPI.HelperMethods;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Net;
 using System.Text.Json;
 
 namespace EshopApp.GatewayAPI.DataMicroService.Cart;
@@ -85,7 +86,6 @@ public class GatewayCartController : ControllerBase
                 return StatusCode(403, new { ErrorMessage = "GivenCartDoesNotBelongToGivenUser" });
 
             //create the cartItem
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await dataHttpClient.PostAsJsonAsync("Cart/CartItem", gatewayCreateCartItemRequestModel);
 
             //validate that creating the cartItem has worked
@@ -104,6 +104,9 @@ public class GatewayCartController : ControllerBase
 
             responseBody = await response.Content.ReadAsStringAsync();
             GatewayCartItem? cartItem = JsonSerializer.Deserialize<GatewayCartItem>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (response.StatusCode == HttpStatusCode.OK) //this happens if the cartItem already existed and its quantity just adjusted
+                return Ok(cartItem);
 
             return Created("", cartItem);
         }
@@ -170,7 +173,6 @@ public class GatewayCartController : ControllerBase
                 return StatusCode(403, new { ErrorMessage = "GivenCartItemDoesNotBelongToGivenUser" });
 
             //create the cartItem
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await dataHttpClient.PutAsJsonAsync("Cart/CartItem", gatewayUpdateCartItemRequestModel);
 
             //validate that creating the cartItem has worked
@@ -251,7 +253,6 @@ public class GatewayCartController : ControllerBase
                 return StatusCode(403, new { ErrorMessage = "GivenCartItemDoesNotBelongToGivenUser" });
 
             //create the cartItem
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await dataHttpClient.DeleteAsync($"Cart/CartItem/{id}");
 
             //validate that creating the cartItem has worked

@@ -344,6 +344,9 @@ internal class GatewayAuthenticationControllerTests
         testAppUser.Should().NotBeNull();
         testAppUser!.Id.Should().NotBeNull();
         testAppUser!.Email.Should().Be(_chosenUserEmail);
+        testAppUser!.Cart.Should().NotBeNull();
+        testAppUser.Cart!.CartItems.Should().HaveCount(0);
+        testAppUser.Cart.Id.Should().NotBeNull();
         _chosenUserId = testAppUser.Id!;
     }
 

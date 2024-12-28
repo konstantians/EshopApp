@@ -70,7 +70,6 @@ public class GatewayAdminController : ControllerBase
     [HttpGet("GetUserById/{userId}")]
     public async Task<IActionResult> GetUserById(string userId)
     {
-        //eventually get user coupons and cart
         try
         {
             //check that an access token has been supplied, this check is made to avoid unnecessary requests
@@ -132,7 +131,6 @@ public class GatewayAdminController : ControllerBase
     [HttpGet("GetUserByEmail/{email}")]
     public async Task<IActionResult> GetUserByEmail(string email)
     {
-        //eventually get user coupons and cart
         try
         {
             //check that an access token has been supplied, this check is made to avoid unnecessary requests

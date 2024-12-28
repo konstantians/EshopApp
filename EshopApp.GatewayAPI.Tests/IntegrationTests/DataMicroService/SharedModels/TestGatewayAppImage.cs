@@ -1,6 +1,4 @@
-﻿using EshopApp.GatewayAPI.DataMicroService.SharedModels;
-
-namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
+﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
 internal class TestGatewayAppImage
 {
     public string? Id { get; set; }
@@ -10,6 +8,6 @@ internal class TestGatewayAppImage
     public bool? ExistsInOrder { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
-    public List<GatewayVariantImage> VariantImages { get; set; } = new List<GatewayVariantImage>();
+    public List<TestGatewayVariantImage> VariantImages { get; set; } = new List<TestGatewayVariantImage>();
     //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>(); will be added eventually
 }
