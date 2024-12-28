@@ -181,7 +181,7 @@ internal class VariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    [Test, Order(30)]
+    [Test, Order(40)]
     public async Task CreateVariant_ShouldFailAndReturnNotFound_IfInvalidProductId()
     {
         //Arrange
@@ -209,7 +209,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Be("InvalidProductIdWasGiven");
     }
 
-    [Test, Order(30)]
+    [Test, Order(50)]
     public async Task CreateVariant_ShouldFailAndReturnBadRequest_IfDuplicateVariantSKU()
     {
         //Arrange
@@ -237,7 +237,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Be("DuplicateVariantSku");
     }
 
-    [Test, Order(40)]
+    [Test, Order(60)]
     public async Task CreateVariant_ShouldSucceedAndCreateVariant()
     {
         //Arrange
@@ -293,7 +293,7 @@ internal class VariantControllerTests
         _chosenVariantSku = testVariant.SKU;
     }
 
-    [Test, Order(60)]
+    [Test, Order(70)]
     public async Task GetVariants_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -309,7 +309,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(70)]
+    [Test, Order(80)]
     public async Task GetVariants_ShouldSucceedAndReturnVariants()
     {
         //Arrange
@@ -319,14 +319,47 @@ internal class VariantControllerTests
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/variant/amount/10/includeDeactivated/true");
         string? responseBody = await response.Content.ReadAsStringAsync();
-        List<TestVariant>? testCategories = JsonSerializer.Deserialize<List<TestVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        List<TestVariant>? testVariants = JsonSerializer.Deserialize<List<TestVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        testCategories.Should().NotBeNull().And.HaveCount(2);
+        testVariants.Should().NotBeNull().And.HaveCount(2);
     }
 
-    [Test, Order(80)]
+    [Test, Order(90)]
+    public async Task GetVariantsBySkus_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/variant/GetVariantsBySkus/includeDeactivated/true?skus={_chosenVariantSku},{_otherVariantSku}");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        errorMessage.Should().NotBeNull().And.Contain("Invalid");
+    }
+
+    [Test, Order(100)]
+    public async Task GetVariantsBySkus_ShouldSucceedAndReturnVariants()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/variant/GetVariantsBySkus/includeDeactivated/true?skus={_chosenVariantSku},{_otherVariantSku}");
+        string? responseBody = await response.Content.ReadAsStringAsync();
+        List<TestVariant>? testVariants = JsonSerializer.Deserialize<List<TestVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        testVariants.Should().NotBeNull().And.HaveCount(2);
+    }
+
+    [Test, Order(110)]
     public async Task GetVariantById_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -343,7 +376,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(90)]
+    [Test, Order(120)]
     public async Task GetVariantById_ShouldFailAndReturnNotFound_IfVariantNotInSystem()
     {
         //Arrange
@@ -358,7 +391,7 @@ internal class VariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Test, Order(100)]
+    [Test, Order(130)]
     public async Task GetVariantById_ShouldSucceedAndReturnVariant()
     {
         //Arrange
@@ -379,7 +412,7 @@ internal class VariantControllerTests
         testVariant!.ProductId.Should().NotBeNull().And.Be(_chosenProductId);
     }
 
-    [Test, Order(110)]
+    [Test, Order(140)]
     public async Task GetVariantBySku_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -396,7 +429,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(120)]
+    [Test, Order(150)]
     public async Task GetVariantBySku_ShouldFailAndReturnNotFound_IfVariantNotInSystem()
     {
         //Arrange
@@ -411,7 +444,7 @@ internal class VariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Test, Order(130)]
+    [Test, Order(160)]
     public async Task GetVariantBySku_ShouldSucceedAndReturnVariant()
     {
         //Arrange
@@ -432,7 +465,7 @@ internal class VariantControllerTests
         testVariant!.ProductId.Should().NotBeNull().And.Be(_chosenProductId);
     }
 
-    [Test, Order(140)]
+    [Test, Order(170)]
     public async Task UpdateVariant_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -458,7 +491,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(150)]
+    [Test, Order(180)]
     public async Task UpdateVariant_ShouldFailAndReturnNotFound_IfInvalidRequestModelFormat()
     {
         //Arrange
@@ -481,7 +514,7 @@ internal class VariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    [Test, Order(160)]
+    [Test, Order(190)]
     public async Task UpdateVariant_ShouldFailAndReturnNotFound_IfVariantNotInSystem()
     {
         //Arrange
@@ -507,7 +540,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Be("EntityNotFoundWithGivenId");
     }
 
-    [Test, Order(170)]
+    [Test, Order(200)]
     public async Task UpdateVariant_ShouldFailAndReturnBadRequest_IfDuplicateVariantSku()
     {
         //Arrange
@@ -533,7 +566,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Be("DuplicateVariantSku");
     }
 
-    [Test, Order(180)]
+    [Test, Order(210)]
     public async Task UpdateVariant_ShouldSucceedAndUpdateVariant()
     {
         //Arrange
@@ -581,7 +614,7 @@ internal class VariantControllerTests
         testProduct!.Variants[1].IsThumbnailVariant.Should().BeFalse();
     }
 
-    [Test, Order(190)]
+    [Test, Order(220)]
     public async Task UpdateVariant_ShouldSucceedAndRemoveAllImagesFromVariant()
     {
         //Arrange
@@ -602,7 +635,7 @@ internal class VariantControllerTests
         testVariant!.VariantImages.Should().NotBeNull().And.HaveCount(0);
     }
 
-    [Test, Order(195)]
+    [Test, Order(230)]
     public async Task UpdateVariant_ShouldSucceedAndRemoveDiscountFromVariant()
     {
         //Arrange
@@ -624,7 +657,7 @@ internal class VariantControllerTests
         testVariant!.Discount.Should().BeNull();
     }
 
-    [Test, Order(197)]
+    [Test, Order(240)]
     public async Task UpdateVariant_ShouldSucceedAndRemoveAttributesFromVariant()
     {
         //Arrange
@@ -645,7 +678,7 @@ internal class VariantControllerTests
         testVariant!.Attributes.Should().NotBeNull().And.HaveCount(0);
     }
 
-    [Test, Order(198)]
+    [Test, Order(250)]
     public async Task UpdateVariant_ShouldSucceedButNotAddAttributesAndImagesThatAreInvalid()
     {
         //Arrange
@@ -670,7 +703,7 @@ internal class VariantControllerTests
         testVariant.VariantImages.Should().NotBeNull().And.HaveCount(0);
     }
 
-    [Test, Order(200)]
+    [Test, Order(260)]
     public async Task DeleteVariant_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {
         //Arrange
@@ -687,7 +720,7 @@ internal class VariantControllerTests
         errorMessage.Should().NotBeNull().And.Contain("Invalid");
     }
 
-    [Test, Order(210)]
+    [Test, Order(270)]
     public async Task DeleteVariant_ShouldFailAndReturnNotFound_IfVariantNotInSystem()
     {
         //Arrange
@@ -702,7 +735,7 @@ internal class VariantControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Test, Order(220)]
+    [Test, Order(280)]
     public async Task DeleteVariant_ShouldSucceedAndDeleteVariant()
     {
         //Arrange
@@ -720,7 +753,7 @@ internal class VariantControllerTests
     }
 
     //Rate Limit Test
-    [Test, Order(300)]
+    [Test, Order(500)]
     public async Task GetVariants_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
     {
         //Arrange

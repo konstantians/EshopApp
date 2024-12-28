@@ -35,7 +35,6 @@ public class GatewayDiscountController : ControllerBase
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             HttpResponseMessage? response = await dataHttpClient.GetAsync($"Discount/Amount/{amount}/includeDeactivated/{includeDeactivated}");
 
-
             //validate that getting the discounts has worked
             int retries = 3;
             while ((int)response.StatusCode >= 500)

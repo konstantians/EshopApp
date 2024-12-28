@@ -369,11 +369,44 @@ internal class GatewayVariantControllerTests
         //Act
         HttpResponseMessage response = await httpClient.GetAsync("api/gatewayVariant/amount/10/includeDeactivated/true");
         string? responseBody = await response.Content.ReadAsStringAsync();
-        List<TestGatewayVariant>? testCategories = JsonSerializer.Deserialize<List<TestGatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        List<TestGatewayVariant>? testVariants = JsonSerializer.Deserialize<List<TestGatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        testCategories.Should().NotBeNull().And.HaveCount(2);
+        testVariants.Should().NotBeNull().And.HaveCount(2);
+    }
+
+    [Test, Order(103)]
+    public async Task GetVariantsBySkus_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/gatewayVariant/GetVariantsBySkus/includeDeactivated/true?skus={_chosenVariantSku},{_otherVariantSku}");
+        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        errorMessage.Should().NotBeNull().And.Contain("Invalid");
+    }
+
+    [Test, Order(107)]
+    public async Task GetVariantsBySkus_ShouldSucceedAndReturnVariants()
+    {
+        //Arrange
+        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
+        httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
+
+        //Act
+        HttpResponseMessage response = await httpClient.GetAsync($"api/gatewayVariant/GetVariantsBySkus/includeDeactivated/true?skus={_chosenVariantSku},{_otherVariantSku}");
+        string? responseBody = await response.Content.ReadAsStringAsync();
+        List<TestGatewayVariant>? testVariants = JsonSerializer.Deserialize<List<TestGatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        //Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        testVariants.Should().NotBeNull().And.HaveCount(2);
     }
 
     [Test, Order(110)]
