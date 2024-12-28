@@ -61,6 +61,48 @@ public class VariantDataAccess : IVariantDataAccess
         }
     }
 
+    public async Task<ReturnVariantsAndCodeResponseModel> GetVariantByTheirSKUsAsync(List<string> skus, bool includeDeactivated)
+    {
+        try
+        {
+            //because it might not be very clear, the variant can have many variant images with each variant filteredImage having only one filteredImage. The reason why it is clunky it is because IsThumbnail property needs to be in the bridge table
+            List<Variant> variants;
+            if (!includeDeactivated)
+            {
+                variants = await _appDataDbContext.Variants
+                .Include(v => v.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
+                .Include(v => v.Attributes)
+                .Include(v => v.Discount)
+                .Include(v => v.Product)
+                    .ThenInclude(p => p!.Categories)
+                .Where(variant => !variant.IsDeactivated!.Value && skus.Contains(variant.SKU!))
+                .ToListAsync();
+            }
+            else
+            {
+                variants = await _appDataDbContext.Variants
+                .Include(v => v.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
+                .Include(v => v.Attributes)
+                .Include(v => v.Discount)
+                .Include(v => v.Product)
+                    .ThenInclude(p => p!.Categories)
+                .Where(variant => !variant.IsDeactivated!.Value && skus.Contains(variant.SKU!))
+                .ToListAsync();
+            }
+
+            return new ReturnVariantsAndCodeResponseModel(variants, DataLibraryReturnedCodes.NoError);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "GetVariantByTheirSKUsAsync"), ex, "An error occurred while retrieving the variants. " +
+                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
+
     public async Task<ReturnVariantAndCodeResponseModel> GetVariantByIdAsync(string id, bool includeDeactivated)
     {
         try

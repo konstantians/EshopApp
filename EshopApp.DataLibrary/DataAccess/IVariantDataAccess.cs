@@ -10,6 +10,7 @@ public interface IVariantDataAccess
     Task<DataLibraryReturnedCodes> DeleteVariantAsync(string variantId);
     Task<ReturnVariantAndCodeResponseModel> GetVariantByIdAsync(string id, bool includeDeactivated);
     Task<ReturnVariantAndCodeResponseModel> GetVariantBySKUAsync(string sku, bool includeDeactivated);
+    Task<ReturnVariantsAndCodeResponseModel> GetVariantByTheirSKUsAsync(List<string> skus, bool includeDeactivated);
     Task<ReturnVariantsAndCodeResponseModel> GetVariantsAsync(int amount, bool includeDeactivated);
     Task<DataLibraryReturnedCodes> UpdateVariantAsync(Variant updatedVariant);
 }

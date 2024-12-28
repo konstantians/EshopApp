@@ -51,22 +51,22 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "bb98087d-0106-4336-b14b-47f04bf91c59",
-                            ConcurrencyStamp = "8ad30836-01ec-48b5-923c-2194b59e78fa",
+                            Id = "5a3758d6-f7f3-4579-8ab1-45bc6cc7308c",
+                            ConcurrencyStamp = "816b21f7-92e6-4e1d-a1cb-8fd74e8932b0",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = "dcd6928a-4817-4780-882b-0ceb1a126dcf",
-                            ConcurrencyStamp = "1af178b1-c793-46d2-9c6c-101b4de39c53",
+                            Id = "3011426d-9b41-4be9-8203-f15a899de7e8",
+                            ConcurrencyStamp = "378af352-90a3-47ed-9f31-fb7949c38035",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d",
-                            ConcurrencyStamp = "3dfd0fae-10d5-4897-8019-8c77468b2d3d",
+                            Id = "2022b983-9e61-4752-ae67-18ae86e4db52",
+                            ConcurrencyStamp = "9c0bcdc9-fd18-4aa7-84ed-80b2f6296377",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -139,33 +139,33 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "47cf3d5e-4909-49bc-9325-7c414c4543ee",
+                            Id = "0b38f55d-c9de-49fa-8a93-8936ece154b2",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "e1a1f41f-7556-4759-8c5f-a35d8a68094a",
+                            ConcurrencyStamp = "c6e4af3d-1a86-4bd0-9285-b4f1085e2d7f",
                             Email = "manager@hotmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "MANAGER@HOTMAIL.COM",
                             NormalizedUserName = "MANAGER@HOTMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEEiM9zjE4KhIaVEg/vBGxLn0YgzwaRDZwYLGdY/c35h3dweynEtHHx6PfzHG8LOHEg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEFIm6UdjYwGXjosnZRSz3FK/CgM7W7UvOC+d8mXDcim26jiKU7LcHvag+Z4ikfjTig==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "dd536736-8067-4e68-b1f8-32eaaa67f9b9",
+                            SecurityStamp = "81bc8317-7da8-47e6-bf28-fd5c6c60d0e4",
                             TwoFactorEnabled = false,
                             UserName = "manager@hotmail.com"
                         },
                         new
                         {
-                            Id = "7f6c0b99-b36b-4867-8d04-a2fc9b9e82e3",
+                            Id = "b975894b-cfde-4a51-ba92-053845e4c2fa",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "5c8b98ad-b334-45f2-9df9-404c10c105c7",
+                            ConcurrencyStamp = "930ffb38-00fd-4664-88db-7af05094147a",
                             Email = "admin@hotmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@HOTMAIL.COM",
                             NormalizedUserName = "ADMIN@HOTMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHr85iBPmNzRKAXi+IZqPyw1QQ4bzEORx5DBxnsDJ35i3OUh0v7NWm6RpPF50IZO8Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEK35CcnW8rCvrl5AHfEd1TjaBf75lCjRd5yFdIVAHXDtvD+uCdSRsyq2tnCpgJFOwQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "0eba0b3d-54ad-414c-8405-9e6ec4cb99ac",
+                            SecurityStamp = "b172b0fb-0c71-4470-92a8-0d0842167182",
                             TwoFactorEnabled = false,
                             UserName = "admin@hotmail.com"
                         });
@@ -201,98 +201,98 @@ namespace EshopApp.AuthLibrary.Migrations
                             Id = 1,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageUsers",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
                             Id = 2,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageRoles",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
                             Id = 3,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageProducts",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
                             Id = 4,
                             ClaimType = "Permission",
-                            ClaimValue = "CanManageOrdersOptions",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            ClaimValue = "CanManageOrderOptions",
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
                             Id = 5,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageOrders",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
                             Id = 6,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageUsers",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 7,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageElevatedUsers",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 8,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageRoles",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 9,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageElevatedRoles",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 10,
                             ClaimType = "Protection",
                             ClaimValue = "CanOnlyBeManagedByElevatedUsers",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 11,
                             ClaimType = "Protection",
                             ClaimValue = "CanOnlyBeManagedByUsersWithElevatedRoles",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 12,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageProducts",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 13,
                             ClaimType = "Permission",
-                            ClaimValue = "CanManageOrdersOptions",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            ClaimValue = "CanManageOrderOptions",
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         },
                         new
                         {
                             Id = 14,
                             ClaimType = "Permission",
                             ClaimValue = "CanManageOrders",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         });
                 });
 
@@ -360,13 +360,13 @@ namespace EshopApp.AuthLibrary.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = "47cf3d5e-4909-49bc-9325-7c414c4543ee",
-                            RoleId = "dcd6928a-4817-4780-882b-0ceb1a126dcf"
+                            UserId = "0b38f55d-c9de-49fa-8a93-8936ece154b2",
+                            RoleId = "3011426d-9b41-4be9-8203-f15a899de7e8"
                         },
                         new
                         {
-                            UserId = "7f6c0b99-b36b-4867-8d04-a2fc9b9e82e3",
-                            RoleId = "4e0a9f77-bdfc-48a9-beaf-d732ca09701d"
+                            UserId = "b975894b-cfde-4a51-ba92-053845e4c2fa",
+                            RoleId = "2022b983-9e61-4752-ae67-18ae86e4db52"
                         });
                 });
 

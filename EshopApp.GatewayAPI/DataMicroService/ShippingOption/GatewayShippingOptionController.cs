@@ -1,25 +1,24 @@
 ﻿using EshopApp.GatewayAPI.DataMicroService.SharedModels;
-using EshopApp.GatewayAPI.DataMicroService.Variant.Models.RequestModels;
+using EshopApp.GatewayAPI.DataMicroService.ShippingOption.Models;
 using EshopApp.GatewayAPI.HelperMethods;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net;
-using System.Text;
 using System.Text.Json;
 
-namespace EshopApp.GatewayAPI.DataMicroService.Variant;
+namespace EshopApp.GatewayAPI.DataMicroService.ShippingOption;
 
 [ApiController]
 [EnableRateLimiting("DefaultWindowLimiter")]
 [Route("api/[controller]")]
-public class GatewayVariantController : ControllerBase
+public class GatewayShippingOptionController : ControllerBase
 {
     private readonly HttpClient authHttpClient;
     private readonly HttpClient dataHttpClient;
     private readonly IConfiguration _configuration;
     private readonly IUtilityMethods _utilityMethods;
 
-    public GatewayVariantController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods)
+    public GatewayShippingOptionController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods)
     {
         _configuration = configuration;
         _utilityMethods = utilityMethods;
@@ -27,24 +26,23 @@ public class GatewayVariantController : ControllerBase
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
     }
 
-
     [HttpGet("Amount/{amount}/includeDeactivated/{includeDeactivated}")]
-    public async Task<IActionResult> GetVariants(int amount, bool includeDeactivated)
+    public async Task<IActionResult> GetShippingOptions(int amount, bool includeDeactivated)
     {
         try
         {
-            //get the variants
+            //get the shippingOptions
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Variant/Amount/{amount}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await dataHttpClient.GetAsync($"ShippingOption/Amount/{amount}/includeDeactivated/{includeDeactivated}");
 
-            //validate that getting the variants has worked
+            //validate that getting the shippingOptions has worked
             int retries = 3;
             while ((int)response.StatusCode >= 500)
             {
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync($"Variant/Amount/{amount}/includeDeactivated/{includeDeactivated}");
+                response = await dataHttpClient.GetAsync($"ShippingOption/Amount/{amount}/includeDeactivated/{includeDeactivated}");
                 retries--;
             }
 
@@ -52,9 +50,9 @@ public class GatewayVariantController : ControllerBase
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
-            List<GatewayVariant>? variants = JsonSerializer.Deserialize<List<GatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            List<GatewayShippingOption>? shippingOptions = JsonSerializer.Deserialize<List<GatewayShippingOption>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return Ok(variants);
+            return Ok(shippingOptions);
         }
         catch (Exception)
         {
@@ -62,38 +60,23 @@ public class GatewayVariantController : ControllerBase
         }
     }
 
-    //this endpoint understands queries like: domain/endpoint/includeDeactivated/true?skus=sku1,sku2,skue3
-    //or domain/endpoint/includeDeactivated/true?skus=sku1&skus=sku2&skus=sku3
-    [HttpGet("GetVariantsBySkus/includeDeactivated/{includeDeactivated}")]
-    public async Task<IActionResult> GetVariantsBySkus([FromQuery] List<string> skus, bool includeDeactivated)
+    [HttpGet("{id}/includeDeactivated/{includeDeactivated}")]
+    public async Task<IActionResult> GetShippingOptionById(string id, bool includeDeactivated)
     {
         try
         {
-            if (skus.Count == 1 && skus[0].Contains(','))
-                skus = skus[0].Split(',').ToList();
-
-            //build the url
-            StringBuilder urlBuilder = new StringBuilder($"Variant/GetVariantsBySkus/includeDeactivated/{includeDeactivated}?skus=");
-            foreach (string sku in skus)
-            {
-                urlBuilder.Append(sku);
-                urlBuilder.Append(",");
-            }
-            urlBuilder.Remove(urlBuilder.Length - 1, 1); //remove final comma
-            string url = urlBuilder.ToString();
-
-            //get the variants
+            //get the shippingOption
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync(url);
+            HttpResponseMessage? response = await dataHttpClient.GetAsync($"ShippingOption/{id}/includeDeactivated/{includeDeactivated}");
 
-            //validate that getting the variants has worked
+            //validate that getting the shippingOption has worked
             int retries = 3;
             while ((int)response.StatusCode >= 500)
             {
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.GetAsync(url);
+                response = await dataHttpClient.GetAsync($"ShippingOption/{id}/includeDeactivated/{includeDeactivated}");
                 retries--;
             }
 
@@ -101,77 +84,9 @@ public class GatewayVariantController : ControllerBase
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
-            List<GatewayVariant>? variants = JsonSerializer.Deserialize<List<GatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            GatewayShippingOption? shippingOption = JsonSerializer.Deserialize<GatewayShippingOption>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return Ok(variants);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500);
-        }
-    }
-
-    [HttpGet("Id/{id}/includeDeactivated/{includeDeactivated}")]
-    public async Task<IActionResult> GetVariantById(string id, bool includeDeactivated)
-    {
-        try
-        {
-            //get the variant
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Variant/Id/{id}/includeDeactivated/{includeDeactivated}");
-
-            //validate that getting the variant has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Variant/Id/{id}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
-
-            string? responseBody = await response.Content.ReadAsStringAsync();
-            GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return Ok(variant);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500);
-        }
-    }
-
-    [HttpGet("Sku/{sku}/includeDeactivated/{includeDeactivated}")]
-    public async Task<IActionResult> GetVariantBySku(string sku, bool includeDeactivated)
-    {
-        try
-        {
-            //get the variant
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"variant/sku/{sku}/includeDeactivated/{includeDeactivated}");
-
-            //validate that getting the variant has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"variant/sku/{sku}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
-
-            string? responseBody = await response.Content.ReadAsStringAsync();
-            GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return Ok(variant);
+            return Ok(shippingOption);
         }
         catch (Exception)
         {
@@ -180,7 +95,7 @@ public class GatewayVariantController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateVariant(GatewayCreateVariantRequestModel gatewayCreateVariantRequestModel)
+    public async Task<IActionResult> CreateShippingOption(GatewayCreateShippingOptionRequestModel gatewayCreateShippingOptionRequestModel)
     {
         try
         {
@@ -192,7 +107,7 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
 
             //validate that the authentication and authorization has worked
             int retries = 3;
@@ -201,25 +116,25 @@ public class GatewayVariantController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
                 retries--;
             }
 
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
-            //create the variant
+            //create the shippingOption
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Variant", gatewayCreateVariantRequestModel);
+            response = await dataHttpClient.PostAsJsonAsync("ShippingOption", gatewayCreateShippingOptionRequestModel);
 
-            //validate that creating the variant has worked
+            //validate that creating the shippingOption has worked
             retries = 3;
             while ((int)response.StatusCode >= 500)
             {
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.PostAsJsonAsync("Variant", gatewayCreateVariantRequestModel);
+                response = await dataHttpClient.PostAsJsonAsync("ShippingOption", gatewayCreateShippingOptionRequestModel);
                 retries--;
             }
 
@@ -227,9 +142,9 @@ public class GatewayVariantController : ControllerBase
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
-            GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            GatewayShippingOption? shippingOption = JsonSerializer.Deserialize<GatewayShippingOption>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return CreatedAtAction(nameof(GetVariantById), new { id = variant!.Id, includeDeactivated = true }, variant);
+            return CreatedAtAction(nameof(GetShippingOptionById), new { id = shippingOption!.Id, includeDeactivated = true }, shippingOption);
         }
         catch (Exception)
         {
@@ -238,7 +153,7 @@ public class GatewayVariantController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateVariant(GatewayUpdateVariantRequestModel gatewayUpdateVariantRequestModel)
+    public async Task<IActionResult> UpdateShippingOption(GatewayUpdateShippingOptionRequestModel gatewayUpdateShippingOptionRequestModel)
     {
         try
         {
@@ -250,7 +165,7 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
 
             //validate that the authentication and authorization has worked
             int retries = 3;
@@ -259,25 +174,25 @@ public class GatewayVariantController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
                 retries--;
             }
 
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
-            //update the variant
+            //update the shipping option
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Variant", gatewayUpdateVariantRequestModel);
+            response = await dataHttpClient.PutAsJsonAsync("ShippingOption", gatewayUpdateShippingOptionRequestModel);
 
-            //validate that updating the variant has worked
+            //validate that updating the shipping option has worked
             retries = 3;
             while ((int)response.StatusCode >= 500)
             {
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.PutAsJsonAsync("Variant", gatewayUpdateVariantRequestModel);
+                response = await dataHttpClient.PutAsJsonAsync("ShippingOption", gatewayUpdateShippingOptionRequestModel);
                 retries--;
             }
 
@@ -293,7 +208,7 @@ public class GatewayVariantController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteVariant(string id)
+    public async Task<IActionResult> DeleteShippingOption(string id)
     {
         try
         {
@@ -305,7 +220,7 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
 
             //validate that the authentication and authorization has worked
             int retries = 3;
@@ -314,32 +229,32 @@ public class GatewayVariantController : ControllerBase
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageOrderOptions");
                 retries--;
             }
 
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
-            //delete the variant
+            //delete the shipping option
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Variant/{id}");
+            response = await dataHttpClient.DeleteAsync($"ShippingOption/{id}");
 
-            //validate that deleting the variant has worked
+            //validate that deleting the shipping option has worked
             retries = 3;
             while ((int)response.StatusCode >= 500)
             {
                 if (retries == 0)
                     return StatusCode(500, "Internal Server Error");
 
-                response = await dataHttpClient.DeleteAsync($"Variant/{id}");
+                response = await dataHttpClient.DeleteAsync($"ShippingOption/{id}");
                 retries--;
             }
 
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
 
-            if (response.StatusCode == HttpStatusCode.OK) //this can happen if the variant exists in order and thus it only becomes deactivated/soft deleted
+            if (response.StatusCode == HttpStatusCode.OK) //this can happen if the shipping option exists in an order and thus it only becomes deactivated/soft deleted
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
 
             return NoContent();
