@@ -6,6 +6,6 @@ namespace EshopApp.GatewayAPI.AuthMicroService.Models;
 //eventually add addresses
 public class GatewayAppUser : IdentityUser
 {
-    //TODO add cart here when the other models are added
+    public GatewayCart? Cart { get; set; }
     public List<GatewayUserCoupon> UserCoupons { get; set; } = new List<GatewayUserCoupon>();
 }

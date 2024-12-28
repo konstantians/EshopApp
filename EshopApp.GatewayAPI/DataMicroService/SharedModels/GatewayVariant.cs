@@ -18,5 +18,5 @@ public class GatewayVariant
     public List<GatewayAppAttribute> Attributes { get; set; } = new List<GatewayAppAttribute>();
     public List<GatewayVariantImage> VariantImages { get; set; } = new List<GatewayVariantImage>();
     //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-    //public List<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public List<GatewayCartItem> CartItems { get; set; } = new List<GatewayCartItem>();
 }

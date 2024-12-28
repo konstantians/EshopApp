@@ -17,5 +17,5 @@ internal class TestGatewayVariant
     public List<TestGatewayAppAttribute> Attributes { get; set; } = new List<TestGatewayAppAttribute>();
     public List<TestGatewayVariantImage> VariantImages { get; set; } = new List<TestGatewayVariantImage>();
     //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-    //public List<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public List<TestGatewayCartItem> CartItems { get; set; } = new List<TestGatewayCartItem>();
 }
