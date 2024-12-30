@@ -26,7 +26,6 @@ public class GatewayProductController : ControllerBase
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
     }
 
-
     [HttpGet("Amount/{amount}/includeDeactivated/{includeDeactivated}")]
     public async Task<IActionResult> GetProducts(int amount, bool includeDeactivated)
     {
@@ -34,21 +33,10 @@ public class GatewayProductController : ControllerBase
         {
             //get the products
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Product/Amount/{amount}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the products has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Product/Amount/{amount}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayProduct>? products = JsonSerializer.Deserialize<List<GatewayProduct>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -68,21 +56,10 @@ public class GatewayProductController : ControllerBase
         {
             //get the products of the given category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the products of the given category has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Product/Category/{category}/Amount/{amount}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayProduct>? products = JsonSerializer.Deserialize<List<GatewayProduct>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -102,21 +79,10 @@ public class GatewayProductController : ControllerBase
         {
             //get the product
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Product/{id}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Product/{id}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the product has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Product/{id}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayProduct? product = JsonSerializer.Deserialize<GatewayProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -142,39 +108,18 @@ public class GatewayProductController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //create the product
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Product", gatewayCreateProductRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Product", gatewayCreateProductRequestModel));
 
-            //validate that creating the product has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PostAsJsonAsync("Product", gatewayCreateProductRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayProduct? product = JsonSerializer.Deserialize<GatewayProduct>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -200,39 +145,18 @@ public class GatewayProductController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //update the product
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Product", gatewayUpdateProductRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Product", gatewayUpdateProductRequestModel));
 
-            //validate that updating the product has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Product", gatewayUpdateProductRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -255,39 +179,18 @@ public class GatewayProductController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //delete the product
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Product/{id}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Product/{id}"));
 
-            //validate that deleting the product has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Product/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             if (response.StatusCode == HttpStatusCode.OK) //this can happen if the product exists in order and thus it only becomes deactivated/soft deleted
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });

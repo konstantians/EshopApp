@@ -8,8 +8,9 @@ public interface IOrderDataAccess
     Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order);
     Task<DataLibraryReturnedCodes> DeleteOrderAsync(string orderId);
     Task<ReturnOrderAndCodeResponseModel> GetOrderByIdAsync(string id);
+    Task<ReturnOrderAndCodeResponseModel> GetOrderByPaymentProcessorSessionIdAsync(string orderPaymentProcessorSessionId);
     Task<ReturnOrdersAndCodeResponseModel> GetOrdersAsync(int amount);
     Task<ReturnOrdersAndCodeResponseModel> GetUserOrdersAsync(int amount, string userId);
     Task<DataLibraryReturnedCodes> UpdateOrderAsync(Order updatedOrder);
-    Task<DataLibraryReturnedCodes> UpdateOrderStatusAsync(string newOrderStatus, string orderId);
+    Task<DataLibraryReturnedCodes> UpdateOrderStatusAsync(string newOrderStatus, string orderId, string orderPaymentProcessorSessionId);
 }

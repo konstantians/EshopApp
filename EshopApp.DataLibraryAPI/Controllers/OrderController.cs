@@ -51,6 +51,37 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpGet("PaymentProcessorSessionId/{paymentProcessorSessionId}")]
+    public async Task<IActionResult> GetOrderByPaymentProcessorSessionId(string paymentProcessorSessionId)
+    {
+        try
+        {
+            ReturnOrderAndCodeResponseModel response = await _orderDataAccess.GetOrderByPaymentProcessorSessionIdAsync(paymentProcessorSessionId);
+            if (response.Order is null)
+                return NotFound();
+
+            return Ok(response.Order);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpGet("Amount/{amount}/UserId/{userId}")]
+    public async Task<IActionResult> GetUserOrders(int amount, string userId)
+    {
+        try
+        {
+            ReturnOrdersAndCodeResponseModel response = await _orderDataAccess.GetUserOrdersAsync(amount, userId);
+            return Ok(response.Orders);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateOrder(CreateOrderRequestModel createOrderRequestModel)
     {
@@ -209,8 +240,11 @@ public class OrderController : ControllerBase
     {
         try
         {
-            DataLibraryReturnedCodes returnedCode = await _orderDataAccess.UpdateOrderStatusAsync(updateOrderStatusRequestModels.NewOrderStatus!, updateOrderStatusRequestModels.OrderId!);
-            if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
+            //one of those probably is null, but that is intended behaviour. If both are not null then the OrderId is chosen for the status update
+            DataLibraryReturnedCodes returnedCode = await _orderDataAccess.UpdateOrderStatusAsync(updateOrderStatusRequestModels.NewOrderStatus!, updateOrderStatusRequestModels.OrderId!, updateOrderStatusRequestModels.PaymentProcessorSessionId!);
+            if (returnedCode == DataLibraryReturnedCodes.TheOrderIdThePaymentProcessorSessionIdCanNotBeBothNull)
+                return BadRequest(new { ErrorMessage = "TheOrderIdThePaymentProcessorSessionIdCanNotBeBothNull" });
+            else if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound(new { ErrorMessage = "EntityNotFoundWithGivenId" });
             else if (returnedCode == DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered)
                 return BadRequest(new { ErrorMessage = "OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered" });

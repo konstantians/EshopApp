@@ -33,22 +33,10 @@ public class GatewayImageController : ControllerBase
         {
             //get the images
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Image/Amount/{amount}/includeSoftDeleted/{includeSoftDeleted}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Image/Amount/{amount}/includeSoftDeleted/{includeSoftDeleted}"));
 
-
-            //validate that getting the images has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Image/Amount/{amount}/includeSoftDeleted/{includeSoftDeleted}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayAppImage>? images = JsonSerializer.Deserialize<List<GatewayAppImage>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -68,21 +56,10 @@ public class GatewayImageController : ControllerBase
         {
             //get the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Image/Id/{id}/includeSoftDeleted/{includeSoftDeleted}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Image/Id/{id}/includeSoftDeleted/{includeSoftDeleted}"));
 
-            //validate that getting the image has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Image/Id/{id}/includeSoftDeleted/{includeSoftDeleted}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppImage? image = JsonSerializer.Deserialize<GatewayAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -108,51 +85,18 @@ public class GatewayImageController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //create the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Image", new
-            {
-                Name = gatewayCreateImageRequestModel.Name,
-                ShouldNotShowInGallery = gatewayCreateImageRequestModel.ShouldNotShowInGallery,
-                ImagePath = gatewayCreateImageRequestModel.ImagePath,
-                ExistsInOrder = gatewayCreateImageRequestModel.ExistsInOrder
-            });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Image", gatewayCreateImageRequestModel));
 
-            //validate that creating the image has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PostAsJsonAsync("Image", new
-                {
-                    Name = gatewayCreateImageRequestModel.Name,
-                    ShouldNotShowInGallery = gatewayCreateImageRequestModel.ShouldNotShowInGallery,
-                    ImagePath = gatewayCreateImageRequestModel.ImagePath,
-                    ExistsInOrder = gatewayCreateImageRequestModel.ExistsInOrder
-                });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayAppImage? image = JsonSerializer.Deserialize<GatewayAppImage>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -178,53 +122,18 @@ public class GatewayImageController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //update the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Image", new
-            {
-                Id = gatewayUpdateImageRequestModel.Id,
-                Name = gatewayUpdateImageRequestModel.Name,
-                ImagePath = gatewayUpdateImageRequestModel.ImagePath,
-                ShouldNotShowInGallery = gatewayUpdateImageRequestModel.ShouldNotShowInGallery,
-                ExistsInOrder = gatewayUpdateImageRequestModel.ExistsInOrder,
-            });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Image", gatewayUpdateImageRequestModel));
 
-            //validate that updating the image has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Image", new
-                {
-                    Id = gatewayUpdateImageRequestModel.Id,
-                    Name = gatewayUpdateImageRequestModel.Name,
-                    ImagePath = gatewayUpdateImageRequestModel.ImagePath,
-                    ShouldNotShowInGallery = gatewayUpdateImageRequestModel.ShouldNotShowInGallery,
-                    ExistsInOrder = gatewayUpdateImageRequestModel.ExistsInOrder,
-                });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -247,36 +156,18 @@ public class GatewayImageController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //update the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Image/RestoreDeletedImages", new { ImageIds = gatewayRestoreImagesRequestModel.ImageIds });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Image/RestoreDeletedImages", new { ImageIds = gatewayRestoreImagesRequestModel.ImageIds }));
 
-            //validate that updating the image has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Image/RestoreDeletedImages", new { ImageIds = gatewayRestoreImagesRequestModel.ImageIds });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -299,39 +190,18 @@ public class GatewayImageController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //delete the image
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Image/{id}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Image/{id}"));
 
-            //validate that deleting the image has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Image/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             if (response.StatusCode == HttpStatusCode.OK) //this can happen if the image exists in order and thus it only becomes deactivated/soft deleted
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });

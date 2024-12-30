@@ -30,4 +30,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TransactionMicroService\CheckOutSession\Models\RequestModels\" />
+    <Folder Include="TransactionMicroService\Discount\Models\RequestModels\" />
+  </ItemGroup>
+
 </Project>

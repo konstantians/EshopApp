@@ -75,7 +75,7 @@ public class UtilityMethods : IUtilityMethods
         }
     }
 
-    public async Task<IActionResult> CommonValidationForRequestClientErrorCodesAsync(HttpResponseMessage response)
+    public async Task<IActionResult> CommonHandlingForErrorCodesAsync(HttpResponseMessage response)
     {
         string responseBody = await response.Content.ReadAsStringAsync();
         //in the case there is no body
@@ -91,6 +91,11 @@ public class UtilityMethods : IUtilityMethods
                 return new NotFoundResult();
             else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
                 return new StatusCodeResult(StatusCodes.Status405MethodNotAllowed);
+            //500 status codes errors
+            else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                return new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);
+            else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
 
             return new BadRequestResult(); //this will probably never happen
         }
@@ -102,7 +107,10 @@ public class UtilityMethods : IUtilityMethods
         keyValue!.TryGetValue("errors", out var errors);
 
         if (response.StatusCode == HttpStatusCode.Unauthorized && errorMessage is not null)
-            return new UnauthorizedObjectResult(new { ErrorMessage = errorMessage });
+            return new UnauthorizedObjectResult(new
+            {
+                ErrorMessage = errorMessage
+            });
         else if (response.StatusCode == HttpStatusCode.Unauthorized)
             return new UnauthorizedResult();
         else if (response.StatusCode == HttpStatusCode.Forbidden && errorMessage is not null)
@@ -119,7 +127,25 @@ public class UtilityMethods : IUtilityMethods
             return new NotFoundResult();
         else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
             return new StatusCodeResult(StatusCodes.Status405MethodNotAllowed);
+        //500 status codes errors
+        else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            return new ObjectResult(new { ErrorMessage = errorMessage }) { StatusCode = StatusCodes.Status503ServiceUnavailable };
+        else if (response.StatusCode == HttpStatusCode.InternalServerError)
+            return new ObjectResult(new { ErrorMessage = errorMessage }) { StatusCode = StatusCodes.Status500InternalServerError };
 
         return new BadRequestResult(); //this will probably never happen
+    }
+
+    public async Task<HttpResponseMessage> MakeRequestWithRetriesForServerErrorAsync(Func<Task<HttpResponseMessage>> httpRequestCall, int maxRetries = 3)
+    {
+        HttpResponseMessage response = null!;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            response = await httpRequestCall();
+            if ((int)response.StatusCode < 500) // if it is success or client error then stop trying
+                break;
+        }
+
+        return response;
     }
 }

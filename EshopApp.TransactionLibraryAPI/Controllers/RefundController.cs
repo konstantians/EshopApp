@@ -61,20 +61,19 @@ public class RefundController : ControllerBase
             }
 
             var stripeEvent = EventUtility.ConstructEvent(json, Request.Headers["Stripe-Signature"], endpointSecret, throwOnApiVersionMismatch: false); //pass in the json body, the stripe signature and the endpoint secret
+            bool.TryParse(_configuration["ShouldRedirectEndpointSentEmail"], out bool shouldSendEmail);
 
-            if (stripeEvent.Type == "refund.created" && !string.IsNullOrEmpty(_configuration["ApiClientBaseUrl"]) && !string.IsNullOrEmpty(_configuration["RefundSucceededRedirectEndpoint"]))
+            if (stripeEvent.Type == "refund.created" || stripeEvent.Type == "refund.updated" && !string.IsNullOrEmpty(_configuration["ApiClientBaseUrl"]) && !string.IsNullOrEmpty(_configuration["RefundSucceededRedirectEndpoint"]))
             {
                 Refund? refund = stripeEvent.Data.Object as Refund;
-                string newOrderState = "RefundPending";
-                if (refund!.Status == "pending")
-                    newOrderState = "RefundPending";
-                else if (refund.Status == "succeeded")
-                    newOrderState = "Refunded";
+                if (refund!.Status != "succeeded")
+                    return NoContent();
 
                 var responseModel = new HandleIssueRefundEventResponseModel
                 {
-                    NewOrderState = newOrderState,
-                    PaymentIntentId = refund?.PaymentIntentId
+                    NewOrderState = "Refunded",
+                    PaymentIntentId = refund?.PaymentIntentId,
+                    ShouldSendEmail = shouldSendEmail,
                 };
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["RefundSucceededRedirectEndpoint"] :
@@ -88,7 +87,8 @@ public class RefundController : ControllerBase
                 var responseModel = new HandleIssueRefundEventResponseModel
                 {
                     NewOrderState = "RefundFailed",
-                    PaymentIntentId = refund?.PaymentIntentId
+                    PaymentIntentId = refund?.PaymentIntentId,
+                    ShouldSendEmail = shouldSendEmail,
                 };
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["RefundFailedsRedirectEndpoint"] :

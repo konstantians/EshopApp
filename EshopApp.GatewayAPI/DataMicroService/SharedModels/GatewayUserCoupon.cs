@@ -14,5 +14,5 @@ public class GatewayUserCoupon
     public string? UserId { get; set; }
     public string? CouponId { get; set; }
     public GatewayCoupon? Coupon { get; set; }
-    //public List<Order> Orders { get; set; } = new List<Order>(); will be added later
+    public List<GatewayOrder> Orders { get; set; } = new List<GatewayOrder>();
 }

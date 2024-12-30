@@ -65,7 +65,7 @@ public class CheckOutSessionController : ControllerBase
                 checkOutSession.TransactionOrderItems.Add(transactionOrderItem);
             }
 
-            HandleCheckOutSessionEventResponseModel? responseModel = await _checkOutSessionService.CreateCheckOutSessionAsync(checkOutSession);
+            ReturnSessionIdSessionUrlAndCodeResponseModel? responseModel = await _checkOutSessionService.CreateCheckOutSessionAsync(checkOutSession);
 
             if (responseModel!.ReturnedCode == TransactionLibraryReturnedCodes.ThereNeedsToBeAtLeastOneOrderItem)
                 return BadRequest(new { ErrorMessage = "ThereNeedsToBeAtLeastOneOrderItem" });
@@ -97,6 +97,7 @@ public class CheckOutSessionController : ControllerBase
             }
 
             var stripeEvent = EventUtility.ConstructEvent(json, Request.Headers["Stripe-Signature"], endpointSecret, throwOnApiVersionMismatch: false); //pass in the json body, the stripe signature and the endpoint secret
+            bool.TryParse(_configuration["ShouldRedirectEndpointSentEmail"], out bool shouldSendEmail);
 
             if (stripeEvent.Type == "checkout.session.completed" && !string.IsNullOrEmpty(_configuration["ApiClientBaseUrl"]) && !string.IsNullOrEmpty(_configuration["SessionCompletedRedirectEndpoint"]))
             {
@@ -119,6 +120,7 @@ public class CheckOutSessionController : ControllerBase
                 }
 
                 long fee = paymentIntent.LatestCharge is not null && paymentIntent.LatestCharge.BalanceTransaction is not null ? paymentIntent.LatestCharge!.BalanceTransaction!.Fee : 0; //in that case of 0 I suppose the admin will need to check it 
+
                 var responseModel = new HandleCheckOutSessionResponseModel
                 {
                     PaymentProcessorPaymentIntentId = paymentIntent.Id,
@@ -127,7 +129,8 @@ public class CheckOutSessionController : ControllerBase
                     NewPaymentStatus = session?.PaymentStatus,
                     PaymentCurrency = session?.Currency,
                     AmountPaidInEuro = paymentIntent.AmountReceived / 100.0m,
-                    NetAmountPaidInEuro = (paymentIntent.AmountReceived - fee) / 100.0m
+                    NetAmountPaidInEuro = (paymentIntent.AmountReceived - fee) / 100.0m,
+                    ShouldSendEmail = shouldSendEmail
                 };
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionCompletedRedirectLink"] :
@@ -144,6 +147,7 @@ public class CheckOutSessionController : ControllerBase
                     PaymentProcessorSessionId = session?.Id,
                     NewOrderStatus = "Failed", //maybe add expired status eventually
                     NewPaymentStatus = session?.PaymentStatus,
+                    ShouldSendEmail = shouldSendEmail
                 };
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionExpiredRedirectEndpoint"] :

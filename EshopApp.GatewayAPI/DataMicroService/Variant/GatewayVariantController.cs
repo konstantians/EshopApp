@@ -35,21 +35,10 @@ public class GatewayVariantController : ControllerBase
         {
             //get the variants
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Variant/Amount/{amount}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Variant/Amount/{amount}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the variants has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Variant/Amount/{amount}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayVariant>? variants = JsonSerializer.Deserialize<List<GatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -84,21 +73,10 @@ public class GatewayVariantController : ControllerBase
 
             //get the variants
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync(url);
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync(url));
 
-            //validate that getting the variants has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync(url);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayVariant>? variants = JsonSerializer.Deserialize<List<GatewayVariant>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -118,21 +96,10 @@ public class GatewayVariantController : ControllerBase
         {
             //get the variant
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Variant/Id/{id}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Variant/Id/{id}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the variant has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Variant/Id/{id}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -152,21 +119,10 @@ public class GatewayVariantController : ControllerBase
         {
             //get the variant
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"variant/sku/{sku}/includeDeactivated/{includeDeactivated}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"variant/sku/{sku}/includeDeactivated/{includeDeactivated}"));
 
-            //validate that getting the variant has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"variant/sku/{sku}/includeDeactivated/{includeDeactivated}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -192,39 +148,18 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //create the variant
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Variant", gatewayCreateVariantRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Variant", gatewayCreateVariantRequestModel));
 
-            //validate that creating the variant has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PostAsJsonAsync("Variant", gatewayCreateVariantRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayVariant? variant = JsonSerializer.Deserialize<GatewayVariant>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -250,39 +185,18 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //update the variant
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Variant", gatewayUpdateVariantRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Variant", gatewayUpdateVariantRequestModel));
 
-            //validate that updating the variant has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Variant", gatewayUpdateVariantRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -305,39 +219,18 @@ public class GatewayVariantController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //delete the variant
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Variant/{id}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Variant/{id}"));
 
-            //validate that deleting the variant has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Variant/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             if (response.StatusCode == HttpStatusCode.OK) //this can happen if the variant exists in order and thus it only becomes deactivated/soft deleted
                 return Ok(new { WarningMessage = "NoErrorButNotFullyDeleted" });
