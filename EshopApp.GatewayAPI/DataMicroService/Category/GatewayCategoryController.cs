@@ -32,22 +32,10 @@ public class GatewayCategoryController : ControllerBase
         {
             //get the categories
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Category/Amount/{amount}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Category/Amount/{amount}"));
 
-
-            //validate that getting the categories has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Category/Amount/{amount}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayCategory>? categories = JsonSerializer.Deserialize<List<GatewayCategory>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -67,21 +55,10 @@ public class GatewayCategoryController : ControllerBase
         {
             //get the category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await dataHttpClient.GetAsync($"Category/{id}");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Category/{id}"));
 
-            //validate that getting the category has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.GetAsync($"Category/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayCategory? category = JsonSerializer.Deserialize<GatewayCategory>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -107,39 +84,18 @@ public class GatewayCategoryController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //create the category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Category", new { gatewayCreateCategoryRequestModel.Name });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Category", new { gatewayCreateCategoryRequestModel.Name }));
 
-            //validate that creating the category has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PostAsJsonAsync("Category", new { gatewayCreateCategoryRequestModel.Name });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayCategory? category = JsonSerializer.Deserialize<GatewayCategory>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -165,41 +121,19 @@ public class GatewayCategoryController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //update the category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Category",
-                new { Id = gatewayUpdateCategoryRequestModel.Id, Name = gatewayUpdateCategoryRequestModel.Name, ProductIds = gatewayUpdateCategoryRequestModel.ProductIds });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                dataHttpClient.PutAsJsonAsync("Category", new { Id = gatewayUpdateCategoryRequestModel.Id, Name = gatewayUpdateCategoryRequestModel.Name, ProductIds = gatewayUpdateCategoryRequestModel.ProductIds }));
 
-            //validate that updating the category has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Category",
-                    new { Id = gatewayUpdateCategoryRequestModel.Id, Name = gatewayUpdateCategoryRequestModel.Name, ProductIds = gatewayUpdateCategoryRequestModel.ProductIds });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -222,39 +156,18 @@ public class GatewayCategoryController : ControllerBase
             //here there is no reason to check if both microservices are fully online since changes can only occur in the second and final call
             //authenticate and authorize the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts"));
 
-            //validate that the authentication and authorization has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.GetAsync("Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/claimType/Permission/claimValue/CanManageProducts");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //delete the category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Category/{id}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Category/{id}"));
 
-            //validate that deleting the category has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Category/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }

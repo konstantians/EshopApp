@@ -10,5 +10,5 @@ public class GatewayAppImage
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public List<GatewayVariantImage> VariantImages { get; set; } = new List<GatewayVariantImage>();
-    //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>(); will be added eventually
+    public List<GatewayOrderItem> OrderItems { get; set; } = new List<GatewayOrderItem>();
 }

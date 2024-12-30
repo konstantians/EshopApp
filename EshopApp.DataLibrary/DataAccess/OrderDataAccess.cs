@@ -111,6 +111,36 @@ public class OrderDataAccess : IOrderDataAccess
         }
     }
 
+    public async Task<ReturnOrderAndCodeResponseModel> GetOrderByPaymentProcessorSessionIdAsync(string orderPaymentProcessorSessionId)
+    {
+        try
+        {
+            Order? order = await _appDataDbContext.Orders
+                .Include(o => o.OrderAddress)
+                .Include(o => o.PaymentDetails)
+                    .ThenInclude(pd => pd!.PaymentOption)
+                .Include(o => o.ShippingOption)
+                .Include(o => o.UserCoupon)
+                    .ThenInclude(uc => uc!.Coupon)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Discount)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Image)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Variant)
+                        .ThenInclude(v => v!.Product)
+                .FirstOrDefaultAsync(order => order.PaymentDetails!.PaymentProcessorSessionId == orderPaymentProcessorSessionId);
+
+            return new ReturnOrderAndCodeResponseModel(order!, DataLibraryReturnedCodes.NoError);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "GetOrderByPaymentProcessorSessionIdFailure"), ex, "An error occurred while retrieving the order with PaymentProcessorSessionId={OrderPaymentProcessorSessionId}. " +
+                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", orderPaymentProcessorSessionId, ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
     public async Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order)
     {
         try
@@ -201,15 +231,24 @@ public class OrderDataAccess : IOrderDataAccess
             }
 
             List<string?> orderItemsIds = _appDataDbContext.OrderItems.Select(orderItem => orderItem.Id).ToList();
+            var variantIds = order.OrderItems.Select(orderItem => orderItem.VariantId).Distinct();
+            Dictionary<string, Variant> foundVariants = await _appDataDbContext.Variants
+                .Include(variant => variant.VariantImages)
+                    .ThenInclude(variantImage => variantImage.Image)
+                .Include(variant => variant.Product) //this might be needed afterwards and thus it is safer to fill it
+                .Include(variant => variant.Discount)
+                .Where(variant => variantIds.Contains(variant.Id) && !variant.IsDeactivated!.Value)
+                .ToDictionaryAsync(variant => variant.Id!);
+
             foreach (OrderItem orderItem in order.OrderItems)
             {
-                Variant? foundVariant = await _appDataDbContext.Variants
+                /*Variant? foundVariant = await _appDataDbContext.Variants
                     .Include(variant => variant.VariantImages)
                     .ThenInclude(variantImage => variantImage.Image)
                     .Include(variant => variant.Discount)
-                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
+                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);*/
 
-                if (foundVariant is null)
+                if (!foundVariants.TryGetValue(orderItem.VariantId!, out Variant? foundVariant))
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
                 else if (foundVariant.UnitsInStock < orderItem.Quantity)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InsufficientStockForVariant);
@@ -267,23 +306,41 @@ public class OrderDataAccess : IOrderDataAccess
         }
     }
 
-    public async Task<DataLibraryReturnedCodes> UpdateOrderStatusAsync(string newOrderStatus, string orderId)
+    public async Task<DataLibraryReturnedCodes> UpdateOrderStatusAsync(string newOrderStatus, string orderId, string orderPaymentProcessorSessionId)
     {
         try
         {
+            if (orderId is null && orderPaymentProcessorSessionId is null)
+                return DataLibraryReturnedCodes.TheOrderIdThePaymentProcessorSessionIdCanNotBeBothNull;
+
             DateTime dateTimeNow = DateTime.Now;
             if (newOrderStatus != "Pending" && newOrderStatus != "Confirmed" && newOrderStatus != "Processed" && newOrderStatus != "Shipped" && newOrderStatus != "Completed"
                 && newOrderStatus != "Canceled" && newOrderStatus != "NoShow" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded" && newOrderStatus != "Failed")
                 return DataLibraryReturnedCodes.InvalidOrderStatus;
 
-            Order? foundOrder = await _appDataDbContext.Orders
-                .Include(order => order.OrderItems)
-                    .ThenInclude(orderItem => orderItem.Variant)
-                .Include(order => order.PaymentDetails)
-                .Include(order => order.ShippingOption)
-                .Include(order => order.UserCoupon)
-                    .ThenInclude(userCoupon => userCoupon!.Coupon)
-                .FirstOrDefaultAsync(order => orderId == order.Id);
+            Order? foundOrder;
+            if (orderId is not null)
+            {
+                foundOrder = await _appDataDbContext.Orders
+                    .Include(order => order.OrderItems)
+                        .ThenInclude(orderItem => orderItem.Variant)
+                    .Include(order => order.PaymentDetails)
+                    .Include(order => order.ShippingOption)
+                    .Include(order => order.UserCoupon)
+                        .ThenInclude(userCoupon => userCoupon!.Coupon)
+                    .FirstOrDefaultAsync(order => orderId == order.Id);
+            }
+            else
+            {
+                foundOrder = await _appDataDbContext.Orders
+                    .Include(order => order.OrderItems)
+                        .ThenInclude(orderItem => orderItem.Variant)
+                    .Include(order => order.PaymentDetails)
+                    .Include(order => order.ShippingOption)
+                    .Include(order => order.UserCoupon)
+                        .ThenInclude(userCoupon => userCoupon!.Coupon)
+                    .FirstOrDefaultAsync(order => orderPaymentProcessorSessionId == order.PaymentDetails!.PaymentProcessorPaymentIntentId);
+            }
 
             if (foundOrder is null)
             {
@@ -404,9 +461,11 @@ public class OrderDataAccess : IOrderDataAccess
             foundOrder.PaymentDetails!.PaymentStatus = updatedOrder.PaymentDetails?.PaymentStatus ?? foundOrder.PaymentDetails.PaymentStatus;
             foundOrder.PaymentDetails!.AmountPaidInEuro = updatedOrder.PaymentDetails?.AmountPaidInEuro ?? foundOrder.PaymentDetails.AmountPaidInEuro;
             foundOrder.PaymentDetails!.NetAmountPaidInEuro = updatedOrder.PaymentDetails?.NetAmountPaidInEuro ?? foundOrder.PaymentDetails.NetAmountPaidInEuro;
-            if (foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId is null && updatedOrder.PaymentDetails is not null)
-                foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId = updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId;
-            if (foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId is null && updatedOrder.PaymentDetails is not null)
+            //the PaymentProcessorSessionId can be updated once only if it is not set yet(for security reasons)
+            if (foundOrder.PaymentDetails.PaymentProcessorSessionId is null && updatedOrder.PaymentDetails is not null && updatedOrder.PaymentDetails.PaymentProcessorSessionId is not null)
+                foundOrder.PaymentDetails.PaymentProcessorSessionId = updatedOrder.PaymentDetails.PaymentProcessorSessionId;
+            //the PaymentProcessorPaymentIntentId can be updated once only if it is not set yet(for security reasons)
+            if (foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId is null && updatedOrder.PaymentDetails is not null && updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId is not null)
                 foundOrder.PaymentDetails.PaymentProcessorPaymentIntentId = updatedOrder.PaymentDetails.PaymentProcessorPaymentIntentId;
 
             foundOrder.ModifiedAt = dateTimeNow;
@@ -418,6 +477,7 @@ public class OrderDataAccess : IOrderDataAccess
 
             //in the case of pending, confirmed and processed states most of the properties can change since the order is not on a critical state
             decimal? finalPrice = 0;
+            int currentCouponPercentageDiscount = foundOrder.UserCoupon?.Coupon?.DiscountPercentage ?? 0; //will be used for the update of the final price if the orderItems are null
 
             //possible orderAddress change
             if (updatedOrder.OrderAddress is not null)
@@ -514,15 +574,27 @@ public class OrderDataAccess : IOrderDataAccess
 
             //possible changes when it comes to orderItems if the orderItems list of the updatedOrder is not null
             List<string?> orderItemsIds = _appDataDbContext.OrderItems.Select(orderItem => orderItem.Id).ToList();
+            var variantIds = updatedOrder.OrderItems?.Select(orderItem => orderItem.VariantId).Distinct();
+            Dictionary<string, Variant> foundVariants = new Dictionary<string, Variant>();
+            if (variantIds is not null && variantIds.Any())
+                foundVariants = await _appDataDbContext.Variants
+                    .Include(variant => variant.VariantImages)
+                        .ThenInclude(variantImage => variantImage.Image)
+                    .Include(variant => variant.Product) //this might be needed afterwards and thus it is safer to fill it
+                    .Include(variant => variant.Discount)
+                    .Where(variant => variantIds.Contains(variant.Id) && !variant.IsDeactivated!.Value)
+                    .ToDictionaryAsync(variant => variant.Id!);
+
             foreach (OrderItem orderItem in updatedOrder.OrderItems ?? Enumerable.Empty<OrderItem>())
             {
-                Variant? foundVariant = await _appDataDbContext.Variants
+                /*Variant? foundVariant = await _appDataDbContext.Variants
                     .Include(variant => variant.VariantImages)
                     .ThenInclude(variantImage => variantImage.Image)
                     .Include(variant => variant.Discount)
                     .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
+                */
 
-                if (foundVariant is null)
+                if (!foundVariants.TryGetValue(orderItem.VariantId!, out Variant? foundVariant))
                     return DataLibraryReturnedCodes.InvalidVariantIdWasGiven;
                 else if (foundVariant.UnitsInStock < orderItem.Quantity)
                     return DataLibraryReturnedCodes.InsufficientStockForVariant;
@@ -559,9 +631,18 @@ public class OrderDataAccess : IOrderDataAccess
                 finalPrice += orderItem.UnitPriceAtOrder * orderItem.Quantity;
             }
 
-            finalPrice = finalPrice + foundOrder.ShippingCostAtOrder + foundOrder.PaymentDetails.PaymentOptionExtraCostAtOrder;
-            finalPrice = finalPrice - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);
-            foundOrder.FinalPrice = finalPrice;
+            if (updatedOrder.OrderItems is null && updatedOrder.UserCoupon is not null)
+            {
+                //if the coupon is updated then the previous coupon discount must be reversed and then the new coupon discount needs to be applied.
+                //The foundOrder.CouponDiscountPercentageAtOrder at that point will contain the discount percentage of the new coupon
+                finalPrice = foundOrder.FinalPrice + (finalPrice * currentCouponPercentageDiscount / 100) - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);
+            }
+            else
+            {
+                finalPrice = finalPrice + foundOrder.ShippingCostAtOrder + foundOrder.PaymentDetails.PaymentOptionExtraCostAtOrder;
+                finalPrice = finalPrice - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);
+                foundOrder.FinalPrice = finalPrice;
+            }
 
             await _appDataDbContext.SaveChangesAsync();
 

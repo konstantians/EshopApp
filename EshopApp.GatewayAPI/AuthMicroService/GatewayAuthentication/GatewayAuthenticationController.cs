@@ -34,7 +34,7 @@ public class GatewayAuthenticationController : ControllerBase
     }
 
     [HttpGet("GetUserByAccessToken")]
-    public async Task<IActionResult> GetUserByAccessToken()
+    public async Task<IActionResult> GetUserByAccessToken(bool? includeCoupons, bool? includeOrders)
     {
         //check that an access token has been supplied, this check is made to avoid unnecessary requests
         if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
@@ -43,67 +43,50 @@ public class GatewayAuthenticationController : ControllerBase
 
         //request to get the user
         _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-        HttpResponseMessage? response = await authHttpClient.GetAsync("Authentication/GetUserByAccessToken");
+        HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken")); //this contains retry logic
 
-        //validate that getting the user has worked
-        int retries = 3;
-        while ((int)response.StatusCode >= 500)
-        {
-            if (retries == 0)
-                return StatusCode(500, "Internal Server Error");
-
-            response = await authHttpClient.GetAsync("Authentication/GetUserByAccessToken");
-            retries--;
-        }
-
-        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-            return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+        if ((int)response.StatusCode >= 400)
+            return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
         string? responseBody = await response.Content.ReadAsStringAsync();
         GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        //get the user coupons
-        _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-        response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true");
-
-        //validate that getting the user coupons has worked
-        retries = 3;
-        while ((int)response.StatusCode >= 500)
-        {
-            if (retries == 0)
-                return StatusCode(500, "Internal Server Error");
-
-            response = await dataHttpClient.GetAsync($"Coupon/userId/{appUser.Id}/includeDeactivated/true");
-            retries--;
-        }
-
-        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-            return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
-
-        responseBody = await response.Content.ReadAsStringAsync();
-        List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        appUser.UserCoupons = userCoupons!;
-
         //get the user cart
-        response = await dataHttpClient.GetAsync($"Cart/UserId/{appUser.Id}");
+        _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+        response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Cart/UserId/{appUser!.Id}")); //this contains retry logic
 
-        //validate that getting the user cart has worked
-        retries = 3;
-        while ((int)response.StatusCode >= 500)
-        {
-            if (retries == 0)
-                return StatusCode(500, "Internal Server Error");
-
-            response = await dataHttpClient.GetAsync($"Cart/UserId/{appUser.Id}");
-            retries--;
-        }
-
-        if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-            return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+        if ((int)response.StatusCode >= 400)
+            return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
         responseBody = await response.Content.ReadAsStringAsync();
         GatewayCart? userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        appUser.Cart = userCart!;
+        appUser!.Cart = userCart!;
+
+        if (includeCoupons.HasValue && includeCoupons.Value)
+        {
+            //get the user coupons
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true")); //this contains retry logic
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            appUser.UserCoupons = userCoupons!;
+        }
+
+        if (includeOrders.HasValue && includeOrders.Value)
+        {
+            //get the user orders
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Order/Amount/{int.MaxValue}/UserId/{appUser.Id}"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            List<GatewayOrder>? userOrders = JsonSerializer.Deserialize<List<GatewayOrder>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            appUser.Orders = userOrders!;
+        }
 
         return Ok(appUser);
     }
@@ -133,42 +116,21 @@ public class GatewayAuthenticationController : ControllerBase
 
             //sign up user
             _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/SignUp", new { signUpModel.Email, signUpModel.Password, signUpModel.PhoneNumber });
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.PostAsJsonAsync("Authentication/SignUp", new { signUpModel.Email, signUpModel.Password, signUpModel.PhoneNumber })); //this contains retry logic
 
-            //validation that sign up has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/SignUp", new { signUpModel.Email, signUpModel.Password, signUpModel.PhoneNumber });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewaySignUpServiceResponseModel? signupResponseModel = JsonSerializer.Deserialize<GatewaySignUpServiceResponseModel>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             //create cart for user
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("cart", new { signupResponseModel!.UserId });
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("cart", new { signupResponseModel!.UserId })); //this contains retry logic
 
-            //validation that cart has been added to user
-            retries = 3;
-            while (response.StatusCode == HttpStatusCode.InternalServerError)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("cart", new { signupResponseModel!.UserId });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //send confirmation email
             string message = "Click on the following link to confirm your email:";
@@ -202,21 +164,11 @@ public class GatewayAuthenticationController : ControllerBase
         {
             //sign in user
             _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/SignIn", new { signInModel.Email, signInModel.Password, signInModel.RememberMe });
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                authHttpClient.PostAsJsonAsync("Authentication/SignIn", new { signInModel.Email, signInModel.Password, signInModel.RememberMe }));
 
-            //validation that sign in has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/SignIn", new { signInModel.Email, signInModel.Password, signInModel.RememberMe });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //return access accessToken
             string? responseBody = await response.Content.ReadAsStringAsync();
@@ -248,23 +200,11 @@ public class GatewayAuthenticationController : ControllerBase
             if (!await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, emailHttpClient }))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
 
-            //request signin in the user
             _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ForgotPassword", new { forgotPasswordModel.Email });
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PostAsJsonAsync("Authentication/ForgotPassword", new { forgotPasswordModel.Email }));
 
-            //validation that requesting forgot password has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/ForgotPassword", new { forgotPasswordModel.Email });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayForgotPasswordServiceResponseModel? forgotPasswordResponseModel = JsonSerializer.Deserialize<GatewayForgotPasswordServiceResponseModel>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -299,23 +239,11 @@ public class GatewayAuthenticationController : ControllerBase
         {
             //request the reset of the password of the user
             _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ResetPassword",
-                new { resetPasswordModel.UserId, resetPasswordModel.Password, resetPasswordModel.Token });
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PostAsJsonAsync("Authentication/ResetPassword",
+                new { resetPasswordModel.UserId, resetPasswordModel.Password, resetPasswordModel.Token }));
 
-            //validate that requesting to reset password has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/ResetPassword",
-                    new { resetPasswordModel.UserId, resetPasswordModel.Password, resetPasswordModel.Token });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
             JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody)!.TryGetValue("accessToken", out string? accessToken);
@@ -339,22 +267,11 @@ public class GatewayAuthenticationController : ControllerBase
 
             //request to change the password of the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/ChangePassword",
-                new { changePasswordModel.CurrentPassword, changePasswordModel.NewPassword });
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PostAsJsonAsync("Authentication/ChangePassword",
+                new { changePasswordModel.CurrentPassword, changePasswordModel.NewPassword }));
 
-            //validate that changing the password has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/ChangePassword", new { changePasswordModel.CurrentPassword, changePasswordModel.NewPassword });
-                retries--;
-            }
-
-            if (response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.Unauthorized)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
         }
@@ -391,21 +308,10 @@ public class GatewayAuthenticationController : ControllerBase
 
             //request to change the email of the user
             string accessToken = _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request)!;
-            HttpResponseMessage? response = await authHttpClient.PostAsJsonAsync("Authentication/RequestChangeAccountEmail", new { changeEmailModel.NewEmail });
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PostAsJsonAsync("Authentication/RequestChangeAccountEmail", new { changeEmailModel.NewEmail }));
 
-            //validate that changing the email has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.PostAsJsonAsync("Authentication/RequestChangeAccountEmail", new { changeEmailModel.NewEmail });
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //after this point the token is certainly valid
             //send the change email link to the user's new email
@@ -456,21 +362,10 @@ public class GatewayAuthenticationController : ControllerBase
 
             //request to delete the account of the user
             string accessToken = _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request)!;
-            HttpResponseMessage? response = await authHttpClient.DeleteAsync("Authentication/DeleteAccount");
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.DeleteAsync("Authentication/DeleteAccount"));
 
-            //validate that deleting the user account has worked
-            int retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await authHttpClient.DeleteAsync("Authentication/DeleteAccount");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //after this point the token is certainly valid
             var handler = new JwtSecurityTokenHandler();
@@ -480,38 +375,16 @@ public class GatewayAuthenticationController : ControllerBase
 
             //request to delete the user's cart
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Cart/UserId/{userId}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Cart/UserId/{userId}"));
 
-            //validate the deletion of the user's cart
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Cart/UserId/{userId}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //request to remove all the user coupons
-            response = await dataHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}"));
 
-            //validate the deletion of the usercoupons
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Coupon/RemoveAllUserCoupons/userId/{userId}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                return await _utilityMethods.CommonValidationForRequestClientErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //send an email to the user to notify them that their account has been deleted
             var apiSendEmailModel = new Dictionary<string, string>

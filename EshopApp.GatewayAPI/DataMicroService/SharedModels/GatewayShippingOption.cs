@@ -9,7 +9,7 @@ public class GatewayShippingOption
     public bool? ContainsDelivery { get; set; }
     public bool? IsDeactivated { get; set; }
     public bool? ExistsInOrder { get; set; }
-    //public List<Order> Orders { get; set; } = new List<Order>(); TODO will be added later
+    public List<GatewayOrder> Orders { get; set; } = new List<GatewayOrder>();
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
 }

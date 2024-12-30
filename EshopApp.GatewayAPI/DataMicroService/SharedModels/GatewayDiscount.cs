@@ -10,5 +10,5 @@ public class GatewayDiscount
     public DateTime CreatedAt { get; set; }
     public DateTime ModifiedAt { get; set; }
     public List<GatewayVariant> Variants { get; set; } = new List<GatewayVariant>();
-    //public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>(); TODO add this later
+    public List<GatewayOrderItem> OrderItems { get; set; } = new List<GatewayOrderItem>();
 }

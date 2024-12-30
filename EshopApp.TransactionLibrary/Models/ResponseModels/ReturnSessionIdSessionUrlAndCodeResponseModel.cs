@@ -1,12 +1,12 @@
 ﻿namespace EshopApp.TransactionLibrary.Models.ResponseModels;
-public class HandleCheckOutSessionEventResponseModel
+public class ReturnSessionIdSessionUrlAndCodeResponseModel
 {
     public string? CheckOutSessionId { get; set; }
     public string? CheckOutSessionUrl { get; set; }
     public TransactionLibraryReturnedCodes ReturnedCode { get; set; }
 
-    public HandleCheckOutSessionEventResponseModel() { }
-    public HandleCheckOutSessionEventResponseModel(string checkOutSessionId, string checkOutSessionUrl, TransactionLibraryReturnedCodes returnedCode)
+    public ReturnSessionIdSessionUrlAndCodeResponseModel() { }
+    public ReturnSessionIdSessionUrlAndCodeResponseModel(string checkOutSessionId, string checkOutSessionUrl, TransactionLibraryReturnedCodes returnedCode)
     {
         CheckOutSessionId = checkOutSessionId;
         CheckOutSessionUrl = checkOutSessionUrl;

@@ -11,5 +11,5 @@ public class GatewayPaymentOption
     public bool? ExistsInOrder { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? ModifiedAt { get; set; }
-    //public List<PaymentDetails> PaymentDetails { get; set; } = new List<PaymentDetails>(); TODO Add this later
+    public List<GatewayPaymentDetails> PaymentDetails { get; set; } = new List<GatewayPaymentDetails>();
 }

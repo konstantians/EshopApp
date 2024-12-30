@@ -9,4 +9,5 @@ public class HandleCheckOutSessionResponseModel
     public string? PaymentCurrency { get; set; }
     public decimal AmountPaidInEuro { get; set; }
     public decimal NetAmountPaidInEuro { get; set; }
+    public bool ShouldSendEmail { get; set; }
 }
