@@ -55,4 +55,5 @@ public class CreateOrderRequestModel
     [Required]
     public string? ShippingOptionId { get; set; }
     public string? UserCouponId { get; set; }
+    public bool IsFinal { get; set; }
 }

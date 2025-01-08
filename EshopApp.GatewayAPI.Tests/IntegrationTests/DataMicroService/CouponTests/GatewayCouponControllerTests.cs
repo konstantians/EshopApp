@@ -13,7 +13,7 @@ namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.CouponTest
 internal class GatewayCouponControllerTests
 {
     private HttpClient httpClient;
-    private int waitTimeInMillisecond = 5000;
+    private int waitTimeInMillisecond = 6000;
     private string? _chosenApiKey;
     private string? _userAccessToken;
     private string? _userId;
@@ -44,7 +44,6 @@ internal class GatewayCouponControllerTests
         HttpResponseMessage response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
         string? responseBody = await response.Content.ReadAsStringAsync();
         _userId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
-
 
         //set the headers for the below operations
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
@@ -472,7 +471,7 @@ internal class GatewayCouponControllerTests
         testUpdateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(3);
 
         //Act
-        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCoupon", testUpdateCouponRequestModel); //here the id is missing, which is required for the update
+        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCoupon", testUpdateCouponRequestModel);
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -494,7 +493,7 @@ internal class GatewayCouponControllerTests
         testUpdateCouponRequestModel.ExpirationDate = DateTime.Now.AddDays(3);
 
         //Act
-        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCoupon", testUpdateCouponRequestModel); //here the id is missing, which is required for the update
+        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCoupon", testUpdateCouponRequestModel);
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);

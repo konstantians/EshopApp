@@ -1,4 +1,4 @@
-﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models;
+﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models.RequestModels;
 internal class TestGatewayUpdateVariantRequestModel
 {
     public string? Id { get; set; }

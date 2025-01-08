@@ -1,7 +1,9 @@
-﻿using EshopApp.GatewayAPI.HelperMethods;
+﻿using EshopApp.GatewayAPI.DataMicroService.SharedModels;
+using EshopApp.GatewayAPI.HelperMethods;
 using EshopApp.GatewayAPI.TransactionMicroService.Refund.Models.RequestModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Text.Json;
 
 namespace EshopApp.GatewayAPI.TransactionMicroService.Discount;
 
@@ -91,29 +93,37 @@ public class GatewayRefundController : ControllerBase
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Order/UpdateOrderStatus", new
             {
-                OrderId = gatewayHandleIssureRefundRequestModel.PaymentIntentId,
-                PaymentStatus = gatewayHandleIssureRefundRequestModel.NewOrderState
+                PaymentProcessorSessionId = gatewayHandleIssureRefundRequestModel.PaymentIntentId,
+                NewOrderStatus = gatewayHandleIssureRefundRequestModel.NewOrderStatus
             }));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
-            //Send Refund Confirmation Email
+            //Send Refund Confirmation Email If Order Successfully redunded
             //send an email to the user to notify them that their order has been refunded
-            if (gatewayHandleIssureRefundRequestModel.ShouldSendEmail)
+            if (gatewayHandleIssureRefundRequestModel.ShouldSendEmail && gatewayHandleIssureRefundRequestModel.NewOrderStatus == "Refunded")
             {
-                //TODO figure out how to send to the user an email about their order being refund 
-                /*var apiSendEmailModel = new Dictionary<string, string>
+                response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+                    dataHttpClient.GetAsync($"Order/PaymentProcessorPaymentIntentId/{gatewayHandleIssureRefundRequestModel.PaymentIntentId}"));
+
+                if ((int)response.StatusCode >= 400)
+                    return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+                string? responseBody = await response.Content.ReadAsStringAsync();
+                GatewayOrder? order = JsonSerializer.Deserialize<GatewayOrder>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                var apiSendEmailModel = new Dictionary<string, string>
                 {
                     { "receiver", order!.OrderAddress!.Email! },
-                    { "title", "Order Placed Successfully" },
-                    { "message", "Here are the details of your order: " } //TODO do this well
+                    { "title", "Order Refunded Successfully" },
+                    { "message", "Your order has been successfully refunded. If you have any question please contact us on kinnaskonstantinos0@gmail.com" }
                 };
                 _ = Task.Run(async () =>
                 {
                     _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);
                     await _utilityMethods.AttemptToSendEmailAsync(emailHttpClient, 3, apiSendEmailModel);
-                });*/
+                });
             }
 
             return NoContent();

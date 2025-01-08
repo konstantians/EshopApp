@@ -6,7 +6,7 @@ public class GatewayHandleIssureRefundRequestModel
 {
     [Required]
     [MaxLength(50)]
-    public string? NewOrderState { get; set; }
+    public string? NewOrderStatus { get; set; }
     [Required]
     [MaxLength(50)]
     public string? PaymentIntentId { get; set; }

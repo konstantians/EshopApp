@@ -1,4 +1,4 @@
-﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ImageTests.Models;
+﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ImageTests.Models.RequestModels;
 internal class TestGatewayUpdateImageRequestModel
 {
     public string? Id { get; set; }

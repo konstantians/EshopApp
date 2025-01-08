@@ -169,7 +169,7 @@ internal class CheckOutSessionControllerTests
 
     //this specific test creates an actualy stripe checkout(on test mode in development), so do not spam that
     [Test, Order(50)]
-    public async Task CreateCheckOutSession_ShouldSucceedAndCreateAttribute()
+    public async Task CreateCheckOutSession_ShouldSucceedAndCreateCheckOutSession()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");

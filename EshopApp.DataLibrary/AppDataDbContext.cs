@@ -315,13 +315,13 @@ public class AppDataDbContext : DbContext
             .HasIndex(paymentDetails => paymentDetails.PaymentProcessorSessionId).IsUnique();
 
         modelBuilder.Entity<PaymentDetails>()
-            .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(50);
+            .Property(paymentDetails => paymentDetails.PaymentProcessorSessionId).HasMaxLength(100);
 
         modelBuilder.Entity<PaymentDetails>()
             .HasIndex(paymentDetails => paymentDetails.PaymentProcessorPaymentIntentId).IsUnique();
 
         modelBuilder.Entity<PaymentDetails>()
-            .Property(paymentDetails => paymentDetails.PaymentProcessorPaymentIntentId).HasMaxLength(50);
+            .Property(paymentDetails => paymentDetails.PaymentProcessorPaymentIntentId).HasMaxLength(100);
 
         modelBuilder.Entity<PaymentDetails>()
             .Property(paymentDetails => paymentDetails.PaymentOptionExtraCostAtOrder).IsRequired();

@@ -1,7 +1,7 @@
-﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.AttributeTests.Models;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models;
+﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.AttributeTests.Models.RequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models.RequestModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;

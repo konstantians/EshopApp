@@ -1,7 +1,6 @@
-﻿using EshopApp.GatewayAPI.DataMicroService.Order.Models.RequestModels;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace EshopApp.GatewayAPI.TransactionMicroService.CheckOutSession.Models.RequestModels;
+namespace EshopApp.GatewayAPI.DataMicroService.Order.Models.RequestModels;
 
 public class GatewayCreateOrderRequestModel
 {
@@ -56,4 +55,5 @@ public class GatewayCreateOrderRequestModel
     [Required]
     public string? ShippingOptionId { get; set; }
     public string? UserCouponId { get; set; }
+    public bool IsFinal { get; set; } //this property here is only used by the gateway api and there is no need to be filled
 }

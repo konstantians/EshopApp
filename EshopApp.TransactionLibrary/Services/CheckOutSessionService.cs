@@ -35,6 +35,11 @@ public class CheckOutSessionService : ICheckOutSessionService
                 else if (transactionOrderItem.Quantity <= 0)
                     return new ReturnSessionIdSessionUrlAndCodeResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidOrderItemQuantity);
 
+                string description = transactionOrderItem.Description is not null && transactionOrderItem.Description != "" ?
+                    transactionOrderItem.Description : "No Description Was Provided";
+                string imageUrl = transactionOrderItem.ImageUrl is not null && transactionOrderItem.ImageUrl != "" ?
+                    transactionOrderItem.ImageUrl : "https://example.com/images/noImageUrl.jpg";
+
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
                     PriceData = new SessionLineItemPriceDataOptions()
@@ -44,8 +49,8 @@ public class CheckOutSessionService : ICheckOutSessionService
                         ProductData = new SessionLineItemPriceDataProductDataOptions()
                         {
                             Name = transactionOrderItem.Name,
-                            Description = transactionOrderItem.Description ?? "",
-                            Images = new List<string>() { transactionOrderItem.ImageUrl! }
+                            Description = description, //empty string is considered invalid for the Stripe Api
+                            Images = new List<string>() { imageUrl } //empty image is considered invalid for the Stripe Api
                         }
                     },
                     Quantity = transactionOrderItem.Quantity,
@@ -59,6 +64,8 @@ public class CheckOutSessionService : ICheckOutSessionService
                 else if (checkOutSession.TransactionPaymentOption.Name is null)
                     return new ReturnSessionIdSessionUrlAndCodeResponseModel(null!, null!, TransactionLibraryReturnedCodes.PaymentOptionNameIsMissing);
 
+                string description = checkOutSession.TransactionPaymentOption.Description is not null && checkOutSession.TransactionPaymentOption.Description != "" ? checkOutSession.TransactionPaymentOption.Description : "No Description Was Provided";
+
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
                     PriceData = new SessionLineItemPriceDataOptions()
@@ -68,7 +75,7 @@ public class CheckOutSessionService : ICheckOutSessionService
                         ProductData = new SessionLineItemPriceDataProductDataOptions()
                         {
                             Name = checkOutSession.TransactionPaymentOption.Name,
-                            Description = checkOutSession.TransactionPaymentOption.Description ?? ""
+                            Description = description
                         }
                     },
                     Quantity = 1,
@@ -82,6 +89,9 @@ public class CheckOutSessionService : ICheckOutSessionService
                 else if (checkOutSession.TransactionShippingOption.Name is null)
                     return new ReturnSessionIdSessionUrlAndCodeResponseModel(null!, null!, TransactionLibraryReturnedCodes.ShippingOptionNameIsMissing);
 
+                string description = checkOutSession.TransactionShippingOption.Description is not null && checkOutSession.TransactionShippingOption.Description != "" ?
+                    checkOutSession.TransactionShippingOption.Description : "No Description Was Provided";
+
                 sessionLineItemOptions.Add(new SessionLineItemOptions()
                 {
                     PriceData = new SessionLineItemPriceDataOptions()
@@ -91,7 +101,7 @@ public class CheckOutSessionService : ICheckOutSessionService
                         ProductData = new SessionLineItemPriceDataProductDataOptions()
                         {
                             Name = checkOutSession.TransactionShippingOption.Name,
-                            Description = checkOutSession.TransactionShippingOption.Description ?? ""
+                            Description = description
                         }
                     },
                     Quantity = 1,

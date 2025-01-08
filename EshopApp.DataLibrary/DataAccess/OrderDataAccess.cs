@@ -141,7 +141,38 @@ public class OrderDataAccess : IOrderDataAccess
         }
     }
 
-    public async Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order)
+    public async Task<ReturnOrderAndCodeResponseModel> GetOrderByPaymentProcessorPaymentIntentIdAsync(string orderPaymentProcessorPaymentIntentId)
+    {
+        try
+        {
+            Order? order = await _appDataDbContext.Orders
+                .Include(o => o.OrderAddress)
+                .Include(o => o.PaymentDetails)
+                    .ThenInclude(pd => pd!.PaymentOption)
+                .Include(o => o.ShippingOption)
+                .Include(o => o.UserCoupon)
+                    .ThenInclude(uc => uc!.Coupon)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Discount)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Image)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Variant)
+                        .ThenInclude(v => v!.Product)
+                .FirstOrDefaultAsync(order => order.PaymentDetails!.PaymentProcessorPaymentIntentId == orderPaymentProcessorPaymentIntentId);
+
+            return new ReturnOrderAndCodeResponseModel(order!, DataLibraryReturnedCodes.NoError);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "GetOrderByPaymentProcessorPaymentIntentIdFailure"), ex, "An error occurred while retrieving the order with PaymentProcessorPaymentIntentId={PaymentProcessorPaymentIntentId}. " +
+                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", orderPaymentProcessorPaymentIntentId, ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
+    //the isFinal flag means that the order will not further processing, which means that user coupon times used and stock units of variants should not change until that point
+    public async Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order, bool isFinal = false)
     {
         try
         {
@@ -164,7 +195,7 @@ public class OrderDataAccess : IOrderDataAccess
                 order.Id = Guid.NewGuid().ToString();
 
             order.Comment = order.Comment ?? "";
-            order.OrderStatus = "Pending";
+            order.OrderStatus = isFinal ? "Confirmed" : "Pending"; //Can be confirmed immediatelly in case of cash-on-arrival payment method
             order.CreatedAt = dateTimeNow;
             order.ModifiedAt = dateTimeNow;
             order.PaymentDetails.PaymentStatus = "Pending";
@@ -206,7 +237,7 @@ public class OrderDataAccess : IOrderDataAccess
             {
                 UserCoupon? foundUserCoupon = await _appDataDbContext.UserCoupons
                     .Include(userCoupon => userCoupon.Coupon)
-                    .FirstOrDefaultAsync(userCoupon => userCoupon.Id == order.UserCouponId && userCoupon.UserId == order.UserId); //this also checks that the user owns t he coupon
+                    .FirstOrDefaultAsync(userCoupon => userCoupon.Id == order.UserCouponId && userCoupon.UserId == order.UserId); //this also checks that the user owns the coupon
                 if (foundUserCoupon is null)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidCouponIdWasGiven);
                 else if (foundUserCoupon.IsDeactivated!.Value || foundUserCoupon.Coupon!.IsDeactivated!.Value)
@@ -214,10 +245,16 @@ public class OrderDataAccess : IOrderDataAccess
                 else if (foundUserCoupon.TimesUsed >= foundUserCoupon.Coupon.UsageLimit)
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.CouponUsageLimitExceeded);
 
-                if (foundUserCoupon is not null && !foundUserCoupon.ExistsInOrder!.Value) //The timesUsed property of the user coupon will be updated only when the order is confirmed
+                if (!foundUserCoupon.ExistsInOrder!.Value) //The timesUsed property of the user coupon will be updated only when the order is confirmed
                 {
                     foundUserCoupon.ModifiedAt = dateTimeNow;
                     foundUserCoupon.ExistsInOrder = true;
+                }
+
+                if (isFinal)
+                {
+                    foundUserCoupon.ModifiedAt = dateTimeNow;
+                    foundUserCoupon.TimesUsed++;
                 }
 
                 order.UserCouponId = foundUserCoupon!.Id;
@@ -242,12 +279,6 @@ public class OrderDataAccess : IOrderDataAccess
 
             foreach (OrderItem orderItem in order.OrderItems)
             {
-                /*Variant? foundVariant = await _appDataDbContext.Variants
-                    .Include(variant => variant.VariantImages)
-                    .ThenInclude(variantImage => variantImage.Image)
-                    .Include(variant => variant.Discount)
-                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);*/
-
                 if (!foundVariants.TryGetValue(orderItem.VariantId!, out Variant? foundVariant))
                     return new ReturnOrderAndCodeResponseModel(null!, DataLibraryReturnedCodes.InvalidVariantIdWasGiven);
                 else if (foundVariant.UnitsInStock < orderItem.Quantity)
@@ -256,6 +287,12 @@ public class OrderDataAccess : IOrderDataAccess
                 if (!foundVariant.ExistsInOrder!.Value) //The variant units in stock will only be updated after the order has been confirmed
                 {
                     foundVariant.ExistsInOrder = true;
+                    foundVariant.ModifiedAt = dateTimeNow;
+                }
+
+                if (isFinal)
+                {
+                    foundVariant.UnitsInStock -= orderItem.Quantity;
                     foundVariant.ModifiedAt = dateTimeNow;
                 }
 
@@ -339,17 +376,22 @@ public class OrderDataAccess : IOrderDataAccess
                     .Include(order => order.ShippingOption)
                     .Include(order => order.UserCoupon)
                         .ThenInclude(userCoupon => userCoupon!.Coupon)
-                    .FirstOrDefaultAsync(order => orderPaymentProcessorSessionId == order.PaymentDetails!.PaymentProcessorPaymentIntentId);
+                    .FirstOrDefaultAsync(order => orderPaymentProcessorSessionId == order.PaymentDetails!.PaymentProcessorSessionId);
             }
 
-            if (foundOrder is null)
+            if (foundOrder is null && orderId is not null)
             {
                 _logger.LogWarning(new EventId(9999, "UpdateOrderStatusFailureDueToNullOrder"), "The order with Id={id} was not found and thus the status update could not proceed.", orderId);
                 return DataLibraryReturnedCodes.EntityNotFoundWithGivenId;
             }
+            else if (foundOrder is null && orderPaymentProcessorSessionId is not null)
+            {
+                _logger.LogWarning(new EventId(9999, "UpdateOrderStatusFailureDueToNullOrder"), "The order with SessionId={sessionId} was not found and thus the status update could not proceed.", orderPaymentProcessorSessionId);
+                return DataLibraryReturnedCodes.OrderNotFoundWithGivenPaymentProcessorSessionId;
+            }
 
             //Because of Stripe the refundpending can be bypassed. This is not the typical case, but to avoid race conditions I allow the bypass of RefundPending
-            if (foundOrder.OrderStatus == "Failed" || foundOrder.OrderStatus == "Refunded" || foundOrder.OrderStatus == "NoShow" || foundOrder.OrderStatus == "Canceled")
+            if (foundOrder!.OrderStatus == "Failed" || foundOrder.OrderStatus == "Refunded" || foundOrder.OrderStatus == "NoShow" || foundOrder.OrderStatus == "Canceled")
                 return DataLibraryReturnedCodes.OrderStatusHasBeenFinalizedAndThusOrderStatusCanNotBeAltered;
             else if (foundOrder.OrderStatus == "Completed" && newOrderStatus != "RefundPending" && newOrderStatus != "RefundFailed" && newOrderStatus != "Refunded")
                 return DataLibraryReturnedCodes.InvalidNewOrderState;
@@ -587,13 +629,6 @@ public class OrderDataAccess : IOrderDataAccess
 
             foreach (OrderItem orderItem in updatedOrder.OrderItems ?? Enumerable.Empty<OrderItem>())
             {
-                /*Variant? foundVariant = await _appDataDbContext.Variants
-                    .Include(variant => variant.VariantImages)
-                    .ThenInclude(variantImage => variantImage.Image)
-                    .Include(variant => variant.Discount)
-                    .FirstOrDefaultAsync(variant => variant.Id == orderItem.VariantId && !variant.IsDeactivated!.Value);
-                */
-
                 if (!foundVariants.TryGetValue(orderItem.VariantId!, out Variant? foundVariant))
                     return DataLibraryReturnedCodes.InvalidVariantIdWasGiven;
                 else if (foundVariant.UnitsInStock < orderItem.Quantity)
@@ -631,13 +666,14 @@ public class OrderDataAccess : IOrderDataAccess
                 finalPrice += orderItem.UnitPriceAtOrder * orderItem.Quantity;
             }
 
-            if (updatedOrder.OrderItems is null && updatedOrder.UserCoupon is not null)
+            if ((updatedOrder.OrderItems is null || updatedOrder.OrderItems.Count == 0) && updatedOrder.UserCoupon is not null)
             {
                 //if the coupon is updated then the previous coupon discount must be reversed and then the new coupon discount needs to be applied.
                 //The foundOrder.CouponDiscountPercentageAtOrder at that point will contain the discount percentage of the new coupon
                 finalPrice = foundOrder.FinalPrice + (finalPrice * currentCouponPercentageDiscount / 100) - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);
+                foundOrder.FinalPrice = finalPrice;
             }
-            else
+            else if (updatedOrder.OrderItems is not null && updatedOrder.OrderItems.Count != 0)
             {
                 finalPrice = finalPrice + foundOrder.ShippingCostAtOrder + foundOrder.PaymentDetails.PaymentOptionExtraCostAtOrder;
                 finalPrice = finalPrice - (finalPrice * foundOrder.CouponDiscountPercentageAtOrder / 100);

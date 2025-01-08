@@ -479,12 +479,12 @@ namespace EshopApp.DataLibrary.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PaymentProcessorPaymentIntentId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PaymentProcessorSessionId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()

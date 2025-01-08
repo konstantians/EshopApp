@@ -5,9 +5,9 @@ namespace EshopApp.GatewayAPI.TransactionMicroService.CheckOutSession.Models.Req
 public class GatewayHandleCreateCheckOutSessionRequestModel
 {
     [Required]
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string? PaymentProcessorSessionId { get; set; }
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string? PaymentProcessorPaymentIntentId { get; set; }
     [Required]
     [MaxLength(50)]

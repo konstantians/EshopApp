@@ -69,7 +69,7 @@ public class CheckOutSessionController : ControllerBase
 
             if (responseModel!.ReturnedCode == TransactionLibraryReturnedCodes.ThereNeedsToBeAtLeastOneOrderItem)
                 return BadRequest(new { ErrorMessage = "ThereNeedsToBeAtLeastOneOrderItem" });
-            else if (responseModel!.ReturnedCode == TransactionLibraryReturnedCodes.ThereNeedsToBeAtLeastOneOrderItem)
+            else if (responseModel!.ReturnedCode == TransactionLibraryReturnedCodes.StripeApiError)
                 return StatusCode(500, new { ErrorMessage = "StripeApiError" });
 
             return Created("", new CreateCheckOutSessionResponseModel()
@@ -119,7 +119,7 @@ public class CheckOutSessionController : ControllerBase
                     retries--;
                 }
 
-                long fee = paymentIntent.LatestCharge is not null && paymentIntent.LatestCharge.BalanceTransaction is not null ? paymentIntent.LatestCharge!.BalanceTransaction!.Fee : 0; //in that case of 0 I suppose the admin will need to check it 
+                long fee = paymentIntent.LatestCharge is not null && paymentIntent.LatestCharge.BalanceTransaction is not null ? paymentIntent.LatestCharge!.BalanceTransaction!.Fee : 0; //in that case of 0 I suppose the admin will need to check it
 
                 var responseModel = new HandleCheckOutSessionResponseModel
                 {
@@ -135,6 +135,8 @@ public class CheckOutSessionController : ControllerBase
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionCompletedRedirectLink"] :
                     _configuration["ApiClientBaseUrl"] + "/" + _configuration["SessionCompletedRedirectLink"];
+                httpClient!.DefaultRequestHeaders.Add("X-API-KEY", _configuration["ApiClientApiKey"]);
+                httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", _configuration["ApiClientRateLimitingBypassCode"]);
                 await httpClient!.PostAsJsonAsync(fullUrl, responseModel);
             }
             else if (stripeEvent.Type == "checkout.session.expired" && !string.IsNullOrEmpty(_configuration["SessionExpiredRedirectEndpoint"]))
@@ -152,6 +154,8 @@ public class CheckOutSessionController : ControllerBase
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionExpiredRedirectEndpoint"] :
                     _configuration["ApiClientBaseUrl"] + "/" + _configuration["SessionExpiredRedirectEndpoint"];
+                httpClient!.DefaultRequestHeaders.Add("X-API-KEY", _configuration["ApiClientApiKey"]);
+                httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", _configuration["ApiClientRateLimitingBypassCode"]);
                 await httpClient!.PostAsJsonAsync(fullUrl, responseModel);
             }
 
