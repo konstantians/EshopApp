@@ -1,9 +1,9 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAdminTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.SharedModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.CartTests.Models.RequestModels;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
-using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models.RequestModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
@@ -42,7 +42,7 @@ internal class GatewayCartControllerTests
 
         (_userAccessToken, _managerAccessToken, _adminAccessToken) = await HelperMethods.CommonProcedures.CommonUsersSetupAsync(httpClient, waitTimeInMillisecond);
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
-        HttpResponseMessage response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
+        HttpResponseMessage response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken?includeCart=true");
         string? responseBody = await response.Content.ReadAsStringAsync();
         _userCartId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Cart!.Id;
 
@@ -53,7 +53,7 @@ internal class GatewayCartControllerTests
         signUpModel.Password = "Kinas2020!";
         signUpModel.ClientUrl = "https://localhost:7070/controller/clientAction";
         await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", signUpModel);
-        await Task.Delay(5000);
+        await Task.Delay(7000);
         string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
         try
         {
@@ -343,7 +343,7 @@ internal class GatewayCartControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCart/cartItem", testGatewayUpdateCreateCartItemRequestModel);
-        HttpResponseMessage getUserByAccessTokenResponse = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
+        HttpResponseMessage getUserByAccessTokenResponse = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken?includeCart=true");
         string? getUserByAccessTokenResponseBody = await getUserByAccessTokenResponse.Content.ReadAsStringAsync();
         TestGatewayCartItem chosenCartItem = JsonSerializer.Deserialize<TestGatewayAppUser>(getUserByAccessTokenResponseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Cart!.CartItems[0]!;
 

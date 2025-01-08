@@ -43,20 +43,21 @@ public class GatewayCheckOutSessionController : ControllerBase
             if (!_utilityMethods.CheckIfUrlIsTrusted(gatewayCreateCheckoutSessionRequestModel.CancelUrl!, _configuration))
                 return BadRequest(new { ErrorMessage = "OriginForCancelUrlIsNotTrusted" });
 
-            //the usercouponcode field is the one that dictates what happens to the coupon and not the UserCouponId
-            if (string.IsNullOrEmpty(gatewayCreateCheckoutSessionRequestModel.UserCouponCode) && gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId is not null)
-                return BadRequest(new { ErrorMessage = "IfTheUserCouponIdFieldIsNotNullThenTheUserCouponCodeShouldAlsoNotBeNull" });
-
             //start by doing healthchecks for the endpoints this is calling
-            if (gatewayCreateCheckoutSessionRequestModel.UserCouponCode is not null && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, transactionHttpClient })))
+            if (gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId is not null &&
+                !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { authHttpClient, dataHttpClient, transactionHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
-            else if (gatewayCreateCheckoutSessionRequestModel.UserCouponCode is null && !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { dataHttpClient, transactionHttpClient })))
+            else if (gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId is null &&
+                !(await _utilityMethods.CheckIfMicroservicesFullyOnlineAsync(new List<HttpClient>() { dataHttpClient, transactionHttpClient })))
                 return StatusCode(503, new { ErrorMessage = "OneOrMoreMicroservicesAreUnavailable" });
+
+            //set dataHttpClient
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
 
             int couponPercentageDiscount = 0;
             //If Coupon is provided check that it is valid and it belongs to the user
             //also fill the couponPercentageDiscount
-            if (!string.IsNullOrEmpty(gatewayCreateCheckoutSessionRequestModel.UserCouponCode))
+            if (!string.IsNullOrEmpty(gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId))
             {
                 //check that an access token has been supplied, this check is made to avoid unnecessary requests
                 if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
@@ -65,7 +66,7 @@ public class GatewayCheckOutSessionController : ControllerBase
 
                 //request to get the user
                 _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-                HttpResponseMessage authenticationResponse = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken?includeCoupons=true")); //this contains retry logic
+                HttpResponseMessage authenticationResponse = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken")); //this contains retry logic
 
                 if ((int)authenticationResponse.StatusCode >= 400)
                     return await _utilityMethods.CommonHandlingForErrorCodesAsync(authenticationResponse);
@@ -73,17 +74,27 @@ public class GatewayCheckOutSessionController : ControllerBase
                 string? authenticationResponseBody = await authenticationResponse.Content.ReadAsStringAsync();
                 GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(authenticationResponseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                GatewayUserCoupon? gatewayUserCoupon = appUser!.UserCoupons.FirstOrDefault(userCoupon => userCoupon.Code == gatewayCreateCheckoutSessionRequestModel.UserCouponCode);
+                authenticationResponse = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(
+                    () => dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/{true}")); //this contains retry logic
+
+                if ((int)authenticationResponse.StatusCode >= 400)
+                    return await _utilityMethods.CommonHandlingForErrorCodesAsync(authenticationResponse);
+
+                authenticationResponseBody = await authenticationResponse.Content.ReadAsStringAsync();
+                appUser!.UserCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(authenticationResponseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+                GatewayUserCoupon? gatewayUserCoupon = appUser!.UserCoupons.FirstOrDefault(userCoupon =>
+                    userCoupon.Id == gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId);
                 if (gatewayUserCoupon is null)
-                    return StatusCode(403, new { ErrorMessage = "UserAccountDoesNotContainThisCouponCode" });
+                    return StatusCode(403, new { ErrorMessage = "UserAccountDoesNotContainThisCoupon" });
 
                 couponPercentageDiscount = gatewayUserCoupon.Coupon!.DiscountPercentage!.Value;
                 gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.UserCouponId = gatewayUserCoupon.Id;
             }
 
             //Create the order
-            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Order", gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel));
+            gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel.IsFinal = false;
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Order", gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
@@ -91,9 +102,8 @@ public class GatewayCheckOutSessionController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayOrder? order = JsonSerializer.Deserialize<GatewayOrder>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            //Create the session
+            //Create the checkout session
             GatewayCreateCheckoutSessionServiceRequestModel gatewayCreateCheckoutSessionServiceRequestModel = new GatewayCreateCheckoutSessionServiceRequestModel();
-            gatewayCreateCheckoutSessionServiceRequestModel.PaymentMethodType = gatewayCreateCheckoutSessionRequestModel.PaymentMethodType;
             gatewayCreateCheckoutSessionServiceRequestModel.SuccessUrl = gatewayCreateCheckoutSessionRequestModel.SuccessUrl;
             gatewayCreateCheckoutSessionServiceRequestModel.CancelUrl = gatewayCreateCheckoutSessionRequestModel.CancelUrl;
             gatewayCreateCheckoutSessionServiceRequestModel.CustomerEmail = gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.Email;
@@ -102,6 +112,7 @@ public class GatewayCheckOutSessionController : ControllerBase
             gatewayCreateCheckoutSessionServiceRequestModel.PaymentOptionName = order!.PaymentDetails!.PaymentOption!.Name;
             gatewayCreateCheckoutSessionServiceRequestModel.PaymentOptionDescription = order.PaymentDetails!.PaymentOption!.Description;
             gatewayCreateCheckoutSessionServiceRequestModel.PaymentOptionCostInEuro = order.PaymentDetails!.PaymentOption!.ExtraCost;
+            gatewayCreateCheckoutSessionServiceRequestModel.PaymentMethodType = order.PaymentDetails!.PaymentOption!.NameAlias;
 
             gatewayCreateCheckoutSessionServiceRequestModel.ShippingOptionName = order.ShippingOption!.Name;
             gatewayCreateCheckoutSessionServiceRequestModel.ShippingOptionDescription = order.ShippingOption.Description;
@@ -122,7 +133,6 @@ public class GatewayCheckOutSessionController : ControllerBase
                 gatewayCreateCheckoutSessionServiceRequestModel.CreateTransactionOrderItemRequestModels.Add(gatewayCreateTransactionOrderItemServiceRequestModel);
             }
 
-            //Create the checkout session
             _utilityMethods.SetDefaultHeadersForClient(false, transactionHttpClient, _configuration["TransactionApiKey"]!, _configuration["TransactionRateLimitingBypassCode"]!);
             response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => transactionHttpClient.PostAsJsonAsync("CheckOutSession", gatewayCreateCheckoutSessionServiceRequestModel));
 
@@ -139,7 +149,7 @@ public class GatewayCheckOutSessionController : ControllerBase
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //maybe return redirect, but I will leave it us ok now
-            return Ok(gatewayCreateCheckoutSessionServiceResponseModel!.CheckOutSessionUrl); //return to the client the CheckOutSessionUrl, so that they can redirect there
+            return Ok(new { CheckOutSessionUrl = gatewayCreateCheckoutSessionServiceResponseModel!.CheckOutSessionUrl }); //return to the client the CheckOutSessionUrl, so that they can redirect there
         }
         catch (Exception)
         {
@@ -179,15 +189,15 @@ public class GatewayCheckOutSessionController : ControllerBase
             response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Order/UpdateOrderStatus", new
             {
                 PaymentProcessorSessionId = gatewayHandleCreateCheckOutSessionRequestModel.PaymentProcessorSessionId,
-                PaymentStatus = gatewayHandleCreateCheckOutSessionRequestModel.NewPaymentStatus
+                NewOrderStatus = gatewayHandleCreateCheckOutSessionRequestModel.NewOrderStatus
             }));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
-            //Send Order Confirmation Email
+            //Send Order Confirmation Email If The CheckOutSession Was Successful
             //send an email to the user to notify them that their order has been successfully placed(include order information)
-            if (gatewayHandleCreateCheckOutSessionRequestModel.ShouldSendEmail)
+            if (gatewayHandleCreateCheckOutSessionRequestModel.ShouldSendEmail && gatewayHandleCreateCheckOutSessionRequestModel.NewOrderStatus == "Confirmed")
             {
                 //Get the order
                 response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>

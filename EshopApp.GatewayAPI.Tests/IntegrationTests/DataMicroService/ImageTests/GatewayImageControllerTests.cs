@@ -1,4 +1,4 @@
-﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ImageTests.Models;
+﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ImageTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;

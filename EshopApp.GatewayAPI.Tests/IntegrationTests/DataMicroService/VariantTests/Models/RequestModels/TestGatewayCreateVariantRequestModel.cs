@@ -1,6 +1,6 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.SharedModels;
 
-namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models;
+namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models.RequestModels;
 internal class TestGatewayCreateVariantRequestModel
 {
     public string? SKU { get; set; }

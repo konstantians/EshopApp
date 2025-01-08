@@ -11,6 +11,6 @@ public class UpdateOrderStatusRequestModel
     public string? NewOrderStatus { get; set; }
     [MaxLength(50)]
     public string? OrderId { get; set; }
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string? PaymentProcessorSessionId { get; set; }
 }

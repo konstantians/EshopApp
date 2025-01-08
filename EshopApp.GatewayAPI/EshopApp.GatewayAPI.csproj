@@ -11,18 +11,22 @@
     <Compile Remove="DataMicroService\GatewayImage\**" />
     <Compile Remove="DataMicroService\GatewayProduct\**" />
     <Compile Remove="DataMicroService\GatewayVariant\**" />
+    <Compile Remove="TransactionMicroService\Discount\**" />
     <Content Remove="DataMicroService\GatewayAttribute\**" />
     <Content Remove="DataMicroService\GatewayImage\**" />
     <Content Remove="DataMicroService\GatewayProduct\**" />
     <Content Remove="DataMicroService\GatewayVariant\**" />
+    <Content Remove="TransactionMicroService\Discount\**" />
     <EmbeddedResource Remove="DataMicroService\GatewayAttribute\**" />
     <EmbeddedResource Remove="DataMicroService\GatewayImage\**" />
     <EmbeddedResource Remove="DataMicroService\GatewayProduct\**" />
     <EmbeddedResource Remove="DataMicroService\GatewayVariant\**" />
+    <EmbeddedResource Remove="TransactionMicroService\Discount\**" />
     <None Remove="DataMicroService\GatewayAttribute\**" />
     <None Remove="DataMicroService\GatewayImage\**" />
     <None Remove="DataMicroService\GatewayProduct\**" />
     <None Remove="DataMicroService\GatewayVariant\**" />
+    <None Remove="TransactionMicroService\Discount\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,7 +36,6 @@
 
   <ItemGroup>
     <Folder Include="TransactionMicroService\CheckOutSession\Models\RequestModels\" />
-    <Folder Include="TransactionMicroService\Discount\Models\RequestModels\" />
   </ItemGroup>
 
 </Project>

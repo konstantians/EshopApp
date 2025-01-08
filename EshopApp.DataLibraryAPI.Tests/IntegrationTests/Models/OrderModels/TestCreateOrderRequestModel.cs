@@ -25,4 +25,5 @@ internal class TestCreateOrderRequestModel
     public string? PaymentOptionId { get; set; }
     public string? ShippingOptionId { get; set; }
     public string? UserCouponId { get; set; }
+    public bool IsFinal { get; set; }
 }

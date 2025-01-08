@@ -115,20 +115,9 @@ public class GatewayDiscountController : ControllerBase
 
             //create the discount
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PostAsJsonAsync("Discount", gatewayCreateDiscountRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Discount", gatewayCreateDiscountRequestModel));
 
-            //validate that creating the discount has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PostAsJsonAsync("Discount", gatewayCreateDiscountRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+            if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             string? responseBody = await response.Content.ReadAsStringAsync();
@@ -163,20 +152,9 @@ public class GatewayDiscountController : ControllerBase
 
             //update the discount
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.PutAsJsonAsync("Discount", gatewayUpdateDiscountRequestModel);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PutAsJsonAsync("Discount", gatewayUpdateDiscountRequestModel));
 
-            //validate that updating the discount has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.PutAsJsonAsync("Discount", gatewayUpdateDiscountRequestModel);
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+            if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             return NoContent();
@@ -208,20 +186,9 @@ public class GatewayDiscountController : ControllerBase
 
             //delete the discount
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-            response = await dataHttpClient.DeleteAsync($"Discount/{id}");
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Discount/{id}"));
 
-            //validate that deleting the discount has worked
-            retries = 3;
-            while ((int)response.StatusCode >= 500)
-            {
-                if (retries == 0)
-                    return StatusCode(500, "Internal Server Error");
-
-                response = await dataHttpClient.DeleteAsync($"Discount/{id}");
-                retries--;
-            }
-
-            if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+            if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             if (response.StatusCode == HttpStatusCode.OK) //this can happen if the discount exists in an order and thus it only becomes deactivated/soft deleted

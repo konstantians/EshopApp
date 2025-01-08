@@ -78,6 +78,8 @@ public class RefundController : ControllerBase
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["RefundSucceededRedirectEndpoint"] :
                     _configuration["ApiClientBaseUrl"] + "/" + _configuration["RefundSucceededRedirectEndpoint"];
+                httpClient!.DefaultRequestHeaders.Add("X-API-KEY", _configuration["ApiClientApiKey"]);
+                httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", _configuration["ApiClientRateLimitingBypassCode"]);
                 await httpClient!.PostAsJsonAsync(fullUrl, responseModel);
             }
             else if (stripeEvent.Type == "refund.failed" && !string.IsNullOrEmpty(_configuration["RefundFailedsRedirectEndpoint"]))
@@ -93,6 +95,8 @@ public class RefundController : ControllerBase
 
                 string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["RefundFailedsRedirectEndpoint"] :
                     _configuration["ApiClientBaseUrl"] + "/" + _configuration["RefundFailedsRedirectEndpoint"];
+                httpClient!.DefaultRequestHeaders.Add("X-API-KEY", _configuration["ApiClientApiKey"]);
+                httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", _configuration["ApiClientRateLimitingBypassCode"]);
                 await httpClient!.PostAsJsonAsync(fullUrl, responseModel);
             }
 

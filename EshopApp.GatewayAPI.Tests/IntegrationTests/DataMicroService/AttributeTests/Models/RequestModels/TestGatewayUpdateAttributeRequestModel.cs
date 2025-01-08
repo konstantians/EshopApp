@@ -1,4 +1,4 @@
-﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.AttributeTests.Models;
+﻿namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.AttributeTests.Models.RequestModels;
 internal class TestGatewayUpdateAttributeRequestModel
 {
     public string? Id { get; set; }

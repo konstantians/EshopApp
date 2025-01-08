@@ -267,13 +267,14 @@ public class CouponDataAccess : ICouponDataAccess
                 //a userCoupon can not exist without being connected to a coupon & a coupon has the IsDeactivated property always filled
                 userCoupons = await _appDataDbContext.UserCoupons
                     .Include(userCoupon => userCoupon.Coupon)
-                    .Where(userCoupon => !userCoupon.Coupon!.IsDeactivated!.Value)
+                    .Where(userCoupon => !userCoupon.Coupon!.IsDeactivated!.Value && userCoupon.UserId == userId)
                     .ToListAsync();
             }
             else
             {
                 userCoupons = await _appDataDbContext.UserCoupons
                     .Include(userCoupon => userCoupon.Coupon)
+                    .Where(userCoupon => userCoupon.UserId == userId)
                     .ToListAsync();
             }
 

@@ -1,6 +1,6 @@
-﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models;
+﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.Models.RequestModels;
 
-namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models;
+namespace EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models.RequestModels;
 internal class TestGatewayCreateProductRequestModel
 {
     public string? Code { get; set; }

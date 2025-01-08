@@ -6,4 +6,6 @@ internal class TestGatewayAppUser : IdentityUser
 {
     public TestGatewayCart? Cart { get; set; }
     public List<TestGatewayUserCoupon> UserCoupons { get; set; } = new List<TestGatewayUserCoupon>();
+    public List<TestGatewayOrder> Orders { get; set; } = new List<TestGatewayOrder>();
+
 }

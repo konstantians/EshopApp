@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 namespace EshopApp.GatewayAPI.Tests.IntegrationTests.HelperMethods;
 internal class CommonProcedures
 {
-    internal static async Task<(string userAccessToken, string managerAccessToken, string adminAccessToken)> CommonUsersSetupAsync(HttpClient httpClient, int waitTimeInMilliseconds = 5000)
+    internal static async Task<(string userAccessToken, string managerAccessToken, string adminAccessToken)> CommonUsersSetupAsync(HttpClient httpClient, int waitTimeInMilliseconds = 6000)
     {
         //sign up simple user
         TestGatewayApiSignUpRequestModel signUpModel = new TestGatewayApiSignUpRequestModel();
@@ -53,12 +53,12 @@ internal class CommonProcedures
         return (userAccessToken!, managerAccessToken!, adminAccessToken!);
     }
 
-    internal static async Task CommonProcessManagementDatabaseAndEmailCleanupAsync(bool terminateTheProcesses)
+    internal static async Task CommonProcessManagementDatabaseAndEmailCleanupAsync(bool terminateTheProcesses, bool startAuthService = true, bool startDataService = true, bool startEmailService = true, bool startTransactionService = false, bool startMvcClient = false)
     {
         if (!terminateTheProcesses)
         {
             IProcessManagementService processManagementService = new ProcessManagementService();
-            processManagementService.BuildAndRunApplication(true, true, true, false, false);
+            processManagementService.BuildAndRunApplication(startAuthService, startDataService, startEmailService, startTransactionService, startMvcClient);
         }
         else
         {

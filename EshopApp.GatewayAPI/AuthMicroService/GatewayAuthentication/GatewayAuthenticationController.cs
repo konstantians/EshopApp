@@ -34,7 +34,7 @@ public class GatewayAuthenticationController : ControllerBase
     }
 
     [HttpGet("GetUserByAccessToken")]
-    public async Task<IActionResult> GetUserByAccessToken(bool? includeCoupons, bool? includeOrders)
+    public async Task<IActionResult> GetUserByAccessToken(bool? includeCart, bool? includeCoupons, bool? includeOrders)
     {
         //check that an access token has been supplied, this check is made to avoid unnecessary requests
         if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
@@ -51,41 +51,45 @@ public class GatewayAuthenticationController : ControllerBase
         string? responseBody = await response.Content.ReadAsStringAsync();
         GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        //get the user cart
         _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
-        response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Cart/UserId/{appUser!.Id}")); //this contains retry logic
 
-        if ((int)response.StatusCode >= 400)
-            return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+        if (includeCart.HasValue && includeCart.Value)
+        {
+            //get the user cart
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Cart/UserId/{appUser!.Id}"));
 
-        responseBody = await response.Content.ReadAsStringAsync();
-        GatewayCart? userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        appUser!.Cart = userCart!;
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            GatewayCart? userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            appUser!.Cart = userCart!;
+        }
 
         if (includeCoupons.HasValue && includeCoupons.Value)
         {
             //get the user coupons
-            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true")); //this contains retry logic
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Coupon/userId/{appUser!.Id}/includeDeactivated/true"));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayUserCoupon>? userCoupons = JsonSerializer.Deserialize<List<GatewayUserCoupon>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            appUser.UserCoupons = userCoupons!;
+            appUser!.UserCoupons = userCoupons!;
         }
 
         if (includeOrders.HasValue && includeOrders.Value)
         {
             //get the user orders
-            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Order/Amount/{int.MaxValue}/UserId/{appUser.Id}"));
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Order/Amount/{int.MaxValue}/UserId/{appUser!.Id}"));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             responseBody = await response.Content.ReadAsStringAsync();
             List<GatewayOrder>? userOrders = JsonSerializer.Deserialize<List<GatewayOrder>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            appUser.Orders = userOrders!;
+            appUser!.Orders = userOrders!;
         }
 
         return Ok(appUser);

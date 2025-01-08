@@ -68,6 +68,23 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpGet("PaymentProcessorPaymentIntentId/{paymentProcessorPaymentIntentId}")]
+    public async Task<IActionResult> GetOrderByPaymentProcessorPaymentIntentId(string paymentProcessorPaymentIntentId)
+    {
+        try
+        {
+            ReturnOrderAndCodeResponseModel response = await _orderDataAccess.GetOrderByPaymentProcessorPaymentIntentIdAsync(paymentProcessorPaymentIntentId);
+            if (response.Order is null)
+                return NotFound();
+
+            return Ok(response.Order);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
     [HttpGet("Amount/{amount}/UserId/{userId}")]
     public async Task<IActionResult> GetUserOrders(int amount, string userId)
     {
@@ -129,7 +146,7 @@ public class OrderController : ControllerBase
             order.OrderAddress = orderAddress;
             order.PaymentDetails = paymentDetails;
 
-            ReturnOrderAndCodeResponseModel response = await _orderDataAccess.CreateOrderAsync(order);
+            ReturnOrderAndCodeResponseModel response = await _orderDataAccess.CreateOrderAsync(order, createOrderRequestModel.IsFinal);
             if (response.ReturnedCode == DataLibraryReturnedCodes.TheOrderMustHaveAtLeastOneOrderItem)
                 return BadRequest(new { ErrorMessage = "TheOrderMustHaveAtLeastOneOrderItem" });
             else if (response.ReturnedCode == DataLibraryReturnedCodes.AllTheAltFieldsNeedToBeFilledIfDifferentShippingAddress)

@@ -5,9 +5,10 @@ using EshopApp.DataLibrary.Models.ResponseModels.OrderModels;
 namespace EshopApp.DataLibrary.DataAccess;
 public interface IOrderDataAccess
 {
-    Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order);
+    Task<ReturnOrderAndCodeResponseModel> CreateOrderAsync(Order order, bool isFinal = false);
     Task<DataLibraryReturnedCodes> DeleteOrderAsync(string orderId);
     Task<ReturnOrderAndCodeResponseModel> GetOrderByIdAsync(string id);
+    Task<ReturnOrderAndCodeResponseModel> GetOrderByPaymentProcessorPaymentIntentIdAsync(string orderPaymentProcessorPaymentIntentId);
     Task<ReturnOrderAndCodeResponseModel> GetOrderByPaymentProcessorSessionIdAsync(string orderPaymentProcessorSessionId);
     Task<ReturnOrdersAndCodeResponseModel> GetOrdersAsync(int amount);
     Task<ReturnOrdersAndCodeResponseModel> GetUserOrdersAsync(int amount, string userId);

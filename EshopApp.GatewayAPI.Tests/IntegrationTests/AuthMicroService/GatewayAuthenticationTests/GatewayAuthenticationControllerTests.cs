@@ -335,7 +335,7 @@ internal class GatewayAuthenticationControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _chosenAccessToken);
 
         //Act
-        HttpResponseMessage response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
+        HttpResponseMessage response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken?includeCart=true");
         string? responseBody = await response.Content.ReadAsStringAsync();
         TestGatewayAppUser? testAppUser = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 

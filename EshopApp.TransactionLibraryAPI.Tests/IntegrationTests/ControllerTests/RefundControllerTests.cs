@@ -12,46 +12,16 @@ namespace EshopApp.TransactionLibraryAPI.Tests.IntegrationTests.ControllerTests;
 internal class RefundControllerTests
 {
     private string _chosenApiKey;
-    private string _chosenSessionId;
     private HttpClient httpClient;
 
     [OneTimeSetUp]
-    public async Task OnTimeSetup()
+    public void OnTimeSetup()
     {
         var webApplicationFactory = new WebApplicationFactory<Program>();
         httpClient = webApplicationFactory.CreateClient();
         httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", "a7f3f1c6-3d2b-4e3a-8d70-4b6e8d6d53d8");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "user_e1f7b8c0-3c79-4a1b-9e7a-9d8b1d4a5c6e");
         _chosenApiKey = "user_e1f7b8c0-3c79-4a1b-9e7a-9d8b1d4a5c6e";
-
-        /*************** CheckOutSession ***************/
-        /*TestCreateCheckOutSessionRequestModel testCreateCheckOutSessionRequestModel = new TestCreateCheckOutSessionRequestModel();
-        testCreateCheckOutSessionRequestModel.PaymentMethodType = "card";
-        testCreateCheckOutSessionRequestModel.SuccessUrl = "https://example.com/success";
-        testCreateCheckOutSessionRequestModel.CancelUrl = "https://example.com/cancel";
-        testCreateCheckOutSessionRequestModel.CustomerEmail = "customer@example.com";
-        testCreateCheckOutSessionRequestModel.CouponPercentage = 10;
-        testCreateCheckOutSessionRequestModel.PaymentOptionName = "customer@example.com";
-        testCreateCheckOutSessionRequestModel.PaymentOptionDescription = "customer@example.com";
-        testCreateCheckOutSessionRequestModel.PaymentOptionCostInEuro = 3;
-        testCreateCheckOutSessionRequestModel.ShippingOptionName = "ExpressShipping";
-        testCreateCheckOutSessionRequestModel.ShippingOptionDescription = "Delivery within 1-2 business days.";
-        testCreateCheckOutSessionRequestModel.ShippingOptionCostInEuro = 10;
-        testCreateCheckOutSessionRequestModel.CreateTransactionOrderItemRequestModels = new List<TestCreateTransactionOrderItemRequestModel>()
-        {
-            new TestCreateTransactionOrderItemRequestModel()
-            {
-                Name = "MyProduct",
-                Description = "best description ever",
-                ImageUrl = "https://example.com/images/myproduct.jpg",
-                Quantity = 2,
-                FinalUnitAmountInEuro = 15
-            }
-        };
-
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/checkOutSession", testCreateCheckOutSessionRequestModel);
-        string? responseBody = await response.Content.ReadAsStringAsync();
-        _chosenSessionId = JsonSerializer.Deserialize<TestCreateCheckOutSessionResponseModel>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.CheckOutSessionId!;*/
     }
 
     [Test, Order(10)]
