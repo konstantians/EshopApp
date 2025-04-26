@@ -1,4 +1,5 @@
 ﻿using EshopApp.AuthLibrary.AuthLogic;
+using EshopApp.AuthLibrary.Models;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Web;
 
@@ -23,6 +26,8 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationProcedures _authenticationProcedures;
     private readonly IConfiguration _configuration;
+    private static readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
     public AuthenticationController(IAuthenticationProcedures authenticationProcedures, IConfiguration configuration)
     {
@@ -146,10 +151,15 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(string userId, string confirmEmailToken, string? redirectUrl = null)
     {
+        //this solves a multiple request bug. This bug can happen if a user clicks a link on gmail. When that happens chrome might send multiple requests...
+        //the cache saves temporary a result and the samaphore does not allow multiple requests to enter the endpoint before the output has been produced
+        var semaphore = _locks.GetOrAdd(confirmEmailToken, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
         try
         {
-            if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
-                return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
+            //this solves a multiple request bug. This bug can happen if a user clicks a link on gmail. When that happens chrome might send multiple requests...
+            if (_cache.TryGetValue(confirmEmailToken, out IActionResult? cachedResult))
+                return cachedResult!;
 
             ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ConfirmEmailAsync(userId, confirmEmailToken);
             //this appends in the end of the redirectUrl either an errorMesage or an accessToken depending on whether or not the confirming of the email was completed successfully
@@ -165,6 +175,7 @@ public class AuthenticationController : ControllerBase
                     query["accessToken"] = returnCodeAndTokenResponseModel.Token;
 
                 uribBuilder.Query = query.ToString();
+                _cache.Set(confirmEmailToken, Redirect(uribBuilder.ToString()), TimeSpan.FromSeconds(12)); //used to fix the bug...
                 return Redirect(uribBuilder.ToString());
             }
 
@@ -188,6 +199,11 @@ public class AuthenticationController : ControllerBase
             }
 
             return StatusCode(500);
+        }
+        finally
+        {
+            semaphore.Release();
+            _locks.TryRemove(confirmEmailToken, out _);
         }
     }
 
@@ -520,8 +536,15 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmChangeEmail(string userId, string newEmail, string changeEmailToken, string? redirectUrl = null)
     {
+        //this solves a multiple request bug. This bug can happen if a user clicks a link on gmail. When that happens chrome might send multiple requests...
+        //the cache saves temporary a result and the samaphore does not allow multiple requests to enter the endpoint before the output has been produced
+        var semaphore = _locks.GetOrAdd(changeEmailToken, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
         try
         {
+            if (_cache.TryGetValue(changeEmailToken, out IActionResult? cachedResult))
+                return cachedResult!;
+
             if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
                 return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
 
@@ -540,6 +563,7 @@ public class AuthenticationController : ControllerBase
                     query["accessToken"] = returnCodeAndTokenResponseModel.Token;
 
                 uribBuilder.Query = query.ToString();
+                _cache.Set(changeEmailToken, Redirect(uribBuilder.ToString()), TimeSpan.FromSeconds(13)); //used to fix the bug...
                 return Redirect(uribBuilder.ToString());
             }
 
@@ -565,6 +589,11 @@ public class AuthenticationController : ControllerBase
             }
 
             return StatusCode(500);
+        }
+        finally
+        {
+            semaphore.Release();
+            _locks.TryRemove(changeEmailToken, out _);
         }
     }
 
@@ -613,5 +642,56 @@ public class AuthenticationController : ControllerBase
         }
 
         return false;
+    }
+
+    // ******* This is added later and has not been thoroughly tested *******
+
+    [HttpGet("CheckResetPasswordEligibility")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CheckResetPasswordEligibility(string userId, string resetPasswordToken)
+    {
+        try
+        {
+            ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _authenticationProcedures.CheckResetPasswordEligibilityForGivenUserId(userId, resetPasswordToken);
+
+            if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
+            else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UserAccountNotActivated)
+                return BadRequest(new { ErrorMessage = "UserAccountNotActivated" });
+            else if (returnUserAndCodeResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.InvalidToken)
+                return BadRequest(new { ErrorMessage = "InvalidToken" });
+
+            return Ok(returnUserAndCodeResponseModel.AppUser);
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpPut("UpdateAccount")]
+    [Authorize]
+    public async Task<IActionResult> UpdateAccount([FromBody] AppUser appUser)
+    {
+        try
+        {
+            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
+            string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+            LibraryReturnedCodes libraryReturnedCode = await _authenticationProcedures.UpdateAccountAsync(token, appUser);
+
+            if (libraryReturnedCode == LibraryReturnedCodes.UserNotFoundWithGivenId)
+                return BadRequest(new { ErrorMessage = "UserNotFoundWithGivenEmail" });
+            else if (libraryReturnedCode == LibraryReturnedCodes.UserAccountNotActivated)
+                return BadRequest(new { ErrorMessage = "UserAccountNotActivated" });
+            else if (libraryReturnedCode == LibraryReturnedCodes.InvalidToken)
+                return BadRequest(new { ErrorMessage = "InvalidToken" });
+
+            return NoContent();
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 }

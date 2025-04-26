@@ -33,7 +33,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.TestUtilitiesLibra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.TransactionLibraryAPI.Tests", "EshopApp.TransactionLibraryAPI.Tests\EshopApp.TransactionLibraryAPI.Tests.csproj", "{4D0828E1-A143-4D50-A213-CCECA90889EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EshopApp.GatewayAPI.Tests", "EshopApp.GatewayAPI.Tests\EshopApp.GatewayAPI.Tests.csproj", "{BBBDC09F-3C8B-404F-9D91-7589E061E87B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EshopApp.GatewayAPI.Tests", "EshopApp.GatewayAPI.Tests\EshopApp.GatewayAPI.Tests.csproj", "{BBBDC09F-3C8B-404F-9D91-7589E061E87B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

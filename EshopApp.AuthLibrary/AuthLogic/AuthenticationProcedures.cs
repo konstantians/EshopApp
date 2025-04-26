@@ -145,7 +145,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             IdentityResult result;
             if (currentPassword is not null)
                 result = await _userManager.ChangePasswordAsync(appUser, currentPassword, newPassword);
-            //this can happen if the appUser created an account through an external identity provider(edge case)
+            //this can happen if the updatedAppUser created an account through an external identity provider(edge case)
             else
                 result = await _userManager.AddPasswordAsync(appUser, newPassword);
 
@@ -262,7 +262,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
 
             //check for a lockout
             AppUser? user = await _userManager.FindByEmailAsync(email);
-            //if the appUser does not have a local account and also not an external login create the local account and connect it with the incoming external login
+            //if the updatedAppUser does not have a local account and also not an external login create the local account and connect it with the incoming external login
             if (user is null)
             {
                 //make sure that the guid is unique(extreme edge case)
@@ -281,7 +281,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 return new ReturnTokenAndCodeResponseModel(accessToken, LibraryReturnedCodes.NoError);
             }
 
-            //if the appUser has a local a local account
+            //if the updatedAppUser has a local a local account
             //check to see if the local account is activated
             if (!_helperMethods.IsEmailConfirmed(user, new EventId(3217, "ExternalSignInFailureDueToUnconfirmedEmail"), "The external sign in process could not continue, because the user account is not activated. Email={Email}"))
                 return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
@@ -310,7 +310,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 return new ReturnTokenAndCodeResponseModel(accessToken, LibraryReturnedCodes.NoError);
             };
 
-            //Finally if the appUser has already a local account and not an external login, try to connect the incoming external login with it
+            //Finally if the updatedAppUser has already a local account and not an external login, try to connect the incoming external login with it
             var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
             if (!addLoginResult.Succeeded)
             {
@@ -551,36 +551,11 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         }
     }
 
-    //TODO Think about how to do this...
-    /*public async Task<bool> UpdateAccountAsync(AppUser appUser)
-    {
-        try
-        {
-            //here make sure that email and email are the same
-            var result = await _userManager.UpdateAsync(appUser);
-            if (!result.Succeeded)
-                _logger.LogWarning(new EventId(3225, "UserInformationUpdateFailureNoException"), "User account information could not be updated. " +
-                    "UserId={UserId}, Email={Email}. Errors={Errors}.", appUser.Id, appUser.Email, result.Errors);
-            else
-                _logger.LogInformation(new EventId(2212, "UserRetrievalError"), "Successfully updated user account information. UserId={UserId}, Email={Email}.",
-                    appUser.Id, appUser.Email);
-            return result.Succeeded;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(new EventId(4216, "UserInformationUpdateFailure"), ex, "An error occurred while trying update the users account information. " +
-                "UserId= {UserId}, Email= {Email}, Username= {Username}. " +
-                "ExceptionMessage= {ExceptionMessage}. StackTrace= {StackTrace}."
-                , appUser.Id, appUser.Email, appUser.UserName, ex.Message, ex.StackTrace);
-            throw;
-        }
-    }*/
-
     private async Task<string> GenerateTokenAsync(AppUser user, bool isPersistent = false, List<string>? roleNames = null)
     {
         roleNames ??= new List<string>() { "User" }; //if rolenames equals null the default is user
 
-        // Create claims for the appUser
+        // Create claims for the updatedAppUser
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -621,5 +596,70 @@ public class AuthenticationProcedures : IAuthenticationProcedures
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    //This is added later and has not been thoroughly tested
+    public async Task<ReturnUserAndCodeResponseModel> CheckResetPasswordEligibilityForGivenUserId(string userId, string resetPasswordToken)
+    {
+        try
+        {
+            AppUser? user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                _logger.LogWarning(new EventId(9999, "CheckResetPasswordEligibilityForGivenUserIdFailureDueToNullUser"),
+                    "Tried to check reset account password eligibility of null user. UserId={UserId}, ResetPasswordToken={ResetPasswordToken}.", userId, resetPasswordToken);
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserNotFoundWithGivenId);
+            }
+
+            if (!_helperMethods.IsEmailConfirmed(user, new EventId(9999, "CheckResetPasswordEligibilityForGivenUserIdFailureDueToUnconfirmedEmail"),
+                "The check reset password eligibility process could not continue, because the user account is not activated. Email= {Email}"))
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
+
+            bool isValid = await _userManager.VerifyUserTokenAsync(user, _userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", resetPasswordToken);
+            if (!isValid)
+                return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.InvalidToken);
+
+
+            return new ReturnUserAndCodeResponseModel(user, LibraryReturnedCodes.NoError);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "CheckResetPasswordEligibilityForGivenUserIdFailure"), ex, "An error occurred while trying to check user's eligibility for account password reset. " +
+                "UserId={UserId}. ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", userId, ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
+    public async Task<LibraryReturnedCodes> UpdateAccountAsync(string accessToken, AppUser updatedAppUser)
+    {
+        try
+        {
+            ReturnUserAndCodeResponseModel returnCodeAndUserResponseModel = await _helperMethods.StandardTokenAndUserValidationProcedures(accessToken, new EventId(9996, "UpdateAccount"));
+            if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
+                return returnCodeAndUserResponseModel.LibraryReturnedCodes;
+
+            AppUser existingUser = returnCodeAndUserResponseModel.AppUser!;
+            existingUser.FirstName = updatedAppUser.FirstName?.Trim() ?? existingUser.FirstName;
+            existingUser.LastName = updatedAppUser.LastName?.Trim() ?? existingUser.LastName;
+            existingUser.PhoneNumber = updatedAppUser.PhoneNumber?.Trim() ?? existingUser.PhoneNumber;
+
+            var result = await _userManager.UpdateAsync(existingUser);
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning(new EventId(9999, "UpdateAccountFailureNoException"), "User account information could not be updated. " +
+                    "UserId={UserId}. Errors={Errors}.", existingUser.Id, result.Errors);
+                return LibraryReturnedCodes.UnknownError;
+            }
+
+            _logger.LogInformation(new EventId(9999, "UpdateAccountSuccess"), "Successfully updated user account information. UserId={UserId}, Email={Email}.",
+            existingUser.Id, updatedAppUser.Email);
+            return LibraryReturnedCodes.NoError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "UpdateAccountFailure"), ex, "An error occurred while trying update the users account information. " +
+                "ExceptionMessage= {ExceptionMessage}. StackTrace= {StackTrace}.", ex.Message, ex.StackTrace);
+            throw;
+        }
     }
 }

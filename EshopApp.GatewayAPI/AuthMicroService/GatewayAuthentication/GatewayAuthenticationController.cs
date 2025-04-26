@@ -410,4 +410,60 @@ public class GatewayAuthenticationController : ControllerBase
             return StatusCode(500, "Internal Server Error");
         }
     }
+
+    [HttpGet("CheckResetPasswordEligibility")]
+    public async Task<IActionResult> CheckResetPasswordEligibility(string userId, string resetPasswordToken)
+    {
+        try
+        {
+            //request the reset of the password of the user
+            _utilityMethods.SetDefaultHeadersForClient(false, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!);
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+            authHttpClient.GetAsync($"Authentication/CheckResetPasswordEligibility?userId={userId}&resetPasswordToken={WebUtility.UrlEncode(resetPasswordToken)}"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            string? responseBody = await response.Content.ReadAsStringAsync();
+            GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return Ok(appUser);
+        }
+        catch
+        {
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
+
+    //also make sure that error messages and correct messages in edit account are displayed correctly
+    //once this is done refactor the errorhandling in the AccountController
+    [HttpPut("UpdateAccount")]
+    public async Task<IActionResult> UpdateAccount([FromBody] GatewayUpdateAccountRequestModel updateUserRequestModel)
+    {
+        try
+        {
+            GatewayAppUser gatewayAppUser = new GatewayAppUser();
+            gatewayAppUser.FirstName = updateUserRequestModel.FirstName;
+            gatewayAppUser.LastName = updateUserRequestModel.LastName;
+            gatewayAppUser.PhoneNumber = updateUserRequestModel.PhoneNumber;
+
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
+            //request the reset of the password of the user
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+            HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
+            authHttpClient.PutAsJsonAsync("Authentication/UpdateAccount", gatewayAppUser));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            return NoContent();
+        }
+        catch
+        {
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
 }
