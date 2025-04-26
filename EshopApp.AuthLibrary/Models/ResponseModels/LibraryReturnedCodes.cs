@@ -24,6 +24,7 @@ public enum LibraryReturnedCodes
     UserWasFoundAlreadyInRole,
     UserWasNotFoundInRole,
     TheRolesMustHaveDifferentIds,
+    InvalidToken,
     UnknownError,
     NoError
 }

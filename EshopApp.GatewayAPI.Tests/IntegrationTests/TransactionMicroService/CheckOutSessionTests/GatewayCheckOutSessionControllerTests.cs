@@ -767,26 +767,6 @@ internal class GatewayCheckOutSessionControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
-    /*[Test, Order(140)]
-    public async Task HandleCreateCheckOutSession_ShouldSucceedAndUpdateTheOrderCorrectlyIfSessionWasUnsuccessful()
-    {
-        //Arrange
-        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
-        //This is the simulated data we are going to get from the transaction api request after a successful transaction has occured
-        TestGatewayHandleCreateCheckOutSessionRequestModel testGatewayHandleCreateCheckOutSessionRequestModel = new TestGatewayHandleCreateCheckOutSessionRequestModel();
-        testGatewayHandleCreateCheckOutSessionRequestModel.PaymentProcessorSessionId = ""; //TODO get the session id
-        testGatewayHandleCreateCheckOutSessionRequestModel.NewOrderStatus = "Failed";
-        testGatewayHandleCreateCheckOutSessionRequestModel.NewPaymentStatus = "unpaid";
-        testGatewayHandleCreateCheckOutSessionRequestModel.ShouldSendEmail = true;
-
-        //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCheckOutSession/HandleCreateCheckOutSession", testGatewayHandleCreateCheckOutSessionRequestModel);
-        //TODO get the order
-
-        //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-    }*/
-
     //Rate Limit Test
     [Test, Order(300)]
     public async Task CreateCheckOutSession_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()

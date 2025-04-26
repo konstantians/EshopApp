@@ -1,4 +1,5 @@
-﻿using EshopApp.AuthLibrary.Models.ResponseModels;
+﻿using EshopApp.AuthLibrary.Models;
+using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationModels;
 using EshopApp.AuthLibrary.Models.ResponseModels.AuthenticationProceduresModels;
 using Microsoft.AspNetCore.Authentication;
@@ -23,4 +24,6 @@ public interface IAuthenticationProcedures
     Task<ReturnTokenAndCodeResponseModel> HandleExternalSignInCallbackAsync();
     Task<IEnumerable<AuthenticationScheme>> GetExternalIdentityProvidersAsync();
     Task<ReturnUserAndCodeResponseModel> GetCurrentUserWithValidatedClaimsByTokenAsync(string accessToken, List<Claim> expectedClaims);
+    Task<ReturnUserAndCodeResponseModel> CheckResetPasswordEligibilityForGivenUserId(string userId, string resetPasswordToken);
+    Task<LibraryReturnedCodes> UpdateAccountAsync(string accessToken, AppUser appUser);
 }

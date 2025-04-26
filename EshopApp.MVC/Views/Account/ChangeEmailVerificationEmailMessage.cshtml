@@ -1,0 +1,57 @@
+﻿@{
+    ViewData["Title"] = "Change Email Verification Page";
+}
+
+<script>
+    if (!localStorage.getItem('showChangeEmailVerificationView')) {
+        localStorage.setItem('showChangeEmailVerificationView', 'true');
+    } else {
+        window.location.href = '/Home/Index';
+    }
+
+    window.addEventListener('beforeunload', function () {
+        localStorage.removeItem('showChangeEmailVerificationView');
+    });
+
+    const POLL_INTERVAL_MS = 5000;
+    async function checkIfAuthenticated() {
+        try {
+            const response = await fetch('/Account/BasicFrontEndAccessTokenValidation', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+            if (data === true) {
+                window.location.href = '/Home/Index';
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }
+
+    setInterval(checkIfAuthenticated, POLL_INTERVAL_MS);
+</script>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-sm-12 col-md-10 col-lg-8 col-xl-6">
+        <div class="card p-3 border border-0">
+            <div class="text-center">
+                <img class="card-img-top img-fluid" style="max-width:100px; max-height:100px;" src="~/images/emailSentSuccessfully.jpg" alt="success image">
+            </div>
+            <div class="card-body">
+                <h3 class="card-title text-center mb-3">Change Email Confirmation!</h3>
+                <p class="card-text text-center">
+                    Your account email change is almost complete!<br>
+                    For the activation of your account you will have to check your new email's inbox and click the confirmation link that you will find there.<br>
+                    Any attempts of signing in to your account before this activation has occured will result in failure.<br>
+                </p>
+                <div class="text-center mt-4">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-lg btn-primary">Continue To Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

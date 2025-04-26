@@ -1,0 +1,335 @@
+﻿@model SignInAndSignUpViewModel
+
+@{
+    ViewData["Title"] = "SignInAndSignUp";
+}
+
+<style>
+    .button-switcher {
+        display: flex;
+        border: none;
+    }
+
+    .button-switcher button {
+        flex: 1;
+        border: 1px solid #ced4da;
+        padding: 7px;
+        color: black;
+        background-color: white;
+    }
+
+    .button-switcher .active {
+        background: #FF5E00;
+        color: white;
+    }
+
+    .button-switcher button.inactive:hover {
+        border-color: #FF5E00 !important;
+        box-shadow: 0px 0px 5px #FF5E00 !important;
+    }
+
+    .left-positioned-modal {
+        position: absolute !important;
+        top: 110px;
+        left: 25%;
+        transform: translate(-50%) !important;
+    }
+
+    .center-positioned-modal{
+        position: absolute !important;
+        top: 65px;
+        left: 50%;
+        transform: translate(-50%) !important;
+    }
+</style>
+
+<div id="signInSignUpContainer" class="@((TempData["ShowSignUpForm"]?.ToString() == "True") ? "right-panel-active" : "")">
+    <div class="d-flex justify-content-center d-lg-none">
+        <div class="button-switcher mb-4" style="width:66%;">
+            <button id="btnSignIn" class="@((TempData["ShowSignUpForm"]?.ToString() == "True") ? "inactive" : "active")" onclick="toggleAuthenticationForm('signInForm')" style="border-right:0;">Είσοδος</button>
+            <button id="btnSignUp" class="@((TempData["ShowSignUpForm"]?.ToString() == "True") ? "active" : "inactive")" onclick="toggleAuthenticationForm('signUpForm')" style="border-left:0;">Εγγραφή</button>
+        </div>
+    </div>
+    <div class="row">
+        <form class="col-lg-6 d-lg-block col-12 flex-column align-items-center @((TempData["ShowSignUpForm"]?.ToString() == "True") ? "d-none" : "d-flex")" method="post" asp-controller="Account" asp-action="SignIn" id="signInForm">
+            <div class="" style="width:66%">
+                <div id="signInErrorAlert" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+                    <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+                    <h4 class="fw-bold mt-2" id="signInAlertFailureTitle">Αποτυχία Δημιουργίας Λογαριασμού</h4>
+                    <p class="text-muted mb-0 text-center" id="signInAlertFailureMessage">Υπάρχει ήδη λογαριασμός με το συγκεκριμένο Email.</p>
+                    <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)">OK</button>
+                </div>
+                <h3 class="text-center mb-3 mb-lg-4">Είσοδος</h3>
+                @* <form asp-controller="account" asp-action="ExternalLogin">
+                    <div id="external-service-providers" class="d-grid gap-2">
+                        @foreach (AuthenticationScheme identityProvider in Model.ExternalIdentityProviders)
+                        {
+                            string icon = identityProvider.Name switch
+                            {
+                                "Google" => "fa-google",
+                                "Microsoft" => "fa-microsoft",
+                                "Twitter" => "fa-square-x-twitter",
+                                _ => ""
+                            };
+                            <button class="btn text-start py-2 px-3" style="background-color:transparent;border: 1px solid #ced4da;" type="submit"
+                                    name="identityProviderName" value="@identityProvider.Name">
+                                <i class="fa-brands @icon me-2"></i>Continue with @identityProvider.DisplayName
+                            </button>
+                        }
+                    </div>
+                    <input name="returnUrl" value="@Model.ReturnUrl" hidden />
+                </form> *@
+                <div class="d-flex justify-content-between" id="externalProvidersContainer">
+                    <button class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da; width:48%;" type="submit"
+                            name="identityProviderName" value="Google">
+                        <i class="fa-brands fa-google me-2"></i>Συνέχεια Με Google
+                    </button>
+                    <button class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da; width:48%;" type="submit"
+                            name="identityProviderName" value="Twitter">
+                        <i class="fa-brands fa-square-x-twitter me-2"></i>Συνέχεια Με Twitter
+                    </button>
+                </div>
+                <div class="d-flex justify-content-center align-items-center my-2">
+                    <div class="flex-grow-1">
+                        <hr class="my-3">
+                    </div>
+                    <div class="px-3">
+                        <span>Ή</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <hr class="my-3">
+                    </div>
+                </div>
+                <div class="mb-4" role="group">
+                    <label asp-for="SignInViewModel.Email"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail</label>
+                    <input class="form-control" asp-for="SignInViewModel.Email" placeholder="Enter email" aria-labelledby="usernameLabel" data-testid="usernameInput">
+                    <span asp-validation-for="SignInViewModel.Email" class="text-danger"></span>
+                </div>
+                <div class="mb-2" role="group">
+                    <label asp-for="SignInViewModel.Password"><i class="fa-solid fa-lock me-2"></i>Συνθηματικό</label>
+                    <input class="form-control" asp-for="SignInViewModel.Password" type="password" placeholder="Enter password"
+                           aria-labelledby="passwordLabel" data-testid="passwordInput">
+                    <span asp-validation-for="SignInViewModel.Password" class="text-danger"></span>
+                </div>
+                <div class="d-flex justify-content-between mb-4" role="group">
+                    @* <div class="form-check">
+                        <label class="form-check-label" asp-for="RememberMe">Παραμείνετε Συνδεδεμένος</label>
+                        <input class="form-check-input" type="checkbox" asp-for="RememberMe" data-testid="rememberMeInput">
+                    </div> *@
+                    <a href="#" class="text-decoration-none text-info" data-bs-toggle="modal"
+                       data-bs-target="#forgotPasswordModal" data-testid="forgotPasswordLink">Ξεχάσατε Τον Κωδικό Σας;</a>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary w-50 py-2 border-3" style="border-color:black !important;" id="signInButton" data-testid="signInButton">Είσοδος</button>
+                </div>
+            </div>
+        </form>
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog left-positioned-modal">
+                <form class="modal-content" method="post" asp-controller="Account" asp-action="ForgotPassword" id="forgotPasswordForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="forgotPasswordModalLabel">Επιβεβαίωση Διεύθυνσης Ταχυδρομικού Λογαριασμού</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label asp-for="ForgotPasswordViewModel.RecoveryEmail"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail</label>
+                        <input class="form-control" asp-for="ForgotPasswordViewModel.RecoveryEmail" placeholder="Enter email" aria-labelledby="usernameLabel" data-testid="usernameInput">
+                        <span asp-validation-for="SignInViewModel.Email" class="text-danger"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                        <button type="submit" class="btn btn-primary" id="forgotPasswordButton">Συνέχεια</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <form class="col-lg-6 d-lg-flex justify-content-lg-end flex-lg-row flex-column col-12 align-items-center @((TempData["ShowSignUpForm"]?.ToString() == "True") ? "d-flex" : "d-none")" 
+            method="post" asp-controller="Account" asp-action="SignUp" id="signUpForm">
+            <div style="width:66%">
+                <div id="signUpErrorAlert" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+                    <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+                    <h4 class="fw-bold mt-2" id="signUpAlertFailureTitle">Αποτυχία Δημιουργίας Λογαριασμού</h4>
+                    <p class="text-muted mb-0 text-center" id="signUpAlertFailureMessage">Υπάρχει ήδη λογαριασμός με το συγκεκριμένο Email.</p>
+                    <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)">OK</button>
+                </div>
+                <h3 class="text-center mb-3 mb-lg-4">Εγγραφή</h3>
+                <div class="mb-4">
+                    <label class="form-label" asp-for="SignUpViewModel.Email"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail</label>
+                    <input class="form-control" asp-for="SignUpViewModel.Email" type="email" placeholder="Enter email" data-testid="emailInput">
+                    <span class="text-danger" asp-validation-for="SignUpViewModel.Email"></span>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" asp-for="SignUpViewModel.PhoneNumber"><i class="fa-solid fa-phone me-2"></i>Αριθμός Τηλεφώνου</label>
+                    <input class="form-control" asp-for="SignUpViewModel.PhoneNumber" placeholder="Enter phone number" data-testid="phoneNumberInput">
+                    <span class="text-danger" asp-validation-for="SignUpViewModel.PhoneNumber"></span>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" asp-for="SignUpViewModel.Password"><i class="fa-solid fa-lock me-2"></i>Συνθηματικό</label>
+                    <input class="form-control" asp-for="SignUpViewModel.Password" type="password" placeholder="Enter password" data-testid="passwordInput" data-compare-password="1">
+                    <span class="text-danger" asp-validation-for="SignUpViewModel.Password"></span>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" asp-for="SignUpViewModel.RepeatPassword"><i class="fa-solid fa-lock me-2"></i>Επανάληψη Συνθηματικού</label>
+                    <input class="form-control" asp-for="SignUpViewModel.RepeatPassword" type="password" placeholder="Repeat password" data-testid="repeatPasswordInput" data-compare-password="2">
+                    <span class="text-danger" asp-validation-for="SignUpViewModel.RepeatPassword"></span>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary w-50 py-2 border-3" style="border-color:black !important;" id="signUpButton" data-testid="signUpButton">Εγγραφή</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="overlay-container d-lg-block d-none">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h2 class="pb-3">Καλώς Ήρθατε Πίσω!</h2>
+                <p class="mb-0">Συνδεθείτε στον προσωπικό σας λογαριασμό </p>
+                <p>για καλύτερες προσφορές και έλεγχο των παραγελλιών σας</p>
+                <button id="getToSignInFormButton" class="btn btn-primary border-1 w-25 mt-2 py-2" style="border-color:black;">Είσοδος</button>
+            </div>
+            <div class="overlay-panel overlay-right" id="rightOverlay">
+                <h2 class="pb-3">Ξεκινήστε Μαζί Μας!</h2>
+                <p class="mb-0">Δημιουργείστε ένα λογαραριασμό μαζί μας</p>
+                <p>και κερδίστε απίστευτες προσφορές και δώρα</p>
+                <button id="getToSignUpFormButton" class="btn btn-primary border-1 w-25 mt-2 py-2" style="border-color:black;">Εγγραφή</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customAlerts.js"></script>
+
+<script type="text/javascript">
+    function adjustExternalProvidersButtonLayout() {
+        const externalProvidersContainer = document.getElementById("externalProvidersContainer");
+        const externalProvidersButtons = externalProvidersContainer.querySelectorAll("button");
+
+        if (window.innerWidth < 1200) { // Below Bootstrap xl breakpoint
+            externalProvidersContainer.classList.remove("d-flex", "justify-content-between");
+            externalProvidersContainer.classList.add("d-block");
+            externalProvidersButtons.forEach(button => {
+                button.style.width = "100%";
+                button.style.marginBottom = "10px";
+            });
+        } else {
+            externalProvidersContainer.classList.add("d-flex", "justify-content-between");
+            externalProvidersContainer.classList.remove("d-block");
+            externalProvidersButtons.forEach(button => {
+                button.style.width = "48%";
+                button.style.marginBottom = "0";
+            });
+        }
+    }
+
+    window.addEventListener("resize", adjustExternalProvidersButtonLayout);
+    document.addEventListener("DOMContentLoaded", adjustExternalProvidersButtonLayout);
+
+    function adjustModals(){
+        let forgotPasswordModalDialog = document.getElementById('forgotPasswordModal').firstElementChild;
+        if (window.innerWidth < 992) { // Below Bootstrap xl breakpoint
+            forgotPasswordModalDialog.classList.remove('left-positioned-modal');
+            forgotPasswordModalDialog.classList.add('center-positioned-modal');
+        } else {
+            forgotPasswordModalDialog.classList.add('left-positioned-modal');
+            forgotPasswordModalDialog.classList.remove('center-positioned-modal');
+        }
+
+        if(window.innerWidth < 576){
+            forgotPasswordModalDialog.style.width = '95%';
+            forgotPasswordModalDialog.style.top = '71px';
+            forgotPasswordModalDialog.style.marginLeft = '0';
+        }
+        else{
+            forgotPasswordModalDialog.style.width = '';
+            forgotPasswordModalDialog.style.top = '';
+            forgotPasswordModalDialog.style.marginLeft = '';
+        }
+    }
+
+    window.addEventListener("resize", adjustModals);
+    document.addEventListener("DOMContentLoaded", adjustModals);
+
+    const container = document.getElementById('signInSignUpContainer');
+    const getToSignInFormButton = document.getElementById('getToSignInFormButton');
+    const getToSignUpFormButton = document.getElementById('getToSignUpFormButton');
+
+    getToSignUpFormButton.addEventListener('click', () => {
+        container.classList.add("right-panel-active");
+    });
+    getToSignInFormButton.addEventListener('click', () => {
+        container.classList.remove("right-panel-active");
+    });
+
+    function toggleAuthenticationForm(section) {
+        //if section that is now active is signInForm
+        if (section === 'signInForm') {
+            document.getElementById('btnSignIn').classList.replace('inactive', 'active');
+            document.getElementById('btnSignUp').classList.replace('active', 'inactive');
+
+            document.getElementById("signInForm").classList.replace('d-none', 'd-flex');
+            document.getElementById("signUpForm").classList.replace('d-flex', 'd-none');
+        }
+        //if section that is now active is signUpForm
+        else if(section === 'signUpForm'){
+            document.getElementById('btnSignUp').classList.replace('inactive', 'active');
+            document.getElementById('btnSignIn').classList.replace('active', 'inactive');
+
+            document.getElementById("signUpForm").classList.replace('d-none', 'd-flex');
+            document.getElementById("signInForm").classList.replace('d-flex', 'd-none');
+        }
+    }
+
+    //this is coming from the customValidation script
+    setUpValidationListeners();
+    setUpFormSubmissionValidationListener("signUpForm");
+    setUpFormSubmissionValidationListener("signInForm");
+    setUpFormSubmissionValidationListener("forgotPasswordForm");
+
+    const duplicateEmailError = '@TempData["DuplicateEmail"]' === 'True';
+    const userNotFoundWithGivenEmail = '@TempData["UserNotFoundWithGivenEmail"]' === 'True';
+    const userAccountLocked = '@TempData["UserAccountLocked"]' === 'True';
+    const userAccountNotActivated = '@TempData["UserAccountNotActivated"]' === 'True';
+    const invalidCredentials = '@TempData["InvalidCredentials"]' === 'True';
+    const unknownError = '@TempData["UnknownError"]' === 'True';
+    const shouldShowSignUpForm = '@TempData["ShowSignUpForm"]' === 'True';
+
+    //The bellow errors happened to cover the forgot password errors
+    //SignUp Server Errors
+    if (duplicateEmailError) {
+        setTimeout(showAlert('signUpErrorAlert',
+            "Αποτυχία Δημιουργίας Λογαριασμού", "Υπάρχει ήδη λογαριασμός με το συγκεκριμένο λογαριασμό ταχυδρομείου. Παρακαλώ δοκιμάστε ξανά με ένα διαφορετικό λογαριασμό ταχυδρομείου.",
+            "Αποτυχία", "Ο λογαριασμός ταχυδρομείου χρησιμοποιείται ήδη από άλλο λογαριασμό."), 100);
+    }
+    else if (unknownError && shouldShowSignUpForm) {
+        setTimeout(showAlert('signUpErrorAlert',
+            "Αποτυχία Δημιουργίας Λογαριασμού", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα",
+            "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα."), 100);
+    }
+    else if (userNotFoundWithGivenEmail) {
+        setTimeout(showAlert('signInErrorAlert',
+            "Αποτυχία Σύνδεσης", "Δεν υπάρχει λογαριασμός με το συγκεκριμένο λογαριασμό ταχυδρομείου. Παρακαλώ δοκιμάστε ξανά με διαφορετικό λογαριασμό.",
+            "Αποτυχία Σύνδεσης", "Δεν υπάρχει λογαριασμός με το συγκεκριμένο λογαριασμό ταχυδρομείου"), 100);
+    }
+    //SignIn Server Errors
+    else if (userAccountLocked) {
+        setTimeout(showAlert('signInErrorAlert',
+            "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου είναι κλειδομένος. Παρακαλώ δοκιμάστε ξανά αργότερα.",
+            "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου  είναι κλειδομένος. Παρακαλώ δοκιμάστε ξανά αργότερα."), 100);
+    }
+    else if (userAccountNotActivated) {
+        setTimeout(showAlert('signInErrorAlert',
+            "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου δεν έχει ενεργοποιηθεί. Παρακαλώ ενεργοποιήστε τον λογαριαμό σας με το email επιβεβαίωσης που έχει σταλθεί στον λογιαρσμό σας πριν δοκιμάσετε ξανά.",
+            "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου δεν έχει ενεργοποιηθεί. Παρακαλώ ενεργοποιήστε τον λογαριαμό σας με το email επιβεβαίωσης που έχει σταλθεί στον λογιαρσμό σας πριν δοκιμάσετε ξανά."), 100);
+    }
+    else if (invalidCredentials) {
+        setTimeout(showAlert('signInErrorAlert',
+            "Αποτυχία Σύνδεσης", "Μη έγκυρα στοιχεία για τον συγκεκριμένο λογαριασμό. Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό.",
+            "Αποτυχία Σύνδεσης", "Μη έγκυρα στοιχεία για τον συγκεκριμένο λογαριασμό."), 100);
+    }
+    else if (unknownError) {
+        setTimeout(showAlert('signInErrorAlert',
+            "Αποτυχία Σύνδεσης", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα.",
+            "Αποτυχία Σύνδεσης", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα."), 100);
+    }
+</script>

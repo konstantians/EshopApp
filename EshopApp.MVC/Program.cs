@@ -5,9 +5,25 @@ namespace EshopApp.MVC
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            IConfiguration configuration = builder.Configuration;
+
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(10);
+                options.Cookie.IsEssential = true;
+                options.Cookie.HttpOnly = true;
+            });
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+            // Add HTTP client for API calls.
+            builder.Services.AddHttpClient("GatewayApiClient", client =>
+            {
+                client.BaseAddress = new Uri(configuration["GatewayApiBaseUrl"]!);
+                client.DefaultRequestHeaders.Add("X-API-KEY", configuration["GatewayApiKey"]!);
+                client.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", configuration["GatewayApiRateLimitingBypassCode"]!);
+            });
 
             var app = builder.Build();
 
@@ -23,6 +39,8 @@ namespace EshopApp.MVC
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseSession(); //Maybe add an idle timeout?
 
             app.UseAuthorization();
 

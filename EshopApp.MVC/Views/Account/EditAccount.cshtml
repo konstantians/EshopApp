@@ -1,0 +1,407 @@
+﻿@model EditAccountViewModel
+
+@{
+    ViewData["Title"] = "Edit Account";
+}
+
+@* TODO test that changing basic settings account settings, change email account and change password work *@
+<style>
+    .button-switcher {
+        display: flex;
+        border: none;
+    }
+
+    .button-switcher button {
+        flex: 1;
+        border: 1px solid #ced4da;
+        padding: 7px;
+        color: black;
+        background-color: white;
+    }
+
+    .button-switcher .active {
+        background: #FF5E00;
+        color: white;
+    }
+
+    .button-switcher button.inactive:hover {
+        border-color: #FF5E00 !important;
+        box-shadow: 0px 0px 5px #FF5E00 !important;
+    }
+</style>
+
+<div class="row">
+    <div id="sensitiveAccountSettingsAlert" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+        <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+        <h4 class="fw-bold mt-2">Επιτυχία Αλλαγής Στοιχείων Λογαριασμού</h4>
+        <p class="text-muted mb-0 text-center"></p>
+        <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)">OK</button>
+    </div>
+    <div class="d-flex justify-content-center d-lg-none mx-auto" style="max-width:500px;">
+        <div class="button-switcher mb-4" style="width:66%;">
+            <button id="btnBasicSettings" class="active" onclick="toggleAuthenticationForm('basicSettingsSection')" style="border-right:0;"><i class="fas fa-unlock me-2 d-lg-none"></i>Στοιχεία</button>
+            <button id="btnSensitiveSettings" class="inactive" onclick="toggleAuthenticationForm('sensitiveSettingsSection')" style="border-left:0;"><i class="fas fa-lock me-2 d-lg-none"></i>Στοιχεία</button>
+        </div>
+    </div>
+    <form class="col-lg-4 d-lg-block col-12 flex-column align-items-center d-flex mx-auto" method="post" asp-controller="Account" asp-action="ChangeBasicAccountSettings" id="basicSettingsSection">
+        <div style="width:66%;">
+            <div id="basicAccountSettingsAlert" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+                <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+                <h4 class="fw-bold mt-2">Επιτυχία Αλλαγής Στοιχείων Λογαριασμού</h4>
+                <p class="text-muted mb-0 text-center"></p>
+                <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)">OK</button>
+            </div>
+            <h4 class="text-center mb-3 mb-lg-4">Βασικά Στοιχεία Λογαριασμού</h4>
+            <div class="mb-4">
+                <label class="form-label" asp-for="ChangeAccountBasicSettings.FirstName">
+                    <i class="fa-solid fa-user me-2"></i>Όνομα
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.FirstName"
+                           value="@Model.ChangeAccountBasicSettings.FirstName" readOnly>
+                    <a class="btn btn-primary" id="firstNameEditButton"
+                       onclick="toggleInputField('ChangeAccountBasicSettings_FirstName', 'firstNameEditButton')">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </div>
+                <span asp-validation-for="ChangeAccountBasicSettings.FirstName" class="text-danger"></span>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" asp-for="ChangeAccountBasicSettings.LastName">
+                    <i class="fa-solid fa-user me-2"></i>Επώνυμο
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.LastName"
+                           value="@Model.ChangeAccountBasicSettings.LastName" readOnly>
+                    <a class="btn btn-primary" id="lastNameEditButton"
+                       onclick="toggleInputField('ChangeAccountBasicSettings_LastName', 'lastNameEditButton')">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </div>
+                <span asp-validation-for="ChangeAccountBasicSettings.LastName" class="text-danger"></span>
+            </div>
+            <div style="margin-bottom: 1.75rem;">
+                <label class="form-label" asp-for="ChangeAccountBasicSettings.PhoneNumber">
+                    <i class="fa-solid fa-phone me-2"></i>Τηλέφωνο
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.PhoneNumber"
+                           value="@Model.ChangeAccountBasicSettings.PhoneNumber" readOnly>
+                    <a class="btn btn-primary" id="phoneNumberEditButton"
+                       onclick="toggleInputField('ChangeAccountBasicSettings_PhoneNumber', 'phoneNumberEditButton')">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </div>
+                <span asp-validation-for="ChangeAccountBasicSettings.PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary py-2 border-3" style="border-color:black !important; width: 70%;" id="changeBasicAccountSettingsButton" data-testid="changeBasicAccountSettingsButton">Επιβεβαίωση Αλλαγών</button>
+            </div>
+        </div>
+    </form>
+    <div class="col-lg-4 d-lg-block d-none mx-auto" id="addressesSection">
+        <h4 class="text-center mb-3 mb-lg-4">Διευθύνσεις Παράδοσης</h4>
+        <p class="text-center">Work In Progress</p>
+    </div>
+    <div class="col-lg-4 d-lg-block col-12 flex-column align-items-center d-none mx-auto" id="sensitiveSettingsSection">
+        <div style="width:66%;">
+            <div id="sensitiveAccountSettingsAlertbull" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+                <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+                <h4 class="fw-bold mt-2">Επιτυχία Αλλαγής Στοιχείων Λογαριασμού</h4>
+                <p class="text-muted mb-0 text-center"></p>
+                <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)">OK</button>
+            </div>
+            <h4 class="text-center mb-3 mb-lg-4">Ευαίσθητα Στοιχεία Λογαριασμού</h4>
+            <div class="mb-4">
+                <label class="form-label" for="passwordInput">
+                    <i class="fa-solid fa-lock me-2"></i>Συνθηματικό
+                </label>
+                <div class="input-group">
+                    <input class="form-control" id="passwordInput" type="password" readOnly>
+                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="emailInput">
+                    <i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail
+                </label>
+                <div class="input-group">
+                    <input class="form-control" id="emailInput" type="email" value="@Model.ChangeEmailViewModel.OldEmail" readOnly>
+                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changeEmailModal">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </div>
+            </div>
+            <div id="accountDeletionSubsection">
+                <h5 class="text-center">Διαγραφή Λογαριασμού</h5>
+                <p class="text-start" style="font-size:15px;">Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί. Προσοχή η παρακάτω ενέργεια είναι μη αναστρέψιμη!<p/>
+                <a class="d-block mx-auto btn btn-primary py-2 border-3" id="deleteAccountButton" style="border-color:black !important; width: 70%;" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">Διαγραφή</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade custom-center-modal" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="Account" asp-action="ChangePassword" id="changePasswordForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Αλλαγή Συνθηματικού Λογαριασμού</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label asp-for="ChangePasswordViewModel.OldPassword"><i class="fa-solid fa-lock me-2"></i>Παλιό Συνθηματικό</label>
+                <input class="form-control" asp-for="ChangePasswordViewModel.OldPassword" placeholder="Enter old password" type="password">
+                <span asp-validation-for="ChangePasswordViewModel.OldPassword" class="text-danger"></span>
+            </div>
+            <div class="modal-body">
+                <label asp-for="ChangePasswordViewModel.NewPassword"><i class="fa-solid fa-lock me-2"></i>Νέο Συνθηματικό</label>
+                <input class="form-control" asp-for="ChangePasswordViewModel.NewPassword" placeholder="Enter new password" type="password">
+                <span asp-validation-for="ChangePasswordViewModel.NewPassword" class="text-danger"></span>
+            </div>
+            <div class="modal-body">
+                <label asp-for="ChangePasswordViewModel.ConfirmNewPassword"><i class="fa-solid fa-lock me-2"></i>Επιβεβαίωση Νέου Συνθηματικού</label>
+                <input class="form-control" asp-for="ChangePasswordViewModel.ConfirmNewPassword" placeholder="Confirm new password" type="password">
+                <span asp-validation-for="ChangePasswordViewModel.ConfirmNewPassword" class="text-danger"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="changePasswordButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade custom-center-modal" id="changeEmailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="Account" asp-action="RequestChangeAccountEmail" id="requestChangeEmailForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Αλλαγή Ηλεκτρονικού Ταχυδρομείου Λογαριασμού</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="modalEmailInput"><i class="fa-solid fa-lock me-2"></i>Διεύθυνση e-mail Λογαριασμού</label>
+                <input class="form-control" id="modalEmailInput" type="email" value="@Model.ChangeEmailViewModel.OldEmail" readOnly>
+            </div>
+            <div class="modal-body">
+                <label asp-for="ChangeEmailViewModel.NewEmail"><i class="fa-solid fa-lock me-2"></i>Νέα Διεύθυνση e-mail Λογαριασμού</label>
+                <input class="form-control" asp-for="ChangeEmailViewModel.NewEmail" placeholder="Enter new email address" type="email">
+                <span asp-validation-for="ChangeEmailViewModel.NewEmail" class="text-danger"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="changeEmailButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel">Επιτυχία</h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center">Το συνθηματικό του λογαριασμού σας ανανεώθηκε επιτυχώς!</p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="Account" asp-action="DeleteAccount" id="deleteEmailForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Επιβεβαίωση Διαγραφής Λογαριασμού</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <strong style="font-size: 18px;">Η παρακάτω ενέργεια δεν είναι αντιστρέψιμη!</strong>
+                <p>Αν είστε σίγουροι πως θέλετε να διαγράψατε τον λογαριασμό σας παρακαλώ συμπληρώστε το email του λογαριασμού και πατήστε συνέχεια.</p>
+                <label for="modalDeleteAccountInput"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail Λογαριασμού</label>
+                <input class="form-control" id="modalDeleteAccountInput" type="email" data-custom-validation="false">
+                <span id="modalDeleteAccountInputValidation" class="text-danger"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="changeEmailButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* TODO Add a checker for the modal to make sure that the account the user is inputing is the same as the one asked *@
+
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customModals.js"></script>
+
+<script>
+    function updateFormSizeClasses() {
+        const basicSettingsSection = document.getElementById("basicSettingsSection");
+        const addressesSection = document.getElementById("addressesSection");
+        const sensitiveSettingsSection = document.getElementById("sensitiveSettingsSection");
+        const changeBasicAccountSettingsButton = document.getElementById("changeBasicAccountSettingsButton");
+        const deleteAccountButton = document.getElementById("deleteAccountButton");
+        const accountDeletionSubsectionText = document.getElementById("accountDeletionSubsection").querySelector("p");
+
+        if (window.innerWidth >= 992) {
+            basicSettingsSection.firstElementChild.style.width = "";
+            addressesSection.firstElementChild.style.width = "";
+            sensitiveSettingsSection.firstElementChild.style.width = "";
+        }
+        else {
+            basicSettingsSection.firstElementChild.style.width = "66%";
+            addressesSection.firstElementChild.style.width = "66%";
+            sensitiveSettingsSection.firstElementChild.style.width = "66%";
+        }
+
+        //992 is bootstrap endpoint
+        if ((window.innerWidth < 576) || (window.innerWidth >= 992 && window.innerWidth < 1220)) {
+            changeBasicAccountSettingsButton.textContent = "Επιβεβαίωση";
+            deleteAccountButton.textContent = "Διαγραφή";
+            accountDeletionSubsectionText.textContent = "Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί."
+        }
+        else{
+            changeBasicAccountSettingsButton.textContent = "Επιβεβαίωση Αλλαγών";
+            deleteAccountButton.textContent = "Διαγραφή Λογαριασμού";
+            accountDeletionSubsectionText.textContent = "Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί. Προσοχή η παρακάτω ενέργεια είναι μη αναστρέψιμη!"
+        }
+
+        if (window.innerWidth >= 576 && window.innerWidth < 992) {
+            basicSettingsSection.style.maxWidth = "500px";
+            sensitiveSettingsSection.style.maxWidth = "500px";
+        }
+        else if(window.innerWidth >= 992){
+            sensitiveSettingsSection.style.maxWidth = "450px";
+            basicSettingsSection.style.maxWidth = "450px";
+        }
+        else{
+            sensitiveSettingsSection.style.maxWidth = "";
+            basicSettingsSection.style.maxWidth = "";
+        }
+    }
+
+    window.addEventListener("load", updateFormSizeClasses);
+    window.addEventListener("resize", updateFormSizeClasses);
+
+    //this just adds a guid to the password field
+    function generateGUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const passwordInput = document.getElementById('passwordInput');
+        passwordInput.value = generateGUID();
+    });
+
+    // Edit button functionality
+    function toggleInputField(inputId, buttonId) {
+        let inputField = document.getElementById(inputId);
+        let button = document.getElementById(buttonId);
+
+        if (inputField && button) {
+            if (inputField.readOnly) {
+                inputField.readOnly = false;
+                button.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else {
+                inputField.readOnly = true;
+                button.innerHTML = '<i class="fa-solid fa-pencil"></i>';
+            }
+        }
+    }
+
+    setUpValidationListeners();
+    setUpFormSubmissionValidationListener("basicSettingsSection");
+    setUpFormSubmissionValidationListener("changePasswordForm");
+
+    function toggleAuthenticationForm(section) {
+        //if section that is now active is signInForm
+        if (section === 'basicSettingsSection') {
+            document.getElementById('btnBasicSettings').classList.replace('inactive', 'active');
+            document.getElementById('btnSensitiveSettings').classList.replace('active', 'inactive');
+
+            document.getElementById("basicSettingsSection").classList.replace('d-none', 'd-flex');
+            document.getElementById("sensitiveSettingsSection").classList.replace('d-flex', 'd-none');
+        }
+        //if section that is now active is signUpForm
+        else if(section === 'sensitiveSettingsSection'){
+            document.getElementById('btnSensitiveSettings').classList.replace('inactive', 'active');
+            document.getElementById('btnBasicSettings').classList.replace('active', 'inactive');
+
+            document.getElementById("sensitiveSettingsSection").classList.replace('d-none', 'd-flex');
+            document.getElementById("basicSettingsSection").classList.replace('d-flex', 'd-none');
+        }
+    }
+
+    let modalDeleteAccountInput = document.getElementById('modalDeleteAccountInput');
+    let modalDeleteAccountInputValidation = document.getElementById('modalDeleteAccountInputValidation');
+    let oldEmail = '@Model.ChangeEmailViewModel.OldEmail';
+    console.log(oldEmail);
+
+    modalDeleteAccountInput.addEventListener("focusout", function () {
+        modalDeleteAccountInput.setAttribute('data-custom-validation', 'true');
+        //if there are more validation errors and the checkpasswordmatch had errors, it is going to be overriden as intended
+        if (modalDeleteAccountInput.value != oldEmail) {
+            modalDeleteAccountInputValidation.textContent = "The provided value does not match your account's email";
+        }
+        else {
+            modalDeleteAccountInputValidation.textContent = '';
+        }
+    });
+
+    modalDeleteAccountInput.addEventListener("input", function () {
+        //if there are more validation errors and the checkpasswordmatch had errors, it is going to be overriden as intended
+        if (modalDeleteAccountInput.value === "" && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
+            modalDeleteAccountInputValidation.textContent = "This field is required";
+        }
+        else if (modalDeleteAccountInput.value !== oldEmail && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
+            modalDeleteAccountInputValidation.textContent = "The provided value does not match your account's email";
+        }
+        else if (modalDeleteAccountInput.value === oldEmail && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
+            modalDeleteAccountInputValidation.textContent = '';
+        }
+    });
+</script>
+
+@section Scripts {
+    <script>
+        const passwordChangeSuccess = '@TempData["PasswordChangeSuccess"]' === 'True';
+        const accountBasicSettingsChangeSuccess = '@TempData["AccountBasicSettingsChangeSuccess"]' === 'True';
+        const duplicateEmailError = '@TempData["DuplicateEmail"]' === 'True';
+        const passwordMismatchError = '@TempData["PasswordMismatchError"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        if(accountBasicSettingsChangeSuccess){
+            showPopUpModal("resultModal", "Επιτυχία Αλλαγής Στοιχείων", "Το βασικά στοιχεία του λογαριασμού σας ανανεώθηκαν επιτυχώς!", "Επιτυχία", "Το βασικά στοιχεία του λογαριασμού σας ανανεώθηκαν επιτυχώς!", "success");
+        }
+        else if (passwordChangeSuccess) {
+            showPopUpModal("resultModal", "Επιτυχία Αλλαγής Συνθηματικού", "Το συνθηματικό του λογαριασμού σας ανανεώθηκε επιτυχώς!", "Επιτυχία", "Το συνθηματικό του λογαριασμού σας ανανεώθηκε επιτυχώς!", "success");
+        }
+        else if (passwordMismatchError) {
+            showPopUpModal('resultModal', "Αποτυχία Αλλαγής Συνθηματικού", "Το παλιό συνθηματικό που εισάγατε δεν είναι το παρών συνθηματικό του λογαριασμού. Παρακαλώ δοκιμάστε ξανά με διαφορετικό παλιό συνθηματικό. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Το παλιό συνθηματικό που εισάγατε δεν είναι το παρών συνθηματικό του λογαριασμού. Παρακαλώ δοκιμάστε ξανά με διαφορετικό παλιό συνθηματικό.");
+        }
+        else if (duplicateEmailError) {
+            showPopUpModal('resultModal', "Αποτυχία Αλλαγής e-mail", "Η νέα διεύθυνση ηλεκτρονικού ταχυδρομείου που θέλετε να χρησιμοποιήσετε υπάρχει στο σύστημα μας και χρησιμοποιείται από άλλο λογαριασμό. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετική διεύθυνση ηλεκτρονικού ταχυδρομείου. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Η νέα διεύθυνση ηλεκτρονικού ταχυδρομείου που θέλετε να χρησιμοποιήσετε υπάρχει στο σύστημα μας και χρησιμοποιείται από άλλο λογαριασμό. Παρακαλώ δοκιμάστε ξανά με διαφορετική διεύθυνση ηλεκτρονικού ταχυδρομείου.");
+        }
+        else if (unknownError) {
+            showPopUpModal('resultModal', "Αποτυχία Αλλαγής Συνθηματικού", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα.",
+                "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα.");
+        }
+
+    </script>
+}

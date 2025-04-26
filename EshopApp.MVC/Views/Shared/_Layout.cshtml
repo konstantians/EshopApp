@@ -3,44 +3,695 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EshopApp.MVC</title>
+    <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/EshopApp.MVC.styles.css" asp-append-version="true" />
+    <style>
+        .icon-container {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border: solid 1px;
+            border-color: black;
+            border-radius: 50%;
+        }
+
+        .icon-container-lg{
+            width: 38px;
+            height: 38px;
+        }
+
+        .icon-container-sm{
+            width: 35px;
+            height: 35px;
+        }
+
+        .dropdown-hoverable:hover .dropdown-menu{
+            display: block;
+            margin-top: 0;
+        }
+
+        .dropdown-menu-cart {
+            position: absolute;
+            top: 50px;
+            width: 320px;
+            cursor: default;
+        }
+
+        .dropdown-menu-user {
+            position: absolute;
+            top: 53px;
+            width: 160px;
+            right: -5px;
+            cursor: default;
+        }
+
+        .custom-box-shadow {
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .custom-box-shadow-no-top {
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .custom-badge{
+            position: absolute;
+            background-color: black;
+            color: white;
+            font-size: 12px;
+            width: 22px;
+            height: 15px;
+            border-radius: 20%;
+            text-align: center;
+        }
+
+        #cartBadge {
+            top: -9px;
+            right: 19px;
+            line-height: 14px;
+        }
+
+        #cartBadgeSmall {
+            top: -10px;
+            right: 16.5px;
+            line-height: 14px;
+            width: 21px;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">EshopApp.MVC</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+        <nav class="navbar navbar-expand-lg navbar-toggleable-sm navbar-light border-bottom mt-0 pt-0 fixed-top bg-white custom-box-shadow">
+            <div class="d-lg-none w-100 pb-0" id="smallNavbar">
+                <div class="d-flex align-items-center">
+                    <div class="col-4">
+                        <button class="navbar-toggler ms-2 ms-md-3" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="icon-container icon-container-sm mt-1 ms-1 d-sm-none">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a class="navbar-brand ms-3" asp-controller="Home" asp-action="Index">
+                            <img src="~/Images/logo.svg" alt="Logo" height="60" width="85">
+                        </a>
+                    </div>
+                    <div class="col-4 text-end">
+                        <div class="icon-container icon-container-sm me-1 d-none d-sm-inline-flex">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="icon-container icon-container-sm dropdown dropdown-hoverable me-1" style="margin-top:1.8px;" id="userIconContainerSmall">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-user custom-box-shadow border-0 py-3" id="dropdownUserMenuSmall">
+                                <li class="mb-2 text-center">
+                                    <a class="text-secondary text-decoration-none hover-black me-1" asp-controller="Account" asp-action="EditAccount">
+                                        <i class="fa-solid fa-gear me-2"></i> Επεξεργασία
+                                    </a>
+                                </li>
+                                <li class="mb-4 text-center">
+                                    <a class="text-secondary text-decoration-none hover-black text-center me-1" href="#">
+                                        <i class="fa-solid fa-box me-2"></i> Παραγγελίες
+                                    </a>
+                                </li>
+                                <li class="text-center">
+                                    <form asp-controller="Account" asp-action="LogOut" method="post">
+                                        <button class="btn text-info text-decoration-none me-1" type="submit">
+                                            <i class="fa-solid fa-right-from-bracket me-2"></i> Αποσύνδεση
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="icon-container icon-container-sm dropdown dropdown-hoverable me-2 me-md-3" id="cartIconContainerSmall">
+                            <i class="fa-solid fa-cart-shopping fa-sm"></i>
+                            <span class="custom-badge" id="cartBadgeSmall">2</span>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-cart custom-box-shadow-no-top pb-0 border-0 rounded-0" id="dropdownMenuCartSmall">
+                                <div class="container p-4">
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <a href="#">
+                                                <img src="~/Images/testJacket.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
+                                            </a>
+                                        </div>
+                                        <div class="col-8 d-flex flex-column justify-content-between">
+                                            <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN SLIM DENIM JACKET</a>
+                                            <div class="d-flex justify-content-between">
+                                                <div class="text-info text-smaller">103.90 &#8364;</div>
+                                                <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-4">
+                                        <div class="col-4">
+                                            <a href="#">
+                                                <img src="~/Images/testDress.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
+                                            </a>
+                                        </div>
+                                        <div class="col-8 d-flex flex-column justify-content-between">
+                                            <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN ELASTIC STRAPPY</a>
+                                            <div class="d-flex justify-content-between">
+                                                <div class="text-info text-smaller">92.90 &#8364;</div>
+                                                <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2 mt-1">
+                                    <a class="btn btn-primary border-0 rounded-0 py-3" href="#">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="collapse navbar-collapse flex-column">
+                <div class="d-flex border-bottom align-items-center mt-0 d-none d-lg-flex w-75 p-0" id="largeNavbarTopSection">
+                    <div class="col-lg-5 col-xl-4">
+                        <form class="d-flex justify-content-between p-2">
+                            <div class="input-group" style="max-width:500px;">
+                                <input type="text" class="form-control" placeholder="Ψάξτε για προϊόν, κατηγορία...">
+                                <button type="button" class="btn btn-secondary border-0" id="searchButton"><i class="fas fa-search"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-2 col-xl-4 text-center">
+                        <a class="navbar-brand mx-md-auto" asp-controller="Home" asp-action="Index">
+                            <img src="~/Images/logo.svg" alt="Logo" height="60" width="85">
+                        </a>
+                    </div>
+                    <div class="col-lg-5 col-xl-4">
+                        <div class="d-flex justify-content-between px-2">
+                            <div class="d-flex align-content-center position-relative" id="userAccountSection">
+                                <div class="icon-container icon-container-lg d-none" style="margin-top:1.8px;" id="userIconContainer">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div class="ms-2" id="standardAccountSection">
+                                    <div class="text-secondary text-smallest">ΛΟΓΑΡΙΑΣΜΟΣ</div>
+                                    <a class="custom-link text-primary" asp-controller="Account" asp-action="SignInAndSignUp">Σύνδεση/Εγγραφή</a>
+                                </div>
+                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-user custom-box-shadow border-0 py-3" id="dropdownUserMenu">
+                                    <li class="mb-2 text-center">
+                                        <a class="text-secondary text-decoration-none hover-black me-1" asp-controller="Account" asp-action="EditAccount">
+                                            <i class="fa-solid fa-gear me-2"></i> Επεξεργασία
+                                        </a>
+                                    </li>
+                                    <li class="mb-4 text-center">
+                                        <a class="text-secondary text-decoration-none hover-black text-center me-1" href="#">
+                                            <i class="fa-solid fa-box me-2"></i> Παραγγελίες
+                                        </a>
+                                    </li>
+                                    <li class="text-center">
+                                        <form asp-controller="Account" asp-action="LogOut" method="post">
+                                            <button class="btn text-info text-decoration-none me-1" type="submit">
+                                                <i class="fa-solid fa-right-from-bracket me-2"></i> Αποσύνδεση
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="d-flex align-items-center" id="cartSection">
+                                <div>
+                                    <div class="text-secondary text-smallest">ΤΟ ΚΑΛΑΘΙ ΣΑΣ</div>
+                                    <a class="custom-link text-primary float-end" href="/bullshit" id="finalPriceLink">0.00 &#8364;</a> @* TODO fix this link when functionality for that is added *@
+                                </div>
+                                <div class="icon-container icon-container-lg ms-3 dropdown dropdown-hoverable position-relative" id="cartIconContainer">
+                                    <i class="fa-solid fa-cart-shopping"></i>
+                                    <span class="custom-badge" id="cartBadge">2</span>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-cart custom-box-shadow-no-top pb-0 border-0" id="dropdownMenuCart" style="border-radius:0 !important;">
+                                        <div class="container p-4">
+                                            <div class="row">
+                                                <div class="col-4">
+                                                    <a href="#">
+                                                        <img src="~/Images/testJacket.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
+                                                    </a>
+                                                </div>
+                                                <div class="col-8 d-flex flex-column justify-content-between">
+                                                    <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN SLIM DENIM JACKET</a>
+                                                    <div class="d-flex justify-content-between">
+                                                        <div class="text-info text-smaller">103.90 &#8364;</div>
+                                                        <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-4">
+                                                <div class="col-4">
+                                                    <a href="#">
+                                                        <img src="~/Images/testDress.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
+                                                    </a>
+                                                </div>
+                                                <div class="col-8 d-flex flex-column justify-content-between">
+                                                    <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN ELASTIC STRAPPY</a>
+                                                    <div class="d-flex justify-content-between">
+                                                        <div class="text-info text-smaller">92.90 &#8364;</div>
+                                                        <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-grid gap-2 mt-1">
+                                            <a class="btn btn-primary border-0 rounded-0 py-3" href="#">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="linksNavbarSection">
+                    <ul class="navbar-nav text-start text-lg-center pt-3 pb-2">
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary pb-3 mx-2" href="#">
+                                NEW IN
+                            </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        <li class="nav-item custom-fontweight text-smaller dropdown navbar-sublink position-relative">
+                            <a class="custom-link text-primary pb-3 mx-2" asp-controller="Home" asp-action="Whatever">ΑΝΔΡΑΣ</a>
+                            <a class="custom-link text-primary float-end d-lg-none me-2" data-bs-toggle="dropdown" data-bs-auto-close="false"><i class="fa-solid fa-chevron-down"></i></a>
+                            <div class="dropdown-menu dropdown-menu-navbar custom-box-shadow-no-top p-lg-3 mb-lg-0 mb-2 border-0 rounded-0">
+                                <div class="container-lg">
+                                    <div class="row">
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΑΞΕΣΟΥΑΡ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΕΣΩΡΟΥΧΑ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΜΠΛΟΥΖΕΣ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΠΑΠΟΥΤΣΙΑ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΦΟΡΜΕΣ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΒΕΡΜΟΥΔΕΣ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΚΟΛΑΝ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΜΠΟΥΦΑΝ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΠΛΕΚΤΑ</a></div>
+                                        <div class="col custom-col pt-3"><a class="text-smaller custom-link text-primary" href="#">ΦΟΥΤΕΡ & ΖΑΚΕΤΕΣ</a></div>
+                                        <div class="col custom-col pt-3 pb-xl-3 pb-lg-0"><a class="text-smaller custom-link text-primary" href="#">ΓΙΛΕΚΑ</a></div>
+                                        <div class="col custom-col pt-3 pb-xl-3 pb-lg-3 pb-md-0"><a class="text-smaller custom-link text-primary" href="#">ΜΑΓΙΩ</a></div>
+                                        <div class="col custom-col pt-3 pb-xl-3 pb-lg-3 pb-md-3 pb-3"><a class="text-smaller custom-link text-primary" href="#">ΠΑΝΤΕΛΟΝΙΑ</a></div>
+                                        <div class="col custom-col pt-3 pb-xl-3 pb-lg-3 pb-md-3 pb-3"><a class="text-smaller custom-link text-primary" href="#">ΠΟΥΚΑΜΙΣΑ</a></div>
+                                        <div class="col custom-col pt-3 pb-xl-3 pb-lg-3 pb-md-3 pb-3"><a class="text-smaller custom-link text-primary" href="#">JEANS</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary mx-2" href="#">ΓΥΝΑΙΚΑ</a>
+                        </li>
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary mx-2" href="#">ΠΑΠΟΥΤΣΙΑ</a>
+                        </li>
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary mx-2" href="#">ΠΑΙΔΙ</a>
+                        </li>
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary mx-2" href="#">ΑΞΕΣΟΥΑΡ</a>
+                        </li>
+                        <li class="nav-item custom-fontweight text-smaller">
+                            <a class="custom-link text-primary mx-2" href="#">BRANDS</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
+    <script>
+        //updates the navbar using a basic check
+        let isUserAuthenticated = false;
+        function checkAuthenticationStatus() {
+            fetch('/Account/BasicFrontEndAccessTokenValidation', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const standardAccountSection = document.getElementById('standardAccountSection');
+                const userIconContainer = document.getElementById('userIconContainer');
+                const userIconContainerSmall = document.getElementById('userIconContainerSmall');
+                if (data === true) {
+                    userIconContainer.classList.remove('d-none');
+                    document.getElementById('userAccountSection').classList.add('dropdown', 'dropdown-hoverable');
+                    standardAccountSection.querySelector('a').textContent = 'Πληροφορίες';
+                    standardAccountSection.querySelector('a').setAttribute('href', '/Account/EditAccount');
+                    userIconContainerSmall.querySelector('i').classList.replace('fa-right-to-bracket', 'fa-user');
+                    isUserAuthenticated = true;
+                }
+                else{
+                    document.getElementById('dropdownUserMenuSmall').classList.remove('dropdown-menu', 'dropdown-menu-end', 'dropdown-menu-user');
+                    document.getElementById('dropdownUserMenuSmall').classList.add('d-none');
+                    userIconContainerSmall.querySelector('a').setAttribute('href', '/Account/SignInAndSignUp');
+                }
+            })
+            .catch(error => {
+                console.error("Error checking authentication: " + error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthenticationStatus();
+        });
+    </script>
+
+    <div class="custom-container container" style="margin-top:140px" id="bodySection">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - EshopApp.MVC - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <script>
+        let isTouch = false;
+        try {
+            isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        } catch (error) {
+            console.warn("Touch detection failed:", error);
+        }
+
+        let cartIconContainer = document.getElementById("cartIconContainer");
+        let dropdownMenuCart = document.getElementById("dropdownMenuCart");
+        let cartIconContainerSmall = document.getElementById("cartIconContainerSmall");
+        let dropdownMenuCartSmall = document.getElementById("dropdownMenuCartSmall");
+        let cartSection = document.getElementById("cartSection");
+        let largeNavbarTopSection = document.getElementById('largeNavbarTopSection');
+        let cartBadge = document.getElementById('cartBadge');
+        let cartBadgeSmall = document.getElementById('cartBadgeSmall');
+        let finalPriceLink = document.getElementById('finalPriceLink');
+        let isCursorInZone = false;
+        let shouldShowSmallSections = false;
+
+        let userAccountSection = document.getElementById("userAccountSection");
+        let userIconContainer = document.getElementById("userIconContainer");
+        let userIconContainerSmall = document.getElementById("userIconContainerSmall");
+        let dropdownUserMenu = document.getElementById("dropdownUserMenu");
+        let dropdownUserMenuSmall = document.getElementById("dropdownUserMenuSmall");
+        let isCursorInUserZone = false;
+
+        function adjustSubMenuPosition() {
+            let navbarHeight = document.querySelector('.navbar').offsetHeight;
+            document.body.style.marginTop = (navbarHeight + 10) + 'px';
+
+            let navbarOffsetLeft = largeNavbarTopSection.getBoundingClientRect().left;
+
+            //crazy math to change the position of the dropdown appropriately
+            let dropdownMenus = document.querySelectorAll('.dropdown-menu-navbar');
+            dropdownMenus.forEach(menu => {
+                let previousSibling = menu.previousElementSibling;
+
+                //this while is needed for responsiveness
+                while (previousSibling && getComputedStyle(previousSibling).display === 'none') {
+                    previousSibling = previousSibling.previousElementSibling;
+                }
+                menu.style.left = (navbarOffsetLeft - previousSibling.getBoundingClientRect().left + 8) + "px";
+            });
+
+            //somehow makes the cart dropdown work correctly
+            dropdownMenuCart.style.right = '0px';
+            //somehow makes the small cart dropdown work correctly
+            dropdownMenuCartSmall.style.right = '0px';
+        }
+
+        window.addEventListener('load', adjustSubMenuPosition);
+        window.addEventListener('resize', adjustSubMenuPosition);
+
+        //checks if the mouse is in the gap between the cart area and the dropdown area and based on that it manages styles for the cart area and the cursor
+        function checkCursorPosition(event) {
+            shouldShowSmallSections = window.getComputedStyle(largeNavbarTopSection).display === 'none';
+
+            if (shouldShowSmallSections) {
+                cartSection = cartIconContainerSmall;
+                userAccountSection = userIconContainerSmall;
+            }
+            else {
+                cartSection = document.getElementById("cartSection");
+                userAccountSection = document.getElementById("userAccountSection");
+            }
+
+            const cursorX = event.clientX;
+            const cursorY = event.clientY;
+            if(!shouldShowSmallSections){
+                handleBigNavbarDropdowns(cursorX, cursorY);
+            }
+            else{
+                handleSmallNavbarDropdowns(cursorX, cursorY);
+            }
+
+        }
+
+        function handleBigNavbarDropdowns(cursorX, cursorY) {
+            if (
+                cursorX >= cartSection.getBoundingClientRect().left &&
+                cursorX <= cartSection.getBoundingClientRect().right &&
+                cursorY >= cartSection.getBoundingClientRect().top &&
+                cursorY <= cartSection.getBoundingClientRect().bottom + 10
+            ) {
+                isCursorInZone = true;
+                cartIconContainer.style.color = '#FF5E00';
+                cartIconContainer.style.borderColor = '#FF5E00';
+                cartBadge.style.backgroundColor = '#FF5E00';
+                finalPriceLink.classList.replace('text-primary', 'text-info');
+                document.body.style.cursor = "pointer";
+            } else {
+                isCursorInZone = false;
+                if (!cartSection.classList.contains('mouseIn')) {
+                    cartIconContainer.style.color = 'black';
+                    cartIconContainer.style.borderColor = 'black';
+                    cartBadge.style.backgroundColor = 'black';
+                    finalPriceLink.classList.replace('text-info', 'text-primary');
+                }
+
+                if (!isCursorInUserZone) {
+                    document.body.style.cursor = "default";
+                }
+            }
+
+            if (
+                cursorX >= userAccountSection.getBoundingClientRect().left &&
+                cursorX <= userAccountSection.getBoundingClientRect().right &&
+                cursorY >= userAccountSection.getBoundingClientRect().top &&
+                cursorY <= userAccountSection.getBoundingClientRect().bottom + 10
+            ) {
+                isCursorInUserZone = true;
+                userIconContainer.style.color = '#FF5E00';
+                userIconContainer.style.borderColor = '#FF5E00';
+                userAccountSection.querySelector("a")?.classList.replace('text-primary', 'text-info');
+                document.body.style.cursor = "pointer";
+            } else {
+                isCursorInUserZone = false;
+                if (!userAccountSection.classList.contains('mouseIn')) {
+                    userIconContainer.style.color = 'black';
+                    userIconContainer.style.borderColor = 'black';
+                    userAccountSection.querySelector("a")?.classList.replace('text-info', 'text-primary');
+                }
+
+                if (!isCursorInZone) {
+                    document.body.style.cursor = "default";
+                }
+            }
+        }
+
+        function handleSmallNavbarDropdowns(cursorX, cursorY) {
+            if (
+                cursorX >= cartSection.getBoundingClientRect().left &&
+                cursorX <= cartSection.getBoundingClientRect().right &&
+                cursorY >= cartSection.getBoundingClientRect().top &&
+                cursorY <= cartSection.getBoundingClientRect().bottom + 19
+            ) {
+                isCursorInZone = true;
+                cartIconContainerSmall.style.color = '#FF5E00';
+                cartIconContainerSmall.style.borderColor = '#FF5E00';
+                cartBadgeSmall.style.backgroundColor = '#FF5E00';
+                document.body.style.cursor = "pointer";
+            } else {
+                isCursorInZone = false;
+                if (!cartSection.classList.contains('mouseIn')) {
+                    cartIconContainerSmall.style.color = 'black';
+                    cartIconContainerSmall.style.borderColor = 'black';
+                    cartBadgeSmall.style.backgroundColor = 'black';
+                }
+                if (!isCursorInUserZone) {
+                    document.body.style.cursor = "default";
+                }
+            }
+
+            if (
+                cursorX >= userAccountSection.getBoundingClientRect().left &&
+                cursorX <= userAccountSection.getBoundingClientRect().right &&
+                cursorY >= userAccountSection.getBoundingClientRect().top &&
+                cursorY <= userAccountSection.getBoundingClientRect().bottom + 18
+            ) {
+                isCursorInUserZone = true;
+                userIconContainerSmall.style.color = '#FF5E00';
+                userIconContainerSmall.style.borderColor = '#FF5E00';
+                document.body.style.cursor = "pointer";
+            } else {
+                isCursorInUserZone = false;
+                if (!userAccountSection.classList.contains('mouseIn')) {
+                    userIconContainerSmall.style.color = 'black';
+                    userIconContainerSmall.style.borderColor = 'black';
+                }
+
+                if (!isCursorInZone) {
+                    document.body.style.cursor = "default";
+                }
+            }
+        }
+
+        function trackCursor() {
+            //cart dropdown
+            if (isCursorInZone && !shouldShowSmallSections) {
+                dropdownMenuCart.classList.add("show");
+            }
+            else if (!isCursorInZone && !shouldShowSmallSections) {
+                dropdownMenuCart.classList.remove("show");
+            }
+            else if (isCursorInZone && shouldShowSmallSections) {
+                dropdownMenuCartSmall.classList.add("show");
+            }
+            else if (!isCursorInZone && shouldShowSmallSections) {
+                dropdownMenuCartSmall.classList.remove("show");
+            }
+
+            //user dropdown
+            if (isUserAuthenticated && isCursorInUserZone && !shouldShowSmallSections) {
+                //TODO fix the stupid bug probably by checking if the mouse is on another dropdown. Maybe think a little bit about how the dropdowns should popup
+                dropdownUserMenu.classList.add("show");
+            }
+            else if (isUserAuthenticated && !isCursorInUserZone && !shouldShowSmallSections) {
+                dropdownUserMenu.classList.remove("show");
+            }
+            else if (isUserAuthenticated && isCursorInUserZone && shouldShowSmallSections) {
+                dropdownUserMenuSmall.classList.add("show");
+            }
+            else if (isUserAuthenticated && !isCursorInUserZone && shouldShowSmallSections) {
+                dropdownUserMenuSmall.classList.remove("show");
+            }
+            requestAnimationFrame(trackCursor);
+        }
+
+        document.addEventListener("mousemove", checkCursorPosition);
+        trackCursor();
+
+        document.addEventListener("click", function (e) {
+            if (isCursorInZone) {
+                //const dropdown = document.getElementById("dropdownMenuCart");
+                if (!dropdownMenuCart.contains(e.target) && !dropdownMenuCartSmall.contains(e.target) && !isTouch) {
+                    finalPriceLink.click();
+                }
+            }
+            else if (isCursorInUserZone) {
+                if (!dropdownUserMenu.contains(e.target) && !dropdownUserMenuSmall.contains(e.target) && !isTouch) {
+                    userAccountSection.querySelector("a").click();
+                }
+            }
+        });
+
+        //cart section styles
+        dropdownMenuCart.addEventListener("mouseenter", () => {
+            cartIconContainer.style.color = '#FF5E00';
+            cartIconContainer.style.borderColor = '#FF5E00';
+            cartBadge.style.backgroundColor = '#FF5E00';
+            finalPriceLink.classList.replace('text-primary', 'text-info');
+            cartSection.classList.add('mouseIn');
+        });
+
+        dropdownMenuCart.addEventListener("mouseleave", () => {
+            cartIconContainer.style.color = 'black';
+            cartIconContainer.style.borderColor = 'black';
+            cartBadge.style.backgroundColor = 'black';
+            finalPriceLink.classList.replace('text-info', 'text-primary');
+            cartSection.classList.remove('mouseIn');
+        });
+
+        dropdownMenuCartSmall.addEventListener("mouseenter", () => {
+            cartIconContainerSmall.style.color = '#FF5E00';
+            cartIconContainerSmall.style.borderColor = '#FF5E00';
+            cartBadgeSmall.style.backgroundColor = '#FF5E00';
+            cartIconContainerSmall.classList.add('mouseIn');
+        });
+
+        dropdownMenuCartSmall.addEventListener("mouseleave", () => {
+            cartIconContainerSmall.style.color = 'black';
+            cartIconContainerSmall.style.borderColor = 'black';
+            cartBadgeSmall.style.backgroundColor = 'black';
+            cartIconContainerSmall.classList.remove('mouseIn');
+        });
+
+        //user section styles
+        dropdownUserMenu.addEventListener("mouseenter", () => {
+            userIconContainer.style.color = '#FF5E00';
+            userIconContainer.style.borderColor = '#FF5E00';
+            userAccountSection.querySelector("a").classList.replace('text-primary', 'text-info');
+            userAccountSection.classList.add('mouseIn');
+        });
+
+        dropdownUserMenu.addEventListener("mouseleave", () => {
+            userAccountSection.querySelector("a").classList.replace('text-info', 'text-primary');
+            userIconContainer.style.color = 'black';
+            userIconContainer.style.borderColor = 'black';
+            userAccountSection.classList.remove('mouseIn');
+        });
+
+        dropdownUserMenuSmall.addEventListener("mouseenter", () => {
+            userIconContainerSmall.style.color = '#FF5E00';
+            userIconContainerSmall.style.borderColor = '#FF5E00';
+            userIconContainerSmall.classList.add('mouseIn');
+        });
+
+        dropdownUserMenuSmall.addEventListener("mouseleave", () => {
+            userIconContainerSmall.style.color = 'black';
+            userIconContainerSmall.style.borderColor = 'black';
+            userIconContainerSmall.classList.remove('mouseIn');
+        });
+
+        //handles search button hover
+        document.getElementById("searchButton").addEventListener("mouseenter", () => {
+            document.getElementById("searchButton").classList.replace('btn-secondary', 'btn-primary');
+        });
+
+        document.getElementById("searchButton").addEventListener("mouseleave", () => {
+            document.getElementById("searchButton").classList.replace('btn-primary', 'btn-secondary');
+        });
+
+        let navbarSublinks = document.querySelectorAll(".navbar-sublink");
+
+        //makes navbarlinks to work correctly on smaller screens
+        function correctNavbarDropdown() {
+            if (window.innerWidth < 992) {
+                navbarSublinks.forEach(navbarSublink => {
+                    navbarSublink.classList.remove('dropdown-hoverable');
+                });
+            } else {
+                navbarSublinks.forEach(navbarSublink => {
+                    navbarSublink.classList.add('dropdown-hoverable');
+                    navbarSublink.firstElementChild.nextElementSibling.classList.remove('show');
+                    navbarSublink.lastElementChild.classList.remove('show');
+                    navbarSublink.lastElementChild.removeAttribute('data-bs-popper');
+                });
+            }
+        }
+
+        correctNavbarDropdown();
+        window.addEventListener('resize', correctNavbarDropdown);
+
+        //fixes a select all bug when the person clicks on the dropdown sevron
+        document.querySelectorAll('.fa-chevron-down').forEach(toggler => {
+            toggler.addEventListener('click', () => {
+                window.getSelection().removeAllRanges();
+            });
+        });
+
+        const bodySection = document.getElementById("bodySection");
+        //makes navbarlinks to work correctly on smaller screens
+        function adjustMarginTopForBody() {
+            if (window.innerWidth < 992) {
+                bodySection.style.marginTop = "95px";
+            } else {
+                bodySection.style.marginTop = "140px";
+            }
+        }
+
+        adjustMarginTopForBody();
+        window.addEventListener('resize', adjustMarginTopForBody);
+    </script>
+
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
