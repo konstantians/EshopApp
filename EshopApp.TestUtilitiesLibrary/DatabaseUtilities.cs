@@ -66,11 +66,11 @@ public class DatabaseUtilities
         CosmosClient cosmosClient = new CosmosClient(cosmosDbConnectionString);
         Database database = cosmosClient.GetDatabase("GlobalDb");
 
-        List<Microsoft.Azure.Cosmos.Container> containerObjects = new List<Microsoft.Azure.Cosmos.Container>();
+        List<Container> containerObjects = new List<Container>();
         foreach (string container in containers)
             containerObjects.Add(database.GetContainer(container));
 
-        foreach (Microsoft.Azure.Cosmos.Container containerObject in containerObjects)
+        foreach (Container containerObject in containerObjects)
         {
             //all the documents of the containerObject
             FeedIterator<dynamic> resultSetIterator = containerObject.GetItemQueryIterator<dynamic>("SELECT * FROM c");

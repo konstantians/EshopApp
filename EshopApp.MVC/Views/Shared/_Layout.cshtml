@@ -183,7 +183,7 @@
                     </div>
                     <div class="col-lg-5 col-xl-4">
                         <div class="d-flex justify-content-between px-2">
-                            <div class="d-flex align-content-center position-relative" id="userAccountSection">
+                            <div class="d-flex align-content-center position-relative" id="userAccountSection" data-testid="userAccountSection">
                                 <div class="icon-container icon-container-lg d-none" style="margin-top:1.8px;" id="userIconContainer">
                                     <i class="fa-solid fa-user"></i>
                                 </div>
@@ -204,7 +204,7 @@
                                     </li>
                                     <li class="text-center">
                                         <form asp-controller="Account" asp-action="LogOut" method="post">
-                                            <button class="btn text-info text-decoration-none me-1" type="submit">
+                                            <button class="btn text-info text-decoration-none me-1" type="submit" data-testid="signOutButton">
                                                 <i class="fa-solid fa-right-from-bracket me-2"></i> Αποσύνδεση
                                             </button>
                                         </form>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- NUnit adapter -->  
+  <NUnit>
+    <NumberOfTestWorkers>24</NumberOfTestWorkers>
+  </NUnit>
+  <!-- Playwright -->  
+  <Playwright>
+    <BrowserName>chromium</BrowserName>
+    <ExpectTimeout>987654321</ExpectTimeout>
+    <LaunchOptions>
+      <Headless>false</Headless>
+      <Channel>chrome</Channel>
+      <SlowMo>350</SlowMo>
+    </LaunchOptions>
+  </Playwright>
+</RunSettings>
