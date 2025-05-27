@@ -45,7 +45,15 @@ public class AdminProcedures : IAdminProcedures
 
             //if the user that called the endpoint has elevated access just return all users
             if (editorUserClaims is not null && editorUserClaims.Any(claim => claim.Type == "Permission" && claim.Value == "CanManageElevatedUsers"))
+            {
+                foreach (var user in foundUsers)
+                {
+                    var roleNames = await _userManager.GetRolesAsync(user);
+                    user.UserRoleName = roleNames.FirstOrDefault();
+                }
+
                 return new ReturnUsersAndCodeResponseModel(foundUsers, LibraryReturnedCodes.NoError);
+            }
 
             //otherwise just return users who do not have elevated protections
             var filteredFoundUsers = new List<AppUser>();
@@ -56,7 +64,10 @@ public class AdminProcedures : IAdminProcedures
                 IList<Claim>? foundUserClaims = foundUserRole is null ? null : await _roleManager.GetClaimsAsync(foundUserRole);
 
                 if (foundUserClaims is null || !foundUserClaims.Any(claim => claim.Type == "Protection" && claim.Value == "CanOnlyBeManagedByElevatedUsers"))
+                {
+                    foundUser.UserRoleName = foundUserRole?.Name;
                     filteredFoundUsers.Add(foundUser);
+                }
             }
 
             return new ReturnUsersAndCodeResponseModel(filteredFoundUsers, LibraryReturnedCodes.NoError);
@@ -87,6 +98,9 @@ public class AdminProcedures : IAdminProcedures
             if (returnedCode != LibraryReturnedCodes.NoError)
                 return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser);
 
+            var roles = await _userManager.GetRolesAsync(foundUser);
+            foundUser.UserRoleName = roles.FirstOrDefault();
+
             return new ReturnUserAndCodeResponseModel(foundUser!, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
@@ -115,6 +129,10 @@ public class AdminProcedures : IAdminProcedures
             if (returnedCode != LibraryReturnedCodes.NoError)
                 return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.InsufficientPrivilegesToManageElevatedUser);
 
+
+            var roles = await _userManager.GetRolesAsync(foundUser);
+            foundUser.UserRoleName = roles.FirstOrDefault();
+
             return new ReturnUserAndCodeResponseModel(foundUser!, LibraryReturnedCodes.NoError);
         }
         catch (Exception ex)
@@ -125,7 +143,7 @@ public class AdminProcedures : IAdminProcedures
         }
     }
 
-    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null)
+    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null, string? firstName = null, string? lastName = null)
     {
 
         var executionStrategy = _identityDbContext.Database.CreateExecutionStrategy();
@@ -164,6 +182,8 @@ public class AdminProcedures : IAdminProcedures
                     appUser.UserName = email;
                     appUser.Email = email;
                     appUser.PhoneNumber = phoneNumber;
+                    appUser.FirstName = firstName;
+                    appUser.LastName = lastName;
 
                     var result = await _userManager.CreateAsync(appUser, password);
 
@@ -278,6 +298,10 @@ public class AdminProcedures : IAdminProcedures
                     //update basic fields like phoneNuber
                     if (updatedUser.PhoneNumber is not null)
                         userToBeUpdated.PhoneNumber = updatedUser.PhoneNumber.Trim() == "" ? null : updatedUser.PhoneNumber.Trim();
+                    if (updatedUser.FirstName is not null)
+                        userToBeUpdated.FirstName = updatedUser.FirstName.Trim() == "" ? null : updatedUser.FirstName.Trim();
+                    if (updatedUser.LastName is not null)
+                        userToBeUpdated.LastName = updatedUser.LastName.Trim() == "" ? null : updatedUser.LastName.Trim();
 
                     userToBeUpdated.Email = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email;
                     userToBeUpdated.UserName = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email; //The email and the username are the same

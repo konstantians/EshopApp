@@ -18,6 +18,16 @@ namespace EshopApp.MVC.Controllers
             return View();
         }
 
+        public IActionResult ViewItems()
+        {
+            return View();
+        }
+
+        public IActionResult ViewCart()
+        {
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

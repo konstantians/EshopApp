@@ -1,0 +1,84 @@
+﻿/* Custom Accordion Styles */
+.custom-accordion {
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Accordion Item */
+.custom-accordion-item {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+/* Accordion Button */
+.custom-accordion-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent;
+    border: none;
+    padding: 0px 15px;
+    font-size: 1rem;
+    width: 100%;
+    cursor: pointer;
+}
+
+.custom-accordion-button:focus {
+    outline: none;
+}
+
+.custom-accordion-button::after {
+    content: "\002B";
+    font-size: 2rem;
+    transition: transform 0.15s ease;
+    margin-bottom: 3.5px;
+}
+
+.custom-accordion-button.collapsed {
+    color: var(--accent-orange);
+}
+
+.custom-accordion-button.collapsed::after {
+    content: "\2212";
+    margin-bottom: 3.5px;
+    color: var(--accent-orange);
+}
+
+.custom-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.4s ease;
+    padding: 0 15px;
+    background-color: #F5F5F5;
+    border-top: 1px solid #ddd;
+}
+
+.custom-accordion-button[aria-expanded="true"] + .custom-accordion-content {
+    max-height: 1000px;
+    padding: 10px 15px;
+}
+
+.custom-accordion-button:hover {
+    color: var(--accent-orange);
+}
+
+    .custom-accordion-button:hover::after {
+        color: var(--accent-orange);
+    }
+
+.hover-highlight:hover {
+    background-color: #e1e1e1;
+    cursor: pointer;
+}
+
+    .hover-highlight:hover label {
+        color: var(--accent-orange);
+    }
+
+.addTransitionLaterToMobileStyles {
+    transition: transform 0.4s ease;
+}
+
+.li-disabled {
+    color: #6c757d;
+}

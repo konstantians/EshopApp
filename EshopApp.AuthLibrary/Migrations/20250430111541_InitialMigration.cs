@@ -32,6 +32,8 @@ namespace EshopApp.AuthLibrary.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -163,18 +165,18 @@ namespace EshopApp.AuthLibrary.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "2022b983-9e61-4752-ae67-18ae86e4db52", "9c0bcdc9-fd18-4aa7-84ed-80b2f6296377", "Admin", "ADMIN" },
-                    { "3011426d-9b41-4be9-8203-f15a899de7e8", "378af352-90a3-47ed-9f31-fb7949c38035", "Manager", "MANAGER" },
-                    { "5a3758d6-f7f3-4579-8ab1-45bc6cc7308c", "816b21f7-92e6-4e1d-a1cb-8fd74e8932b0", "User", "USER" }
+                    { "21ecd123-b0cb-43c2-8f98-0c7f95616b39", "bbde9cc4-064a-4bd6-867e-2792ef10ca92", "User", "USER" },
+                    { "652bc758-830f-4a9b-bbd9-ba6b1e620b87", "ea588b88-845b-4cae-9297-453e7e6476a7", "Admin", "ADMIN" },
+                    { "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f", "d86c95e1-d3fc-4469-8be6-9e2fd0ffb60d", "Manager", "MANAGER" }
                 });
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
-                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "0b38f55d-c9de-49fa-8a93-8936ece154b2", 0, "c6e4af3d-1a86-4bd0-9285-b4f1085e2d7f", "manager@hotmail.com", true, false, null, "MANAGER@HOTMAIL.COM", "MANAGER@HOTMAIL.COM", "AQAAAAIAAYagAAAAEFIm6UdjYwGXjosnZRSz3FK/CgM7W7UvOC+d8mXDcim26jiKU7LcHvag+Z4ikfjTig==", null, false, "81bc8317-7da8-47e6-bf28-fd5c6c60d0e4", false, "manager@hotmail.com" },
-                    { "b975894b-cfde-4a51-ba92-053845e4c2fa", 0, "930ffb38-00fd-4664-88db-7af05094147a", "admin@hotmail.com", true, false, null, "ADMIN@HOTMAIL.COM", "ADMIN@HOTMAIL.COM", "AQAAAAIAAYagAAAAEK35CcnW8rCvrl5AHfEd1TjaBf75lCjRd5yFdIVAHXDtvD+uCdSRsyq2tnCpgJFOwQ==", null, false, "b172b0fb-0c71-4470-92a8-0d0842167182", false, "admin@hotmail.com" }
+                    { "1850f719-5137-4cfe-a1c5-a297f5a9c708", 0, "c247d8c2-25bf-40f3-b33a-9434999bb7dc", "manager@hotmail.com", true, null, null, false, null, "MANAGER@HOTMAIL.COM", "MANAGER@HOTMAIL.COM", "AQAAAAIAAYagAAAAEE3uP+Co2AMNXophyC9MxO2MyE92fDPSm4QfVUMkMDULcAfH2XUTUBtmWYsWKW8rjg==", null, false, "6d066e2d-d91c-41d6-9bbd-346c5815331c", false, "manager@hotmail.com" },
+                    { "aab9bc1a-5825-4e42-a2ad-52fe511919df", 0, "2136a7ac-3ac5-4fb2-9743-5a16c670cbc1", "admin@hotmail.com", true, null, null, false, null, "ADMIN@HOTMAIL.COM", "ADMIN@HOTMAIL.COM", "AQAAAAIAAYagAAAAEGeJRANczvOMtpZcrQhlmyvRicYx30trAx08LwuxoW8wrgxl6kVayVAE9t6BewxuyA==", null, false, "cd934a73-0e5d-441d-bfdb-33605564514f", false, "admin@hotmail.com" }
                 });
 
             migrationBuilder.InsertData(
@@ -182,20 +184,20 @@ namespace EshopApp.AuthLibrary.Migrations
                 columns: new[] { "Id", "ClaimType", "ClaimValue", "RoleId" },
                 values: new object[,]
                 {
-                    { 1, "Permission", "CanManageUsers", "3011426d-9b41-4be9-8203-f15a899de7e8" },
-                    { 2, "Permission", "CanManageRoles", "3011426d-9b41-4be9-8203-f15a899de7e8" },
-                    { 3, "Permission", "CanManageProducts", "3011426d-9b41-4be9-8203-f15a899de7e8" },
-                    { 4, "Permission", "CanManageOrderOptions", "3011426d-9b41-4be9-8203-f15a899de7e8" },
-                    { 5, "Permission", "CanManageOrders", "3011426d-9b41-4be9-8203-f15a899de7e8" },
-                    { 6, "Permission", "CanManageUsers", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 7, "Permission", "CanManageElevatedUsers", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 8, "Permission", "CanManageRoles", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 9, "Permission", "CanManageElevatedRoles", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 10, "Protection", "CanOnlyBeManagedByElevatedUsers", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 11, "Protection", "CanOnlyBeManagedByUsersWithElevatedRoles", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 12, "Permission", "CanManageProducts", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 13, "Permission", "CanManageOrderOptions", "2022b983-9e61-4752-ae67-18ae86e4db52" },
-                    { 14, "Permission", "CanManageOrders", "2022b983-9e61-4752-ae67-18ae86e4db52" }
+                    { 1, "Permission", "CanManageUsers", "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f" },
+                    { 2, "Permission", "CanManageRoles", "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f" },
+                    { 3, "Permission", "CanManageProducts", "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f" },
+                    { 4, "Permission", "CanManageOrderOptions", "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f" },
+                    { 5, "Permission", "CanManageOrders", "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f" },
+                    { 6, "Permission", "CanManageUsers", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 7, "Permission", "CanManageElevatedUsers", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 8, "Permission", "CanManageRoles", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 9, "Permission", "CanManageElevatedRoles", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 10, "Protection", "CanOnlyBeManagedByElevatedUsers", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 11, "Protection", "CanOnlyBeManagedByUsersWithElevatedRoles", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 12, "Permission", "CanManageProducts", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 13, "Permission", "CanManageOrderOptions", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" },
+                    { 14, "Permission", "CanManageOrders", "652bc758-830f-4a9b-bbd9-ba6b1e620b87" }
                 });
 
             migrationBuilder.InsertData(
@@ -203,8 +205,8 @@ namespace EshopApp.AuthLibrary.Migrations
                 columns: new[] { "RoleId", "UserId" },
                 values: new object[,]
                 {
-                    { "3011426d-9b41-4be9-8203-f15a899de7e8", "0b38f55d-c9de-49fa-8a93-8936ece154b2" },
-                    { "2022b983-9e61-4752-ae67-18ae86e4db52", "b975894b-cfde-4a51-ba92-053845e4c2fa" }
+                    { "f96cbc05-07f3-4c2c-87f1-ca9de2701d9f", "1850f719-5137-4cfe-a1c5-a297f5a9c708" },
+                    { "652bc758-830f-4a9b-bbd9-ba6b1e620b87", "aab9bc1a-5825-4e42-a2ad-52fe511919df" }
                 });
 
             migrationBuilder.CreateIndex(

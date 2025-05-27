@@ -455,11 +455,34 @@ public class AccountController : Controller
         Response.Cookies.Append("EshopAppAuthenticationCookie", accessToken, cookieOptions);
     }
 
+    //used by confirmation pages
     [HttpGet]
     public IActionResult BasicFrontEndAccessTokenValidation()
     {
         bool result = HelperMethods.BasicTokenValidation(Request);
         return Json(result);
+    }
+
+    //used by navbar in the layout
+    [HttpGet]
+    public IActionResult BasicFrontEndAccessTokenValidationAndClaimExtraction()
+    {
+        bool result = HelperMethods.BasicTokenValidation(Request);
+        if (!result)
+            return Json(new
+            {
+                isValid = false,
+                claimValues = new List<object>()
+            });
+        else
+        {
+            List<(string, string)> userClaims = HelperMethods.GetClaimsFromToken(Request);
+            return Json(new
+            {
+                isValid = true,
+                claimValues = userClaims.Select(userClaim => userClaim.Item2)
+            });
+        }
     }
 
     [HttpPost]

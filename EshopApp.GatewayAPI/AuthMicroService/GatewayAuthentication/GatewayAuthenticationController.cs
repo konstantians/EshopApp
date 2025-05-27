@@ -411,6 +411,8 @@ public class GatewayAuthenticationController : ControllerBase
         }
     }
 
+    // ******* The below endpoints were added later and have not been thoroughly tested *******
+
     [HttpGet("CheckResetPasswordEligibility")]
     public async Task<IActionResult> CheckResetPasswordEligibility(string userId, string resetPasswordToken)
     {
@@ -465,5 +467,34 @@ public class GatewayAuthenticationController : ControllerBase
         {
             return StatusCode(500, "Internal Server Error");
         }
+    }
+
+
+    [HttpGet("GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/{claimType}/ClaimValue/{claimValue}")]
+    [HttpGet("GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}")]
+    public async Task<IActionResult> GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken(string claimType, string claimValue, string? secondClaimType, string? secondClaimValue)
+    {
+        //check that an access token has been supplied, this check is made to avoid unnecessary requests
+        if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+            !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
+        string? endpoint;
+        if (string.IsNullOrEmpty(secondClaimType) || string.IsNullOrEmpty(secondClaimValue))
+            endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}";
+        else
+            endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}";
+
+        //request to get the user
+        _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+        HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync($"Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/{endpoint}"));
+
+        if ((int)response.StatusCode >= 400)
+            return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+        string? responseBody = await response.Content.ReadAsStringAsync();
+        GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return Ok(appUser);
     }
 }

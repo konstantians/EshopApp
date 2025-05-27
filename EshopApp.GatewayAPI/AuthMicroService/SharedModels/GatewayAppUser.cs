@@ -9,6 +9,7 @@ public class GatewayAppUser : IdentityUser
     public GatewayCart? Cart { get; set; }
     public List<GatewayUserCoupon> UserCoupons { get; set; } = new List<GatewayUserCoupon>();
     public List<GatewayOrder> Orders { get; set; } = new List<GatewayOrder>();
+    public string? UserRoleName { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
 }

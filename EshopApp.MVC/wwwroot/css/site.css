@@ -8,6 +8,10 @@ html {
   min-height: 100%;
 }
 
+:root {
+    --accent-orange: #FF5E00;
+}
+
 /*
 body { something about sticky footer
   margin-bottom: 60px;
@@ -20,7 +24,7 @@ body {
 }
 
 ::selection {
-    background-color: #FF5E00 !important;
+    background-color: var(--accent-orange) !important;
     color: white !important;
 }
 
@@ -32,8 +36,23 @@ body {
 }
 
 .btn-primary {
-    background-color: #FF5E00 !important;
+    background-color: var(--accent-orange) !important;
     color: white !important;
+}
+
+.btn-outline-primary {
+    color: var(--accent-orange);
+    border-color: var(--accent-orange) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.show > .btn-outline-primary.dropdown-toggle {
+    color: white;
+    background-color: var(--accent-orange);
+    border-color: var(--accent-orange);
 }
 
 .btn-secondary {
@@ -50,15 +69,99 @@ body {
 }
 
 .text-info {
-    color: #FF5E00 !important;
+    color: var(--accent-orange) !important;
 }
 
-.text-smaller{
-    font-size: 14px;
+.text-biggest {
+    font-size: 1.25rem; /* 20px */
+}
+
+.text-bigger {
+    font-size: 1.125rem; /* 18px */
+}
+
+.text-smaller {
+    font-size: 0.875rem; /* 14px */
 }
 
 .text-smallest {
-    font-size: 12px;
+    font-size: 0.75rem; /* 12px */
+}
+
+.text-extra-smallest {
+    font-size: 0.6rem;
+}
+
+@media (min-width: 576px) {
+    .text-sm-biggest {
+        font-size: 1.25rem;
+    }
+
+    .text-sm-bigger {
+        font-size: 1.125rem;
+    }
+
+    .text-sm-smaller {
+        font-size: 0.875rem;
+    }
+
+    .text-sm-smallest {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .text-md-biggest {
+        font-size: 1.25rem;
+    }
+
+    .text-md-bigger {
+        font-size: 1.125rem;
+    }
+
+    .text-md-smaller {
+        font-size: 0.875rem;
+    }
+
+    .text-md-smallest {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .text-lg-biggest {
+        font-size: 1.25rem;
+    }
+
+    .text-lg-bigger {
+        font-size: 1.125rem;
+    }
+
+    .text-lg-smaller {
+        font-size: 0.875rem;
+    }
+
+    .text-lg-smallest {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .text-xl-biggest {
+        font-size: 1.25rem;
+    }
+
+    .text-xl-bigger {
+        font-size: 1.125rem;
+    }
+
+    .text-xl-smaller {
+        font-size: 0.875rem;
+    }
+
+    .text-xl-smallest {
+        font-size: 0.75rem;
+    }
 }
 
 .hover-black:hover {
@@ -70,7 +173,7 @@ body {
 }
 
 .custom-link:hover {
-    color: #FF5E00 !important;
+    color: var(--accent-orange) !important;
     cursor: pointer !important;
 }
 
@@ -85,14 +188,47 @@ body {
 }
 
 input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-orange) !important;
+    box-shadow: 0px 0px 5px var(--accent-orange) !important;
+}
+
+.custom-outline:focus {
+    border-color: var(--accent-orange) !important;
+    box-shadow: 0px 0px 5px var(--accent-orange) !important;
+}
+
+.btn-close:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.form-check-input {
+    margin-top: 0;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #eaeaea;
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-orange) !important;
+    border-color: #eaeaea !important;
     box-shadow: none !important;
-    border-color: #FF5E00 !important;
-    box-shadow: 0px 0px 5px #FF5E00 !important;
+}
+
+.form-check-input:not(:checked) {
+    border-color: #eaeaea !important;
+    box-shadow: none !important;
+}
+
+.form-check-input:focus {
+    outline: none;
+    border-color: #eaeaea !important;
+    box-shadow: none !important;
 }
 
 .btn-hoverable-box-shadow:hover {
-    border-color: #FF5E00 !important;
-    box-shadow: 0 0 5px #FF5E00 !important;
+    border-color: var(--accent-orange) !important;
+    box-shadow: 0 0 5px var(--accent-orange) !important;
 }
 
 .custom-col {
@@ -149,69 +285,6 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* /////////////////////////// */
-
-.overlay-container {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 50%;
-    height: 100%;
-    overflow: hidden;
-    transition: transform 0.6s ease-in-out;
-    z-index: 100;
-}
-
-
-#signInSignUpContainer.right-panel-active .overlay-container {
-    transform: translateX(-100%);
-}
-
-
-.overlay {
-    background: black;
-    background: conic-gradient(at 0% 100%, black, #484848);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: 0 0;
-    /*background: #FF416C;
-    background: -webkit-linear-gradient(to right, #FF4B2B, #FF416C);
-    background: linear-gradient(to right, #FF4B2B, #FF416C);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: 0 0;*/
-    color: #FFFFFF;
-    position: relative;
-    left: -100%;
-    height: 100%;
-    width: 200%;
-    transform: translateX(0);
-    transition: transform 0.6s ease-in-out;
-}
-
-
-#signInSignUpContainer.right-panel-active .overlay {
-    transform: translateX(50%);
-}
-
-
-.overlay-panel {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 40px;
-    text-align: center;
-    height: 100%;
-    width: 50%;
-    transform: translateX(0);
-    transition: transform 0.6s ease-in-out;
-}
-
-.overlay-right {
-    right: 0;
-    transform: translateX(0);
-}
 
 /* specific modal */
 #forgotPasswordModalDialog {
@@ -341,7 +414,7 @@ input:focus, textarea:focus, select:focus {
     height: 80px; /*90*/
     border-radius: 50%;
     z-index: 9;
-    background: #FF5E00;
+    background: var(--accent-orange);
     padding: 15px;
     text-align: center;
     box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
@@ -353,3 +426,78 @@ input:focus, textarea:focus, select:focus {
     top: 3px;
 }
 
+.pagination .page-link {
+    color: black;
+    border-color: #d3d3d3;
+    background-color: #F5F5F5;
+    border:none;
+}
+
+.pagination .page-link:hover {
+    color: var(--accent-orange);
+}
+
+.pagination .page-item.active .page-link {
+    background-color:inherit;
+    color: var(--accent-orange);
+}
+
+.pagination .no-background{
+    background-color:inherit;
+}
+
+.pagination .page-link.special:hover {
+    color: white;
+    background-color: var(--accent-orange);
+}
+
+.page-link:focus,
+.page-link:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.dropdown-menu .dropdown-item:active,
+.dropdown-menu .dropdown-item:focus,
+.dropdown-menu .dropdown-item:hover {
+    background-color: var(--accent-orange) !important;
+    color: white !important;
+}
+
+.custom-box-shadow {
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+}
+
+.custom-box-shadow-no-top {
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1199.99px) {
+    #filtersSection {
+        transform: translateX(-100%);
+        position: fixed;
+        top: 192px;
+        left: 0;
+        max-height: 50vh;
+        width: 75%;
+        background: white;
+        z-index: 1040;
+        overflow-y: auto;
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199.99px) {
+    #filtersSection {
+        width: 50%;
+    }
+}
+
+@media (min-width: 1200px) {
+    #filtersSection {
+        position: sticky !important;
+        top: 135px;
+        align-self: flex-start !important;
+    }
+}

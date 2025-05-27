@@ -172,7 +172,7 @@ public class GatewayAdminController : ControllerBase
             //send request to create the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PostAsJsonAsync("Admin",
-                new { gatewayApiCreateUserRequestModel.Email, gatewayApiCreateUserRequestModel.Password, gatewayApiCreateUserRequestModel.PhoneNumber }));
+                new { gatewayApiCreateUserRequestModel.Email, gatewayApiCreateUserRequestModel.Password, gatewayApiCreateUserRequestModel.PhoneNumber, gatewayApiCreateUserRequestModel.FirstName, gatewayApiCreateUserRequestModel.LastName }));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
@@ -191,14 +191,14 @@ public class GatewayAdminController : ControllerBase
             GatewayCart? cart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             appUser!.Cart = cart;
 
-            //send an email to the user to notify them that their account has been deleted
+            //send an email to the user to notify them that their account has been created, if the admin has specified that
             if (gatewayApiCreateUserRequestModel.SendEmailNotification)
             {
                 var apiSendEmailModel = new Dictionary<string, string>
                 {
                    { "receiver", gatewayApiCreateUserRequestModel.Email! },
                     { "title", "Account Deletion" },
-                    { "message", "An administrator has deleted your account. If you have any questions you can contact us at kinnaskonstantinos0@gmail.com ." }
+                    { "message", "An administrator has created an account using your email address. If you have any questions you can contact us at kinnaskonstantinos0@gmail.com ." }
                 };
                 _ = Task.Run(async () =>
                 {
@@ -229,7 +229,7 @@ public class GatewayAdminController : ControllerBase
             //send request to update the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.PutAsJsonAsync("Admin",
-                new { gatewayApiUpdateUserRequestModel.AppUser, gatewayApiUpdateUserRequestModel.Password, PhoneNumber = gatewayApiUpdateUserRequestModel.ActivateEmail }));
+                new { gatewayApiUpdateUserRequestModel.AppUser, gatewayApiUpdateUserRequestModel.Password, gatewayApiUpdateUserRequestModel.ActivateEmail }));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
