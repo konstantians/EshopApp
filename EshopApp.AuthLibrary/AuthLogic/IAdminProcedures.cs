@@ -6,7 +6,7 @@ namespace EshopApp.AuthLibrary.AuthLogic
 {
     public interface IAdminProcedures
     {
-        Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null);
+        Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null, string? firstName = null, string? lastName = null);
         Task<LibraryReturnedCodes> DeleteUserAccountAsync(string accessToken, List<Claim> expectedClaims, string userId);
         Task<ReturnUserAndCodeResponseModel?> FindUserByEmailAsync(string accessToken, List<Claim> expectedClaims, string email);
         Task<ReturnUserAndCodeResponseModel?> FindUserByIdAsync(string accessToken, List<Claim> expectedClaims, string userId);

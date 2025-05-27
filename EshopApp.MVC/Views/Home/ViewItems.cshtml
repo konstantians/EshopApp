@@ -1,0 +1,454 @@
+﻿@{
+    ViewData["Title"] = "View Items";
+}
+
+<link href="~/css/filtersStyles.css" rel="stylesheet" />
+
+<style>
+    .card:hover {
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+        /* cursor: pointer; */
+    }
+
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 0-.708 0L4.5 8l6.146 6.354a.5.5 0 0 0 .708-.708L5.707 8l5.647-5.646a.5.5 0 0 0 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0L11.5 8l-6.146 6.354a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    }
+</style>
+
+<h1 class="text-center h3" style="font-weight:700;">ΑΝΔΡΑΣ</h1>
+<hr style="color:#484848" class="d-none d-sm-block">
+
+<button id="filterToggleButton" class="btn btn-primary rounded-0 d-xl-none px-3" style="position: fixed; top: 320px; left: 0px; z-index: 1050; transform: rotate(-90deg);
+            transform-origin: top left; background-color:white !important; color: var(--accent-orange) !important; border: #aaa solid 1px; border-top:none; transition: left 0.4s ease;">
+    Φίλτρα
+</button>
+
+<div class="row">
+    <div class="col-3" id="filtersSection">
+        <div class="card" style="position: sticky !important; top:135px; align-self:flex-start !important;" id="cardFilters">
+            <div class="card-header d-none d-xl-block">
+                <h4 class="text-center mb-0">Φίλτρα</h4>
+            </div>
+            <div class="card-body">
+                <div class="custom-accordion">
+                    <div class="custom-accordion-item">
+                        <button class="custom-accordion-button" type="button" aria-expanded="false">
+                            ΤΙΜΗ
+                        </button>
+                        <div class="custom-accordion-content">
+                            <ul class="list-unstyled">
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">0&euro; - 20&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">20&euro; - 40&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">40&euro; - 60&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">60&euro; - 80&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">80&euro; - 100&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">100&euro; - 120&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">120&euro; - 140&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">140&euro; - 160&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">160&euro; - 180&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">180&euro; - 200&euro; (2331)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="custom-accordion-item">
+                        <button class="custom-accordion-button" type="button" aria-expanded="false">
+                            ΦΥΛΟ
+                        </button>
+                        <div class="custom-accordion-content">
+                            <ul class="list-unstyled">
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΑΝΔΡΑΣ (1340)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΓΥΝΑΙΚΑ (537)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 li-disabled">
+                                    <label class="mb-0 text-smaller">ΑΓΟΡΙ (0)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" disabled>
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 li-disabled">
+                                    <label class="mb-0 text-smaller">ΚΟΡΙΤΣΙ (0)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" disabled>
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 li-disabled">
+                                    <label class="mb-0 text-smaller">UNISEX (0)</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" disabled>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="custom-accordion-item">
+                        <button class="custom-accordion-button" type="button" aria-expanded="false">
+                            ΚΑΤΗΓΟΡΙΑ
+                        </button>
+                        <div class="custom-accordion-content">
+                            <ul class="list-unstyled">
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">JEANS</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΑΞΕΣΟΥΑΡ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΒΕΡΜΟΥΔΕΣ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΓΙΛΕΚΑ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΕΣΩΡΟΥΧΑ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΚΟΛΑΝ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΜΑΓΙΩ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΜΠΛΟΥΖΕΣ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΜΠΟΥΦΑΝ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΠΑΝΤΕΛΟΝΙΑ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                                <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight">
+                                    <label class="mb-0 text-smaller" style="cursor:pointer;">ΠΑΠΟΥΤΣΙΑ</label>
+                                    <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-9" id="objectsSection">
+        <div class="row mb-1 mb-sm-2 px-2 px-sm-0 px-md-0">
+            <div class="col-12 col-md-6 px-1">
+                <ul class="pagination justify-content-md-start justify-content-center align-items-center mb-1 mb-md-0" id="paginationUl">
+                    <li class="page-item me-1" id="goToFirstPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span aria-hidden="true" class="text-md-biggest">«</span>
+                        </a>
+                    </li>
+                    <li class="page-item me-1" id="goToPreviousPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span class="text-md-biggest" aria-hidden="true">‹</span>
+                        </a>
+                    </li>
+                    <li class="page-item active page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">1</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">2</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">3</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">4</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">…</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">1183</a>
+                    </li>
+                    <li class="page-item ms-1" id="goToNextPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1">
+                            <span aria-hidden="true" class="text-md-biggest">›</span>
+                        </a>
+                    </li>
+                    <li class="page-item ms-1" id="goToLastPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1182">
+                            <span aria-hidden="true" class="text-md-biggest">»</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-12 col-md-6 px-1 mb-1 mb-sm-0">
+                <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">
+                            Προεπιλεγμένη Σειρά
+                        </button>
+                        <ul class="dropdown-menu py-0" id="sortingDropdown">
+                            <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
+                            <li data-order="descendingPriceOrder"><a class="dropdown-item" href="#">Φθίνουσα Σειρά</a></li>
+                            <li data-order="ascendingPriceOrder"><a class="dropdown-item" href="#">Αύξουσα Σειρά</a></li>
+                            <li data-order="popularityOrder"><a class="dropdown-item" href="#">Πιο Δημοφιλή</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">
+                            18 Ανά Σελίδα
+                        </button>
+                        <ul class="dropdown-menu py-0" id="itemsPerPageDropdown">
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(120)" href="#">120 Ανά Σελίδα</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row px-2 px-sm-0 px-md-0" id="itemsContainer">
+            <div class="col-xl-4 col-lg-4 col-6 m-0 px-1">
+                <div class="card mb-2" style="max-height:620px; width:auto;" data-card-emailValue="email"
+                     data-card-phoneValue="phoneNumber"
+                     data-card-accountType="BS Change That Crap TODO"
+                     data-card-hiddenBySearch="false"
+                     data-card-hiddenByOtherFilters="false"
+                     data-card-isAccountActivated="true"
+                     data-card-isAccountSuspended="false">
+                    @* <img src="~/Images/jacketBig.jpg" class="card-img-top img-fluid" style="max-height: 400px;"> *@
+                    <div id="cardCarousel-1" class="carousel slide mt-2" data-bs-interval="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-1" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-1" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3 px-lg-5">
+                        <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 14px;"> VOLCOM 'FILIP RYGALSKI' ΠΟΥΚΑΜΙΣΟ ΑΝΔΡΙΚΟ A0412506-BLK </span>
+                        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+                            <span class="text-info" style="font-size:24px;">77,00&#8364;</span>
+                            <a href="#">
+                                <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-6 m-0 px-1">
+                <div class="card mb-2" style="max-height:620px; width:auto;" data-card-emailValue="email"
+                     data-card-phoneValue="phoneNumber"
+                     data-card-accountType="BS Change That Crap TODO"
+                     data-card-hiddenBySearch="false"
+                     data-card-hiddenByOtherFilters="false"
+                     data-card-isAccountActivated="true"
+                     data-card-isAccountSuspended="false">
+                    @* <img src="~/Images/jacketBig.jpg" class="card-img-top img-fluid" style="max-height: 400px;"> *@
+                    <div id="cardCarousel-2" class="carousel slide mt-2" data-bs-interval="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-2" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-2" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3 px-lg-5">
+                        <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 14px;"> VOLCOM 'FILIP RYGALSKI' ΠΟΥΚΑΜΙΣΟ ΑΝΔΡΙΚΟ A0412506-BLK </span>
+                        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+                            <span class="text-info" style="font-size:24px;">77,00&#8364;</span>
+                            <a href="#">
+                                <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-6 m-0 px-1">
+                <div class="card mb-2" style="max-height:620px; width:auto;" data-card-emailValue="email"
+                     data-card-phoneValue="phoneNumber"
+                     data-card-accountType="BS Change That Crap TODO"
+                     data-card-hiddenBySearch="false"
+                     data-card-hiddenByOtherFilters="false"
+                     data-card-isAccountActivated="true"
+                     data-card-isAccountSuspended="false">
+                    <div id="cardCarousel-3" class="carousel slide mt-2" data-bs-interval="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-3" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-3" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3 px-lg-5">
+                        <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 14px;"> VOLCOM 'FILIP RYGALSKI' ΠΟΥΚΑΜΙΣΟ ΑΝΔΡΙΚΟ A0412506-BLK </span>
+                        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+                            <span class="text-info" style="font-size:24px;">77,00&#8364;</span>
+                            <a href="#">
+                                <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-4 col-6 m-0 px-1">
+                <div class="card mb-2" style="max-height:620px; width:auto;" data-card-emailValue="email"
+                     data-card-phoneValue="phoneNumber"
+                     data-card-accountType="BS Change That Crap TODO"
+                     data-card-hiddenBySearch="false"
+                     data-card-hiddenByOtherFilters="false"
+                     data-card-isAccountActivated="true"
+                     data-card-isAccountSuspended="false">
+                    <div id="cardCarousel-4" class="carousel slide mt-2" data-bs-interval="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/Images/jacketBig.jpg" class="d-block w-100 img-fluid" style="max-height: 380px;">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-4" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-4" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3 px-lg-5">
+                        <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 14px;"> VOLCOM 'FILIP RYGALSKI' ΠΟΥΚΑΜΙΣΟ ΑΝΔΡΙΚΟ A0412506-BLK </span>
+                        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+                            <span class="text-info" style="font-size:24px;">77,00&#8364;</span>
+                            <a href="#">
+                                <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/filtersBehaviour.js"></script>
+
+    <script>
+        document.querySelectorAll('.custom-accordion-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isExpanded = content.classList.contains('expanded');
+
+                this.setAttribute('aria-expanded', !isExpanded);
+                this.classList.toggle('collapsed', !isExpanded);
+                content.classList.toggle('expanded', !isExpanded);
+            });
+        });
+
+        let itemsContainer = document.getElementById('itemsContainer');
+
+        function updateObjectsContainer() {
+            if (window.innerWidth < 1650) {
+                objectsSection.classList.remove('col-xl-9');
+                objectsSection.classList.add('col-xl-8');
+
+                Array.from(itemsContainer.children).forEach(cardItem => {
+                    cardItem.classList.remove('col-xl-2');
+                    cardItem.classList.remove('col-xl-3');
+                    cardItem.classList.add('col-xl-4');
+                });
+            }
+            else if (window.innerWidth < 2350) {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+
+                Array.from(itemsContainer.children).forEach(cardItem => {
+                    cardItem.classList.remove('col-xl-2');
+                    cardItem.classList.add('col-xl-3');
+                    cardItem.classList.remove('col-xl-4');
+                });
+            }
+            //for very big screens
+            else {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+
+                Array.from(itemsContainer.children).forEach(cardItem => {
+                    cardItem.classList.add('col-xl-2');
+                    cardItem.classList.remove('col-xl-3');
+                    cardItem.classList.remove('col-xl-4');
+                });
+            }
+        }
+
+        window.addEventListener("load", updateObjectsContainer);
+        window.addEventListener("resize", updateObjectsContainer);
+    </script>
+}

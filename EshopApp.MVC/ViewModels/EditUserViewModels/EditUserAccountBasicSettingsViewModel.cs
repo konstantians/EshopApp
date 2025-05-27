@@ -1,9 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EshopApp.MVC.ViewModels.EditAccountViewModels;
+namespace EshopApp.MVC.ViewModels.EditUserViewModels;
 
-public class ChangeAccountBasicSettingsViewModel
+public class EditUserAccountBasicSettingsViewModel
 {
+    [Required]
+    public string? UserId { get; set; }
+
     [MaxLength(128, ErrorMessage = "Firstname can not exceed 128 characters")]
     [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string? FirstName { get; set; }
@@ -16,4 +19,6 @@ public class ChangeAccountBasicSettingsViewModel
     [Display(Name = "Phone Number")]
     [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string? PhoneNumber { get; set; }
+
+    public bool AccountActivated { get; set; }
 }

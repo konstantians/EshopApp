@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Text.Json;
 
@@ -20,7 +21,32 @@ public static class HelperMethods
         return true;
     }
 
-    public static async Task<IActionResult?> CommonErrorValidation(Controller controller, ILogger logger, HttpResponseMessage response, string? responseBody, string redirectToAction, string redirectToController, bool responseBodyWasPassedIn = false)
+    //Think about this
+    public static List<(string Type, string Value)> GetClaimsFromToken(HttpRequest httpRequest)
+    {
+        var token = httpRequest.Cookies["EshopAppAuthenticationCookie"];
+        var handler = new JwtSecurityTokenHandler();
+
+        try
+        {
+            if (!handler.CanReadToken(token))
+                return new List<(string, string)>(); // or throw
+
+            var jwtToken = handler.ReadJwtToken(token);
+
+            return jwtToken.Claims
+                .Select(c => (Type: c.Type, Value: c.Value))
+                .ToList();
+        }
+        catch
+        {
+            // Log error if needed
+            return new List<(string, string)>();
+        }
+    }
+
+    public static async Task<IActionResult?> CommonErrorValidation(Controller controller, ILogger logger, HttpResponseMessage response, string? responseBody, string redirectToAction,
+        string redirectToController, object? routeValues = null, bool responseBodyWasPassedIn = false)
     {
         //this deals with 5xx errors
         if (response.StatusCode == HttpStatusCode.InternalServerError)
@@ -35,7 +61,7 @@ public static class HelperMethods
         if ((int)response.StatusCode >= 400 && string.IsNullOrEmpty(responseBody))
         {
             controller.TempData["UnknownError"] = true;
-            return controller.RedirectToAction(redirectToAction, redirectToController);
+            return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
         }
         //this deals with 4xx errors with non-empty response bodies
         else if ((int)response.StatusCode >= 400)
@@ -45,13 +71,13 @@ public static class HelperMethods
                 var responseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody!);
                 responseObject!.TryGetValue("errorMessage", out string? errorMessage);
                 controller.TempData[errorMessage ?? "UnknownError"] = true;
-                return controller.RedirectToAction(redirectToAction, redirectToController);
+                return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
             }
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Unexpected front end error");
                 controller.TempData["UnknownError"] = true;
-                return controller.RedirectToAction(redirectToAction, redirectToController);
+                return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
             }
         }
 

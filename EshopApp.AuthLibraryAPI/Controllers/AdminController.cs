@@ -128,7 +128,7 @@ public class AdminController : ControllerBase
 
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
             ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _adminProcedures.CreateUserAccountAsync(accessToken, expectedClaims, apiCreateUserRequestModel.Email!, apiCreateUserRequestModel.Password!,
-                apiCreateUserRequestModel.PhoneNumber!);
+                apiCreateUserRequestModel.PhoneNumber, apiCreateUserRequestModel.FirstName, apiCreateUserRequestModel.LastName);
 
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });

@@ -1,0 +1,743 @@
+﻿@model List<UiRole>
+
+@{
+    ViewData["Title"] = "Manage Roles";
+    List<(string, int)> claimsInRoles = new List<(string, int)>();
+    foreach (UiRole role in Model)
+    {
+        foreach (UiClaim claim in role.Claims)
+        {
+            int index = claimsInRoles.FindIndex(rc => rc.Item1 == claim.Value);
+            if (index == -1)
+                claimsInRoles.Add((claim.Value!, 1));
+            else
+                claimsInRoles[index] = (claimsInRoles[index].Item1, claimsInRoles[index].Item2 + 1);
+        }
+    }
+
+    List<UiClaim> systemClaims = (List<UiClaim>)ViewData["SystemClaims"]!;
+}
+
+<style>
+    .card:hover {
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+        /* cursor: pointer; */
+    }
+</style>
+
+<link href="~/css/filtersStyles.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.css" rel="stylesheet" />
+<link href="~/css/multiSelectStyles.css" rel="stylesheet"/>
+
+<div class="row mb-3">
+    <div class="col-8 offset-2 col-sm-6 offset-sm-3 col-lg-8 offset-lg-2 text-center">
+        <h3 class="mb-0">Ρόλοι Εφαρμογής</h3>
+    </div>
+    <div class="col-2 col-sm-3 col-lg-2 m-0 text-end px-2 px-sm-0 px-lg-2">
+        <a class="btn btn-outline-primary border border-1 d-none px-2 py-1" id="createRolePromptButton" data-bs-toggle="modal" data-bs-target="#createRoleModal">Δημιουργία Ρόλου</a>
+    </div>
+</div>
+
+<button id="filterToggleButton" class="btn btn-primary rounded-0 d-xl-none px-3" style="position: fixed; top: 320px; left: 0px; z-index: 1050; transform: rotate(-90deg);
+            transform-origin: top left; background-color:white !important; color: var(--accent-orange) !important; border: #aaa solid 1px; border-top:none; transition: left 0.4s ease;">
+    Φίλτρα
+</button>
+
+<div class="row">
+    <div class="col-3" id="filtersSection">
+        <div class="card" style="position: sticky !important; top:135px; align-self:flex-start !important;" id="cardFilters">
+            <div class="card-header d-none d-xl-block">
+                <h4 class="text-center mb-0">Φίλτρα</h4>
+            </div>
+            <div class="card-body">
+                <div class="p-3 border border-1 mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label id="searchLabel" for="searchInput" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
+                        <div class="btn-group dropdown" role="group">
+                            <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicator" class="fa-solid fa-user-tag"></i> </button>
+                            <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                            <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="roleName">Αναζήτηση με Τίτλο<i class="fa-solid fa-user-tag ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="roleId">Αναζήτηση με Id<i class="fa-solid fa-id-badge ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="searchInput" value="">
+                        <a class="btn btn-primary" id="searchButton"><i class="fas fa-search"></i></a>
+                    </div>
+                </div>
+
+                <div class="custom-accordion">
+                    <div class="custom-accordion-item">
+                        <button class="custom-accordion-button" type="button" aria-expanded="false">
+                            ΔΙΚΑΙΩΜΑΤΑ ΡΟΛΟΥ
+                        </button>
+                        <div class="custom-accordion-content">
+                            <ul class="list-unstyled" id="claimFiltersUl">
+                                @foreach ((string, int) claimInRole in claimsInRoles)
+                                {
+                                    <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight" data-claim-name="@claimInRole.Item1">
+                                        <label class="mb-0 text-smaller" style="cursor:pointer; flex: 1 1 auto; min-width:0; overflow:hidden; text-overflow: ellipsis">@claimInRole.Item1 (@claimInRole.Item2)</label>
+                                        <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer; margin-left:8px;flex: 0 0 auto !important;">
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-9" id="objectsSection">
+        <div class="row mb-1 mb-sm-2 px-2 px-sm-0 px-lg-2">
+            <div class="col-12 col-md-6 px-0">
+                <ul class="pagination justify-content-md-start justify-content-center align-items-center mb-1 mb-md-0 @(Model.Count > 18 ? "" : "d-none")" id="paginationUl" data-total-items="@Model.Count">
+                    <li class="page-item me-1" id="goToFirstPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span aria-hidden="true" class="text-md-biggest">«</span>
+                        </a>
+                    </li>
+                    <li class="page-item me-1" id="goToPreviousPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span class="text-md-biggest" aria-hidden="true">‹</span>
+                        </a>
+                    </li>
+                    <li class="page-item active page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">1</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Count > 54 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">2</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Count > 72 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">3</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Count > 90 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">4</a>
+                    </li>
+                    <li class="page-item disabled @(Model.Count > 108 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">…</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">@Math.Ceiling((double)@Model.Count / 18) </a>
+                    </li>
+                    <li class="page-item ms-1" id="goToNextPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1">
+                            <span aria-hidden="true" class="text-md-biggest">›</span>
+                        </a>
+                    </li>
+                    <li class="page-item ms-1" id="goToLastPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1182">
+                            <span aria-hidden="true" class="text-md-biggest">»</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-12 col-md-6 px-0 mb-1 mb-sm-0">
+                <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">
+                            Προεπιλεγμένη Σειρά
+                        </button>
+                        <ul class="dropdown-menu py-0" id="sortingDropdown">
+                            <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
+                            <li data-order="roleNameOrder"><a class="dropdown-item" href="#">Αλφαβητικά κατά Τίτλο Ρόλου</a></li>
+                            <li data-order="usersInRoleOrder"><a class="dropdown-item" href="#">Βάση Αριθμό Χρηστών Στον Ρόλο</a></li>
+                            <li data-order="claimsInRoleOrder"><a class="dropdown-item" href="#">Βάση Δικαιωμάτων Στον Ρόλο</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">
+                            18 Ανά Σελίδα
+                        </button>
+                        <ul class="dropdown-menu py-0">
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(120)" href="#">120 Ανά Σελίδα</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
+            <div class="table-responsive w-100 p-0">
+                <table class="table table-hover table-striped" id="rolesTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th class="text-nowrap">Τίτλος Ρόλου</th>
+                            <th class="text-nowrap">Χρήστες Στον Ρόλο</th>
+                            <th class="text-nowrap">Δικαιώματα Στον Ρόλο</th>
+                            <th>Επεξεργασία</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int counter = 0;
+                        }
+                        @foreach (UiRole role in Model)
+                        {
+                            if (counter > 17)
+                                break;
+
+                            <tr>
+                                <td class="text-nowrap">@role.Id</td>
+                                <td class="text-nowrap">@role.Name</td>
+                                <td class="text-nowrap">@role.UsersInRoleCount</td>
+                                <td class="text-nowrap">@role.Claims.Count</td>
+                                @if(role.Name != "User" && role.Name != "Admin")
+                                {
+                                    <td class="text-nowrap">
+                                        <a class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editRoleModal-@role.Id"><i class="fa-solid fa-user-pen"></i></a>
+                                        <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteRoleConfirmationModal-@role.Id"><i class="fa-solid fa-user-xmark"></i></a>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        <a class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewRoleModal-@role.Id"><i class="fa-solid fa-eye"></i></a>
+                                    </td>
+                                }
+                            </tr>
+
+                            counter++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade custom-center-modal" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="roleManagement" asp-action="CreateRole" id="createRoleForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Δημιουργία Ρόλου</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label for="roleNameCreateRoleModalInput" class="form-label"><i class="fa-solid fa-user-tag me-2"></i>Τίτλος Ρόλου</label>
+                    <input class="form-control" id="roleNameCreateRoleModalInput" type="text" data-custom-validation="false" name="roleName">
+                    <span id="roleNameCreateRoleModalValidationSpan" class="text-danger"></span>
+                </div>
+                
+                <label for="systemClaimsCreateRoleModalMultiSelect" class="form-label"><i class="fa-solid fa-key me-2"></i>Δικαιώματα Ρόλου</label>
+                <select id="systemClaimsCreateRoleModalMultiSelect" name="selectedClaims" multiple>
+                    @foreach (UiClaim systemClaim in systemClaims)
+                    {
+                        <option value="@systemClaim.Type|@systemClaim.Value">@systemClaim.Value</option>
+                    }
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelCreateRoleButton">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="createRoleButton" data-testid="createRoleButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@foreach (UiRole role in Model)
+{
+    if (role.Name == "User" || role.Name == "Admin")
+    {
+        <div class="modal fade custom-center-modal" id="viewRoleModal-@role.Id" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Επεξεργασία Δικαιωμάτων Ρόλου</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <label for="roleNameViewRoleModalInput" class="form-label"><i class="fa-solid fa-user-tag me-2"></i>Τίτλος Ρόλου</label>
+                            <input class="form-control" id="roleNameViewRoleModalInput" type="text" data-custom-validation="false" value="@role.Name" readonly>
+                        </div>
+
+                        <label for="systemClaimsViewRoleModalMultiSelect-@role.Id" class="form-label"><i class="fa-solid fa-key me-2"></i>Δικαιώματα Ρόλου</label>
+                        <select id="systemClaimsViewRoleModalMultiSelect-@role.Id" name="newClaims" multiple disabled>
+                            @foreach (UiClaim systemClaim in systemClaims)
+                            {
+                                var isSelected = role.Claims.Any(claim => claim.Type == systemClaim.Type && claim.Value == systemClaim.Value);
+                                if (isSelected)
+                                {
+                                    <option value="@systemClaim.Type|@systemClaim.Value" selected> @systemClaim.Value </option>
+                                }
+                                else
+                                {
+                                    <option value="@systemClaim.Type|@systemClaim.Value"> @systemClaim.Value </option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Εντάξει</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        continue;
+    }
+    
+    <div class="modal fade custom-center-modal" id="deleteRoleConfirmationModal-@role.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" asp-controller="roleManagement" asp-action="DeleteRole" id="deleteRoleForm-@role.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επιβεβαίωση Διαγραφής Λογαριασμού</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <strong style="font-size: 18px;">Η παρακάτω ενέργεια δεν είναι αντιστρέψιμη!</strong>
+                    <p>
+                        Αν είστε σίγουροι πως θέλετε να διαγράψατε τον συγκεκριμένο ρόλο παρακαλώ συμπληρώστε τον τίτλο του ρόλου και πατήστε συνέχεια.
+                    </p>
+                    <label for="modalDeleteRoleInput-@role.Id" class="form-label"><i class="fa-solid fa-user-tag me-2"></i>Τίτλος Ρόλου</label>
+                    <input class="form-control" id="modalDeleteRoleInput-@role.Id" type="text" data-custom-validation="false" data-testid="emailInput" data-role-name="@role.Name">
+                    <span id="modalDeleteRoleValidationSpan-@role.Id" class="text-danger"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelDeleteRoleButton-@role.Id">Ακύρωση</button>
+                    <button type="submit" class="btn btn-primary" id="deleteRoleButton-@role.Id" data-testid="deleteRoleButton-@role.Id">Συνέχεια</button>
+                </div>
+                <input name="roleId" value="@role.Id" hidden />
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade custom-center-modal" id="editRoleModal-@role.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" asp-controller="roleManagement" asp-action="EditRole" id="editRoleForm-@role.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επεξεργασία Δικαιωμάτων Ρόλου</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="roleNameEditRoleModalInput" class="form-label"><i class="fa-solid fa-user-tag me-2"></i>Τίτλος Ρόλου</label>
+                        <input class="form-control" id="roleNameEditRoleModalInput" type="text" data-custom-validation="false" value="@role.Name" readonly>
+                    </div>
+
+                    <label for="systemClaimsEditRoleModalMultiSelect-@role.Id" class="form-label"><i class="fa-solid fa-key me-2"></i>Δικαιώματα Ρόλου</label>
+                    <select id="systemClaimsEditRoleModalMultiSelect-@role.Id" name="newClaims" multiple>
+                        @foreach (UiClaim systemClaim in systemClaims)
+                        {
+                            var isSelected = role.Claims.Any(claim => claim.Type == systemClaim.Type && claim.Value == systemClaim.Value);
+                            if (isSelected)
+                            {
+                                <option value="@systemClaim.Type|@systemClaim.Value" selected> @systemClaim.Value </option>
+                            }
+                            else
+                            {
+                                <option value="@systemClaim.Type|@systemClaim.Value"> @systemClaim.Value </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelEditRoleButton-@role.Id">Ακύρωση</button>
+                    <button type="submit" class="btn btn-primary" id="editRoleButton-@role.Id" data-testid="cancelEditRoleButton-@role.Id">Συνέχεια</button>
+                </div>
+                <input name="roleId" value="@role.Id" hidden />
+            </form>
+        </div>
+    </div>
+}
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/customModals.js"></script>
+    <script type="text/javascript" src="~/js/filtersBehaviour.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.js"></script>
+    <script>
+        new SlimSelect({
+            select: '#systemClaimsCreateRoleModalMultiSelect',
+        placeholder: 'Επιλέξτε Δικαιώματα Ρόλου',
+        closeOnSelect: false,
+        showSearch: true,
+        searchPlaceholder: 'Αναζήτηση'
+        });
+
+        document.querySelectorAll('select[id^="systemClaimsViewRoleModalMultiSelect"]').forEach(select => {
+            new SlimSelect({
+                select: select,
+                placeholder: '',
+                closeOnSelect: false,
+                showSearch: false,
+            });
+        });
+
+        document.querySelectorAll('select[id^="systemClaimsEditRoleModalMultiSelect"]').forEach(select => {
+            new SlimSelect({
+                select: select,
+                placeholder: 'Επιλέξτε Νέα Δικαιώματα Ρόλου',
+                closeOnSelect: false,
+                showSearch: true,
+                searchPlaceholder: 'Αναζήτηση'
+            });
+        });
+
+        document.querySelectorAll('label[for^="systemClaims"]').forEach(label => {
+            label.addEventListener('click', () => {
+                const selectId = label.htmlFor;
+                //magic syntax to select the invisible input
+                //essentially it says find the closest ss-main and then inside it pick first .ss-search input element
+                //Also this line here might break if the slim library changes
+                const input = document.querySelector(`#${selectId} ~ .ss-main .ss-search input`);
+                if (input) input.focus();
+            });
+        });
+    </script>
+
+    <script>
+        let roles = JSON.parse('@Html.Raw(Json.Serialize(Model))');
+        roles = roles.map((role, index) => ({
+            ...role,
+            originalIndex: index,
+            isFilteredBySearch: false,
+            protectedByClaimLis: []
+        }));
+        let rolesTableTBody = document.getElementById('rolesTable').querySelector('tbody');
+        let rolesTrs = rolesTableTBody.querySelectorAll('tr');
+
+        let isClaimFilterActive = 0;
+        let searchInput = document.getElementById('searchInput');
+        let searchButtonIconIndicator = document.getElementById('searchButtonIconIndicator');
+        let searchMode = "roleName";
+
+        /* pagination change */
+        document.addEventListener('pagination:pageChange', function (event) {
+            renderRoles();
+        });
+
+        /* items per page change */
+        document.addEventListener('itemsPerPage:changed', function (event) {
+            renderRoles();
+        });
+
+        /* checkbox filters */
+        document.getElementById('claimFiltersUl').querySelectorAll('li').forEach(li => {
+            li.addEventListener("click", function () {
+                let filterCheckBox = li.querySelector('input');
+                let liClaimName = li.getAttribute('data-claim-name').toLowerCase().trim();
+                if (filterCheckBox.checked) {
+                    roles = roles.map(role => {
+                        const roleClaim = role.claims.find(claim => claim.value.toLowerCase() === liClaimName);
+                        if (roleClaim && !role.protectedByClaimLis.includes(liClaimName)) {
+                            role.protectedByClaimLis.push(liClaimName);
+                        }
+
+                        return role;
+                    });
+                    isClaimFilterActive++;
+                }
+                else {
+                    roles.forEach(role => {
+                        const index = role.protectedByClaimLis.indexOf(liClaimName);
+                        if (index > -1) {
+                            role.protectedByClaimLis.splice(index, 1);
+                        }
+                    });
+                    isClaimFilterActive--;
+                }
+
+                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
+                renderRoles();
+            });
+        });
+
+        /* search filters */
+        const searchModeLinks = document.querySelectorAll('a[data-search-mode]').forEach(link => {
+            link.addEventListener("click", function () {
+                if (searchMode === link.getAttribute('data-search-mode')) {
+                    return;
+                }
+
+                searchInput.value = "";
+                searchMode = link.getAttribute('data-search-mode');
+                if (searchMode === "roleName") {
+                    searchButtonIconIndicator.classList.remove('fa-id-badge');
+                    searchButtonIconIndicator.classList.add('fa-user-tag');
+                }
+                else if (searchMode === "roleId") {
+                    searchButtonIconIndicator.classList.remove('fa-user-tag');
+                    searchButtonIconIndicator.classList.add('fa-id-badge');
+                }
+
+                roles.forEach(role => role.isFilteredBySearch = false);
+                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
+                renderRoles();
+            });
+        });
+
+        let searchTimeOut;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeOut);
+            searchTimeOut = setTimeout(() => {
+                let query = searchInput.value.trim().toLowerCase();
+                if(query === ""){
+                    roles = roles.map(role => ({
+                        ...role,
+                        isFilteredBySearch: false
+                    }));
+                }
+                else if (searchMode === "roleName") {
+                    roles = roles.map(role => {
+                        const match = role.name?.toLowerCase().includes(query);
+                        return {
+                            ...role,
+                            isFilteredBySearch: !match
+                        };
+                    });
+                }
+                else if (searchMode === "roleId") {
+                    roles = roles.map(role => {
+                        const match = role.id?.toLowerCase().includes(query);
+                        return {
+                            ...role,
+                            isFilteredBySearch: !match
+                        };
+                    });
+                }
+
+                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
+                renderRoles();
+            }, 500);
+        });
+
+        function countHowManyRolesAreLeftUnfilteredAndUpdatePagination() {
+            let roleCount = 0;
+            roles.forEach(role => {
+                if (!role.isFilteredBySearch && (isClaimFilterActive === 0 || role.protectedByClaimLis.length > 0)) {
+                    roleCount++;
+                }
+            });
+
+            //this exists in filtersBehaviour.js
+            updateTotalItems(roleCount);
+        }
+
+        /* sorting */
+        document.getElementById('sortingDropdown').querySelectorAll('li').forEach(li => {
+            li.addEventListener('click', function () {
+                if (li.getAttribute('data-order') === "defaultOrder") {
+                    roles.sort((a, b) => a.originalIndex - b.originalIndex);
+                }
+                else if (li.getAttribute('data-order') === "roleNameOrder") {
+                    roles.sort((roleA, roleB) => (roleA.name || '').localeCompare(roleB.name || ''));
+                }
+                else if (li.getAttribute('data-order') === "usersInRoleOrder") {
+                    roles.sort((roleA, roleB) => (roleB.usersInRoleCount || 0) - (roleA.usersInRoleCount || 0));
+                }
+                else if (li.getAttribute('data-order') === "claimsInRoleOrder") {
+                    roles.sort((roleA, roleB) => (roleB.claims.length || 0) - (roleA.claims.length || 0));
+                }
+
+                renderRoles();
+            });
+        });
+
+        /* role rendering */
+        function renderRoles() {
+            rolesTableTBody.innerHTML = '';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            let counter = 0;
+            let renderedCount = 0;
+
+            for (const role of roles) {
+                if (renderedCount >= itemsPerPage) {
+                    break
+                };
+
+                if (role.isFilteredBySearch) {
+                    continue;
+                }
+                else if (isClaimFilterActive > 0 && role.protectedByClaimLis.length === 0) {
+                    continue;
+                }
+
+                if (counter < start) {
+                    counter++;
+                    continue;
+                }
+
+                let finalTd = `<td><a class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewRoleModal-${role.id}"><i class="fa-solid fa-eye"></i></a></td>`;
+                if (role.name.trim().toLowerCase() !== "admin" && role.name.trim().toLowerCase() !== "user") {
+                    finalTd = `
+                        <td class="text-nowrap">
+                            <a class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editRoleModal-${role.id}"><i class="fa-solid fa-user-pen"></i></a>
+                            <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteRoleConfirmationModal-${role.id}"><i class="fa-solid fa-user-xmark"></i></a>
+                        </td>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-nowrap">${role.id}</td>
+                    <td class="text-nowrap">${role.name}</td>
+                    <td class="text-nowrap">${role.usersInRoleCount}</td>
+                    <td class="text-nowrap">${role.claims.length}</td>
+                    ${finalTd}
+                `;
+                rolesTableTBody.appendChild(tr);
+
+                renderedCount++;
+                counter++;
+            }
+        }
+
+        /* ------------------------------------- */
+        document.querySelectorAll('.custom-accordion-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isExpanded = content.classList.contains('expanded');
+
+                this.setAttribute('aria-expanded', !isExpanded);
+                this.classList.toggle('collapsed', !isExpanded);
+                content.classList.toggle('expanded', !isExpanded);
+            });
+        });
+
+        let createRoleButton = document.getElementById('createRolePromptButton');
+        function updateCreateRoleButtonText() {
+            if (window.innerWidth < 576) {
+                createRoleButton.innerHTML = '<i class="fa-solid fa-user-plus"></i>';
+            }
+            else if (window.innerWidth < 1480) {
+                createRoleButton.innerHTML = 'Δημιουργία';
+                createRoleButton.classList.remove('py-1', 'px-2');
+            }
+            else {
+                createRoleButton.innerHTML = 'Δημιουργία Ρόλου';
+                createRoleButton.classList.remove('py-1', 'px-2');
+            }
+
+            createRoleButton.classList.remove('d-none');
+        }
+
+        window.addEventListener("load", updateCreateRoleButtonText);
+        window.addEventListener("resize", updateCreateRoleButtonText);
+
+        function updateObjectsContainer() {
+            if (window.innerWidth < 1650) {
+                objectsSection.classList.remove('col-xl-9');
+                objectsSection.classList.add('col-xl-8');
+            }
+            else if (window.innerWidth < 2350) {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+            }
+            //for very big screens
+            else {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+            }
+        }
+
+        window.addEventListener("load", updateObjectsContainer);
+        window.addEventListener("resize", updateObjectsContainer);
+
+        /* Delete Role Custom Modal Validation */
+        let modalDeleteRoleInputs = document.querySelectorAll('[id^="modalDeleteRoleInput"]');
+        modalDeleteRoleInputs.forEach(modalDeleteRoleInput => {
+            modalDeleteRoleInput.addEventListener("focusout", function () {
+                modalDeleteRoleInput.setAttribute('data-custom-validation', 'true');
+                let roleName = modalDeleteRoleInput.getAttribute('data-role-name');
+                if (modalDeleteRoleInput.value !== roleName) {
+                    modalDeleteRoleInput.nextElementSibling.textContent = "The provided value does not match the name of the role";
+                }
+                else {
+                    modalDeleteRoleInput.nextElementSibling.textContent = '';
+                }
+            });
+        });
+
+        modalDeleteRoleInputs.forEach(modalDeleteRoleInput => {
+            modalDeleteRoleInput.addEventListener("input", function () {
+                let roleName = modalDeleteRoleInput.getAttribute('data-role-name');
+                if (modalDeleteRoleInput.value === "" && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
+                    modalDeleteRoleInput.nextElementSibling.textContent = "This field is required";
+                }
+                else if (modalDeleteRoleInput.value !== roleName && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
+                    modalDeleteRoleInput.nextElementSibling.textContent = "The provided value does not match the name of the role";
+                }
+                else if (modalDeleteRoleInput.value === roleName && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
+                    modalDeleteRoleInput.nextElementSibling.textContent = '';
+                }
+            });
+        });
+
+        //this means pick all the ids that start with this "deleteRoleForm"
+        document.querySelectorAll('[id^="deleteRoleForm"]').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                let modalDeleteRoleInput = form.querySelector('input');
+                let modalDeleteRoleValidationSpan = form.querySelector('span');
+                if (modalDeleteRoleInput.getAttribute('data-custom-validation') !== 'true' || modalDeleteRoleValidationSpan.textContent !== '') {
+                    if (modalDeleteRoleInput.value === "") {
+                        modalDeleteRoleValidationSpan.textContent = "This field is required";
+                    }
+
+                    e.preventDefault();
+                }
+            });
+        });
+
+        /* Server Validation Handling */
+        const roleDeletionSuccess = '@TempData["RoleDeletionSuccess"]' === 'True';
+        const roleCreationSuccess = '@TempData["RoleCreationSuccess"]' === 'True';
+        const roleUpdateSuccess = '@TempData["RoleUpdateSuccess"]' === 'True';
+        const roleNotFoundWithGivenId = '@TempData["RoleNotFoundWithGivenId"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        let resultModal = document.getElementById("resultModal");
+
+        if (roleDeletionSuccess) {
+            resultModal.setAttribute("popUpValue", "roleDeletionSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Διαγραφής Ρόλου", "Ο ρόλος συστήματος διαγράφτηκε επιτυχώς!", "Επιτυχία",
+                "Ο ρόλος συστήματος διαγράφτηκε επιτυχώς!", "success");
+        }
+        else if(roleCreationSuccess){
+            resultModal.setAttribute("popUpValue", "roleCreationSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Δημιουργίας Ρόλου", "Ο ρόλος δημιουργήθηκε επιτυχώς, μπορείτε να τον διαχειριστείτε χρησιμοποιώντας αυτό το menu!", "Επιτυχία",
+                "Ο ρόλος δημιουργήθηκε επιτυχώς, μπορείτε να τον διαχειριστείτε χρησιμοποιώντας αυτό το menu!", "success");
+        }
+        else if(roleUpdateSuccess){
+            resultModal.setAttribute("popUpValue", "roleUpdateSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Επεξεργασίας Ρόλου", "Τα δικαιώματα του ρόλου ανανεώθηκαν επιτυχώς!", "Επιτυχία",
+                "Τα δικαιώματα του ρόλου ανανεώθηκαν επιτυχώς!", "success");
+        }
+        else if (roleNotFoundWithGivenId) {
+            resultModal.setAttribute("popUpValue", "roleNotFoundWithGivenId");
+            showPopUpModal('resultModal', "Αποτυχία Εύρεσης Ρόλου", "Ο ρόλος που προσπαθίσατε να τροποποιήσετε δεν βρέθηκε στο σύστημα. Παρακαλώ ανανεώστε την σελίδα σας και δοκιμάστε ξανά.",
+                "Αποτυχία", "Ο ρόλος που προσπαθίσατε να τροποποιήσετε δεν βρέθηκε στο σύστημα. Παρακαλώ ανανεώστε την σελίδα σας και δοκιμάστε ξανά.");
+        }
+        else if (unknownError) {
+            resultModal.setAttribute("popUpValue", "unknownError");
+            showPopUpModal('resultModal', "Αποτυχία Τροποποίησης Ρόλου", "Κάποιο πρόβλημα συνέβη από την μεριά του συστήματος. Παρακαλώ δοκιμάστε αργότερα.",
+                "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε αργότερα.");
+        }
+
+    </script>
+}

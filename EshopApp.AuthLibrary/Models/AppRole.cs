@@ -7,6 +7,9 @@ namespace EshopApp.AuthLibrary.Models;
 public class AppRole : IdentityRole
 {
     [NotMapped]
+    public int UsersInRoleCount { get; set; }
+
+    [NotMapped]
     public List<CustomClaim> Claims { get; set; } = new List<CustomClaim>();
 
     public AppRole() { }
