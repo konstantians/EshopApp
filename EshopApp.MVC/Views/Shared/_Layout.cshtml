@@ -154,6 +154,32 @@
                                     </a>
                                 </li>
 
+                                <li class="mt-3 text-center d-none user-account-link" data-claim="canManageProducts">
+                                    <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="ProductManagement" asp-action="ManageProducts">
+                                        <i class="fa-solid fa-users me-2"></i> Διαχείριση Προϊόντων
+                                    </a>
+                                </li>
+                                <li class="text-center d-none user-account-link mt-2" data-claim="canManageProducts">
+                                    <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="CategoryManagement" asp-action="ManageCategories">
+                                        <i class="fa-solid fa-layer-group me-2"></i> Διαχείριση Κατηγοριών
+                                    </a>
+                                </li>
+                                <li class="text-center d-none user-account-link" data-claim="canManageProducts">
+                                    <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="CategoryManagement" asp-action="ManageAttributes">
+                                        <i class="fa-solid fa-user-shield me-2"></i> Διαχείριση Χαρακτηριστικών
+                                    </a>
+                                </li>
+                                <li class="text-center d-none user-account-link" data-claim="canManageProducts">
+                                    <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="ImageManagement" asp-action="ManageImages">
+                                        <i class="fa-solid fa-user-shield me-2"></i> Διαχείριση Εικόνων
+                                    </a>
+                                </li>
+                                <li class="text-center d-none user-account-link" data-claim="canManageProducts">
+                                    <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="DiscountManagement" asp-action="ManageDiscounts">
+                                        <i class="fa-solid fa-user-shield me-2"></i> Διαχείριση Εκπτώσεων
+                                    </a>
+                                </li>
+
                                 <li class="mt-3 text-center user-account-link">
                                     <form asp-controller="Account" asp-action="LogOut" method="post">
                                         <button class="btn text-info text-decoration-none me-1 text-start px-3" type="submit">
@@ -250,6 +276,32 @@
                                     <li class="d-none text-center user-account-link" data-claim="canManageRoles">
                                         <a class="text-secondary text-decoration-none hover-black text-start px-3 me-1" asp-controller="RoleManagement" asp-action="ManageRoles">
                                             <i class="fa-solid fa-user-shield me-2"></i> Διαχείριση Ρόλων
+                                        </a>
+                                    </li>
+
+                                    <li class="mt-3 text-center d-none user-account-link" data-claim="canManageProducts">
+                                        <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="ProductManagement" asp-action="ManageProducts">
+                                            <i class="fa-solid fa-boxes-stacked me-2"></i> Διαχείριση Προϊόντων
+                                        </a>
+                                    </li>
+                                    <li class="text-center d-none user-account-link mt-2" data-claim="canManageProducts">
+                                        <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="CategoryManagement" asp-action="ManageCategories">
+                                            <i class="fa-solid fa-tag me-2"></i> Διαχείριση Κατηγοριών
+                                        </a>
+                                    </li>
+                                    <li class="text-center d-none user-account-link mt-2" data-claim="canManageProducts">
+                                        <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="CategoryManagement" asp-action="ManageAttributes">
+                                            <i class="fa-solid fa-sliders me-2"></i> Διαχείριση Χαρακτηριστικών
+                                        </a>
+                                    </li>
+                                    <li class="text-center d-none user-account-link mt-2" data-claim="canManageProducts">
+                                        <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="ImageManagement" asp-action="ManageImages">
+                                            <i class="fa-solid fa-image me-2"></i> Διαχείριση Εικόνων
+                                        </a>
+                                    </li>
+                                    <li class="text-center d-none user-account-link mt-2" data-claim="canManageProducts">
+                                        <a class="text-secondary text-decoration-none hover-black me-1 text-start px-3" asp-controller="DiscountManagement" asp-action="ManageDiscounts">
+                                            <i class="fa-solid fa-percent me-2"></i> Διαχείριση Εκπτώσεων
                                         </a>
                                     </li>
 
@@ -414,13 +466,23 @@
                             })
                         }
                     }
+                    if (data.claimValues.find(claimValue => claimValue.trim().toLowerCase() === "canmanageproducts")) {
+                        document.querySelectorAll('li[data-claim="canManageProducts"]').forEach(li => {
+                            li.classList.remove('d-none');
+                        });
 
-                        // this means no extra lis were shown
-                        if (aboveLiExists) {
-                            document.querySelectorAll('.user-account-link').forEach(li => {
-                                li.classList.remove('text-center');
-                            });
-                        }
+                        document.querySelectorAll('.dropdown-menu-user').forEach(menu => {
+                            menu.style.width = '280px';
+                        });
+                        aboveLiExists = true;
+                    }
+
+                    // this means no extra lis were shown
+                    if (aboveLiExists) {
+                        document.querySelectorAll('.user-account-link').forEach(li => {
+                            li.classList.remove('text-center');
+                        });
+                    }
                 }
                 else{
                     document.getElementById('dropdownUserMenuSmall').classList.remove('dropdown-menu', 'dropdown-menu-end', 'dropdown-menu-user');

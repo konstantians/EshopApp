@@ -78,6 +78,24 @@ function validateField(field) {
         }
     }
 
+    if (field.hasAttribute('data-val-range-min')) {
+        let minValue = parseInt(field.getAttribute('data-val-range-min'));
+        let fieldValue = parseInt(field.value.trim());
+        if (minValue > fieldValue) {
+            showValidationErrror(field, field.getAttribute('data-val-range'));
+            return false;
+        }
+    }
+
+    if (field.hasAttribute('data-val-range-max')) {
+        let maxValue = parseInt(field.getAttribute('data-val-range-max'));
+        let fieldValue = parseInt(field.value.trim());
+        if (maxValue < fieldValue) {
+            showValidationErrror(field, field.getAttribute('data-val-range'));
+            return false;
+        }
+    }
+
     //regex validation if data-val-regex-pattern exists
     if (field.hasAttribute("data-val-regex-pattern")) {
         const regexPattern = new RegExp(field.getAttribute("data-val-regex-pattern"));

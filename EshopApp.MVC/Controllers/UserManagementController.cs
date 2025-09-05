@@ -172,7 +172,6 @@ public class UserManagementController : Controller
         }
 
         //if status code is 201
-        //TODO add a tempcode so that an alert can appear
         TempData["UserCreationSuccess"] = true;
         return RedirectToAction("ManageUsers", "UserManagement");
     }

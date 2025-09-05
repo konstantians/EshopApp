@@ -21,7 +21,11 @@
 <style>
     .card:hover {
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
-        /* cursor: pointer; */
+    }
+
+    .dropdown-menu {
+        min-width: 100%;
+        width: auto;
     }
 </style>
 
@@ -57,8 +61,8 @@
                             <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicator" class="fa-solid fa-user-tag"></i> </button>
                             <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
                             <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
-                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="roleName">Αναζήτηση με Τίτλο<i class="fa-solid fa-user-tag ms-2"></i></a>
-                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="roleId">Αναζήτηση με Id<i class="fa-solid fa-id-badge ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="name" data-search-mode-icon="fa-user-tag">Αναζήτηση με Τίτλο<i class="fa-solid fa-user-tag ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="id" data-search-mode-icon="fa-id-badge">Αναζήτηση με Id<i class="fa-solid fa-id-badge ms-2"></i></a>
                             </div>
                         </div>
                     </div>
@@ -77,7 +81,7 @@
                             <ul class="list-unstyled" id="claimFiltersUl">
                                 @foreach ((string, int) claimInRole in claimsInRoles)
                                 {
-                                    <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight" data-claim-name="@claimInRole.Item1">
+                                    <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight" data-filter="@claimInRole.Item1">
                                         <label class="mb-0 text-smaller" style="cursor:pointer; flex: 1 1 auto; min-width:0; overflow:hidden; text-overflow: ellipsis">@claimInRole.Item1 (@claimInRole.Item2)</label>
                                         <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer; margin-left:8px;flex: 0 0 auto !important;">
                                     </li>
@@ -136,20 +140,16 @@
             <div class="col-12 col-md-6 px-0 mb-1 mb-sm-0">
                 <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
                     <div class="dropdown option-dropdown">
-                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">
-                            Προεπιλεγμένη Σειρά
-                        </button>
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
                         <ul class="dropdown-menu py-0" id="sortingDropdown">
-                            <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
-                            <li data-order="roleNameOrder"><a class="dropdown-item" href="#">Αλφαβητικά κατά Τίτλο Ρόλου</a></li>
-                            <li data-order="usersInRoleOrder"><a class="dropdown-item" href="#">Βάση Αριθμό Χρηστών Στον Ρόλο</a></li>
-                            <li data-order="claimsInRoleOrder"><a class="dropdown-item" href="#">Βάση Δικαιωμάτων Στον Ρόλο</a></li>
+                            <li data-order="defaultOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
+                            <li data-order="nameOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Τίτλο Ρόλου</a></li>
+                            <li data-order="usersInRoleCountOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Βάση Αριθμό Χρηστών Στον Ρόλο</a></li>
+                            <li data-order="claimsOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Βάση Δικαιωμάτων Στον Ρόλο</a></li>
                         </ul>
                     </div>
                     <div class="dropdown option-dropdown">
-                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">
-                            18 Ανά Σελίδα
-                        </button>
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
                         <ul class="dropdown-menu py-0">
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
@@ -369,6 +369,7 @@
 @section Scripts {
     <script type="text/javascript" src="~/js/customModals.js"></script>
     <script type="text/javascript" src="~/js/filtersBehaviour.js"></script>
+    <script type="text/javascript" src="~/js/filtersRepeatedNonStaticCode.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.js"></script>
     <script>
@@ -419,172 +420,47 @@
             isFilteredBySearch: false,
             protectedByClaimLis: []
         }));
-        let rolesTableTBody = document.getElementById('rolesTable').querySelector('tbody');
-        let rolesTrs = rolesTableTBody.querySelectorAll('tr');
-
-        let isClaimFilterActive = 0;
-        let searchInput = document.getElementById('searchInput');
-        let searchButtonIconIndicator = document.getElementById('searchButtonIconIndicator');
-        let searchMode = "roleName";
+        let tbody = document.getElementById('rolesTable').querySelector('tbody');
+        let isClaimFilterActive = { value: 0 };
 
         /* pagination change */
         document.addEventListener('pagination:pageChange', function (event) {
-            renderRoles();
+            renderTable(roles);
         });
 
         /* items per page change */
         document.addEventListener('itemsPerPage:changed', function (event) {
-            renderRoles();
+            renderTable(roles);
         });
 
-        /* checkbox filters */
-        document.getElementById('claimFiltersUl').querySelectorAll('li').forEach(li => {
-            li.addEventListener("click", function () {
-                let filterCheckBox = li.querySelector('input');
-                let liClaimName = li.getAttribute('data-claim-name').toLowerCase().trim();
-                if (filterCheckBox.checked) {
-                    roles = roles.map(role => {
-                        const roleClaim = role.claims.find(claim => claim.value.toLowerCase() === liClaimName);
-                        if (roleClaim && !role.protectedByClaimLis.includes(liClaimName)) {
-                            role.protectedByClaimLis.push(liClaimName);
-                        }
-
-                        return role;
-                    });
-                    isClaimFilterActive++;
-                }
-                else {
-                    roles.forEach(role => {
-                        const index = role.protectedByClaimLis.indexOf(liClaimName);
-                        if (index > -1) {
-                            role.protectedByClaimLis.splice(index, 1);
-                        }
-                    });
-                    isClaimFilterActive--;
-                }
-
-                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
-                renderRoles();
-            });
-        });
-
-        /* search filters */
-        const searchModeLinks = document.querySelectorAll('a[data-search-mode]').forEach(link => {
-            link.addEventListener("click", function () {
-                if (searchMode === link.getAttribute('data-search-mode')) {
-                    return;
-                }
-
-                searchInput.value = "";
-                searchMode = link.getAttribute('data-search-mode');
-                if (searchMode === "roleName") {
-                    searchButtonIconIndicator.classList.remove('fa-id-badge');
-                    searchButtonIconIndicator.classList.add('fa-user-tag');
-                }
-                else if (searchMode === "roleId") {
-                    searchButtonIconIndicator.classList.remove('fa-user-tag');
-                    searchButtonIconIndicator.classList.add('fa-id-badge');
-                }
-
-                roles.forEach(role => role.isFilteredBySearch = false);
-                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
-                renderRoles();
-            });
-        });
-
-        let searchTimeOut;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeOut);
-            searchTimeOut = setTimeout(() => {
-                let query = searchInput.value.trim().toLowerCase();
-                if(query === ""){
-                    roles = roles.map(role => ({
-                        ...role,
-                        isFilteredBySearch: false
-                    }));
-                }
-                else if (searchMode === "roleName") {
-                    roles = roles.map(role => {
-                        const match = role.name?.toLowerCase().includes(query);
-                        return {
-                            ...role,
-                            isFilteredBySearch: !match
-                        };
-                    });
-                }
-                else if (searchMode === "roleId") {
-                    roles = roles.map(role => {
-                        const match = role.id?.toLowerCase().includes(query);
-                        return {
-                            ...role,
-                            isFilteredBySearch: !match
-                        };
-                    });
-                }
-
-                countHowManyRolesAreLeftUnfilteredAndUpdatePagination();
-                renderRoles();
-            }, 500);
-        });
-
-        function countHowManyRolesAreLeftUnfilteredAndUpdatePagination() {
-            let roleCount = 0;
+        function countHowManyEntriesAreLeftUnfilteredAndUpdatePagination() {
+            let count = 0;
             roles.forEach(role => {
-                if (!role.isFilteredBySearch && (isClaimFilterActive === 0 || role.protectedByClaimLis.length > 0)) {
-                    roleCount++;
+                if (!role.isFilteredBySearch && (isClaimFilterActive.value === 0 || role.protectedByClaimLis.length > 0)) {
+                    count++;
                 }
             });
 
-            //this exists in filtersBehaviour.js
-            updateTotalItems(roleCount);
+            updateTotalItems(count);
         }
 
-        /* sorting */
-        document.getElementById('sortingDropdown').querySelectorAll('li').forEach(li => {
-            li.addEventListener('click', function () {
-                if (li.getAttribute('data-order') === "defaultOrder") {
-                    roles.sort((a, b) => a.originalIndex - b.originalIndex);
+        function claimFilterCheckboxCheckedProcedures(liClaimName, li){
+            roles.forEach(role => {
+                const roleClaim = role.claims.find(claim => claim.value.toLowerCase() === liClaimName);
+                if (roleClaim && !role.protectedByClaimLis.includes(liClaimName)) {
+                    role.protectedByClaimLis.push(liClaimName);
                 }
-                else if (li.getAttribute('data-order') === "roleNameOrder") {
-                    roles.sort((roleA, roleB) => (roleA.name || '').localeCompare(roleB.name || ''));
-                }
-                else if (li.getAttribute('data-order') === "usersInRoleOrder") {
-                    roles.sort((roleA, roleB) => (roleB.usersInRoleCount || 0) - (roleA.usersInRoleCount || 0));
-                }
-                else if (li.getAttribute('data-order') === "claimsInRoleOrder") {
-                    roles.sort((roleA, roleB) => (roleB.claims.length || 0) - (roleA.claims.length || 0));
-                }
-
-                renderRoles();
             });
-        });
 
-        /* role rendering */
-        function renderRoles() {
-            rolesTableTBody.innerHTML = '';
+            isClaimFilterActive.value++;
+        }
 
-            const start = (currentPage - 1) * itemsPerPage;
-            let counter = 0;
-            let renderedCount = 0;
+        function checkIfItemFilteredByCheckboxFilters(item){
+            return (isClaimFilterActive.value > 0 && item.protectedByClaimLis.length === 0);
+        }
 
-            for (const role of roles) {
-                if (renderedCount >= itemsPerPage) {
-                    break
-                };
-
-                if (role.isFilteredBySearch) {
-                    continue;
-                }
-                else if (isClaimFilterActive > 0 && role.protectedByClaimLis.length === 0) {
-                    continue;
-                }
-
-                if (counter < start) {
-                    counter++;
-                    continue;
-                }
-
-                let finalTd = `<td><a class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewRoleModal-${role.id}"><i class="fa-solid fa-eye"></i></a></td>`;
+        function addTrToTableBody(role){
+            let finalTd = `<td><a class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewRoleModal-${role.id}"><i class="fa-solid fa-eye"></i></a></td>`;
                 if (role.name.trim().toLowerCase() !== "admin" && role.name.trim().toLowerCase() !== "user") {
                     finalTd = `
                         <td class="text-nowrap">
@@ -601,12 +477,13 @@
                     <td class="text-nowrap">${role.claims.length}</td>
                     ${finalTd}
                 `;
-                rolesTableTBody.appendChild(tr);
-
-                renderedCount++;
-                counter++;
-            }
+                tbody.appendChild(tr);
         }
+
+        setUpSortingDropdownListeners(roles);
+        setUpSearchInputMode(roles, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpSearchInput(roles, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpCheckBoxFilterUl('claimFiltersUl', claimFilterCheckboxCheckedProcedures, 'protectedByClaimLis', isClaimFilterActive, roles, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
 
         /* ------------------------------------- */
         document.querySelectorAll('.custom-accordion-button').forEach(button => {
@@ -659,50 +536,7 @@
         window.addEventListener("load", updateObjectsContainer);
         window.addEventListener("resize", updateObjectsContainer);
 
-        /* Delete Role Custom Modal Validation */
-        let modalDeleteRoleInputs = document.querySelectorAll('[id^="modalDeleteRoleInput"]');
-        modalDeleteRoleInputs.forEach(modalDeleteRoleInput => {
-            modalDeleteRoleInput.addEventListener("focusout", function () {
-                modalDeleteRoleInput.setAttribute('data-custom-validation', 'true');
-                let roleName = modalDeleteRoleInput.getAttribute('data-role-name');
-                if (modalDeleteRoleInput.value !== roleName) {
-                    modalDeleteRoleInput.nextElementSibling.textContent = "The provided value does not match the name of the role";
-                }
-                else {
-                    modalDeleteRoleInput.nextElementSibling.textContent = '';
-                }
-            });
-        });
-
-        modalDeleteRoleInputs.forEach(modalDeleteRoleInput => {
-            modalDeleteRoleInput.addEventListener("input", function () {
-                let roleName = modalDeleteRoleInput.getAttribute('data-role-name');
-                if (modalDeleteRoleInput.value === "" && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteRoleInput.nextElementSibling.textContent = "This field is required";
-                }
-                else if (modalDeleteRoleInput.value !== roleName && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteRoleInput.nextElementSibling.textContent = "The provided value does not match the name of the role";
-                }
-                else if (modalDeleteRoleInput.value === roleName && modalDeleteRoleInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteRoleInput.nextElementSibling.textContent = '';
-                }
-            });
-        });
-
-        //this means pick all the ids that start with this "deleteRoleForm"
-        document.querySelectorAll('[id^="deleteRoleForm"]').forEach(form => {
-            form.addEventListener('submit', function (e) {
-                let modalDeleteRoleInput = form.querySelector('input');
-                let modalDeleteRoleValidationSpan = form.querySelector('span');
-                if (modalDeleteRoleInput.getAttribute('data-custom-validation') !== 'true' || modalDeleteRoleValidationSpan.textContent !== '') {
-                    if (modalDeleteRoleInput.value === "") {
-                        modalDeleteRoleValidationSpan.textContent = "This field is required";
-                    }
-
-                    e.preventDefault();
-                }
-            });
-        });
+        setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteRoleConfirmationModal', 'deleteRoleForm', 'modalDeleteRoleInput', 'data-role-name', "The provided value does not match the name of the role");
 
         /* Server Validation Handling */
         const roleDeletionSuccess = '@TempData["RoleDeletionSuccess"]' === 'True';

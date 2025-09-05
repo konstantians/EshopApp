@@ -1,0 +1,354 @@
+﻿@model CreateProductViewModel
+
+@{
+    ViewData["Title"] = "Create Product";
+    List<UiCategory>? categories = ViewData["Categories"] as List<UiCategory> ?? new List<UiCategory>();
+    List<UiAttribute>? attributes = ViewData["Attributes"] as List<UiAttribute> ?? new List<UiAttribute>();
+    List<UiDiscount>? discounts = ViewData["Discounts"] as List<UiDiscount> ?? new List<UiDiscount>();
+    List<UiImage>? images = ViewData["Images"] as List<UiImage> ?? new List<UiImage>();
+}
+
+<link href="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.css" rel="stylesheet" />
+<link href="~/css/multiSelectStyles.css" rel="stylesheet" />
+
+<style>
+     .form-check-input {
+          width: 1.35rem !important;
+          height: 1.35rem !important;
+          border: 2px solid #ced4da !important
+    }
+
+    .image-selectable {
+        border-radius: 4px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .image-selectable.selected {
+        background-color: var(--accent-orange);
+    }
+</style>
+
+@* <style>
+    .custom-orange-select {
+        border-radius: 5px;
+        padding: 0.5rem;
+        font-weight: bold;
+        appearance: none; /* removes native arrow in some browsers */
+        background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='20' width='20' viewBox='0 0 20 20'><path d='M5.516 7.548l4.487 4.487 4.487-4.487-1.06-1.06-3.427 3.426-3.427-3.426z'/></svg>");
+        background-repeat: no-repeat;
+        background-position-x: 95%;
+        background-position-y: center;
+    }
+
+        .custom-orange-select:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(255, 165, 0, 0.8);
+        }
+</style> *@
+
+<form class="row" asp-controller="ProductManagement" asp-action="CreateProduct" id="createProductForm">
+    <div class="col-lg-4 col-12 mx-auto" id="productSection">
+        <h4 class="text-center mb-3 mb-lg-4" data-testid="basicSettingsHeader">Στοιχεία Προϊόντος</h4>
+        <div class="mb-4">
+            <label class="form-label" asp-for="Code"><i class="fa-solid fa-tag me-2"></i>Κωδικός</label>
+            <input type="text" class="form-control" asp-for="Code" placeholder="Enter product code" data-testid="productCodeInput">
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label class="form-label" asp-for="Name"><i class="fa-solid fa-box me-2"></i>Όνομα</label>
+            <input type="text" class="form-control" asp-for="Name" placeholder="Enter product name" data-testid="productNameInput">
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label class="form-label" asp-for="Description"><i class="fa-solid fa-pen-to-square me-2"></i>Περιγραφή</label>
+            <textarea class="form-control" asp-for="Description" data-testid="productDescriptionTextArea" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        @if (categories is not null)
+        {
+            <div class="mb-4">
+                <label for="CategoryIds" class="form-label"><i class="fa-solid fa-box-archive me-2"></i>Κατηγορίες</label>
+                <select asp-for="CategoryIds" multiple>
+                    @foreach (UiCategory category in categories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        <div style="margin-bottom: 1.75rem;" class="d-flex align-items-center justify-content-between">
+            <label class="form-check-label me-2 text-bigger" asp-for="IsActivated">Ενεργοποίηση Προϊόντος</label>
+            <input class="form-check-input rounded-0" type="checkbox" asp-for="IsActivated" checked/>
+        </div>
+    </div>
+    <div class="col-lg-8 col-12 mx-auto" id="variantSection">
+        <h4 class="text-center mb-3 mb-lg-4">Στοιχεία Παραλαγής Προϊόντος</h4>
+        <div class="row">
+            <div class="col-lg-6 col-12 mb-4">
+                <label class="form-label" asp-for="CreateVariantRequestModel.SKU"><i class="fa-solid fa-tag me-2"></i>SKU</label>
+                <input type="text" class="form-control" asp-for="CreateVariantRequestModel.SKU" placeholder="Enter variant SKU" data-testid="variantSkuInput">
+                <span asp-validation-for="CreateVariantRequestModel.SKU" class="text-danger"></span>
+            </div>
+            <div class="col-lg-6 col-12 mb-4">
+                <label class="form-label" asp-for="CreateVariantRequestModel.Price"><i class="fa-solid fa-money-bill-wave me-2"></i>Τιμή</label>
+                <input type="number" class="form-control" asp-for="CreateVariantRequestModel.Price" placeholder="Enter variant price" data-testid="variantPriceInput" step="0.01">
+                <span asp-validation-for="CreateVariantRequestModel.Price" class="text-danger"></span>
+            </div>
+            <div class="col-lg-6 col-12 mb-4">
+                <label class="form-label" asp-for="CreateVariantRequestModel.UnitsInStock"><i class="fa-solid 	fa-chart-bar me-2"></i>Διαθέσιμες Μονάδες</label>
+                <input type="number" class="form-control" asp-for="CreateVariantRequestModel.UnitsInStock" placeholder="Enter variant units count" data-testid="CreateVariantViewModel.UnitsInStock">
+                <span asp-validation-for="CreateVariantRequestModel.UnitsInStock" class="text-danger"></span>
+            </div>
+            <div class="col-lg-6 col-12 mb-4">
+                @if (discounts is not null)
+                    {
+                        <label class="form-label" id="discountLabel"><i class="fa-solid fa-money-bill-wave me-2"></i>Έκπτωση</label>
+                        <div class="dropdown">
+                            <button class="form-select text-start custom-outline" type="button" id="discountDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">Καμία έκπτωση</button>
+                            <ul class="dropdown-menu w-100 py-0" aria-labelledby="discountDropdownButton" id="discountsDropdown">
+                                <li><a class="dropdown-item" href="#" data-value="noDiscount">Καμία έκπτωση</a></li>
+                                @foreach (UiDiscount discount in discounts)
+                                {
+                                    <li><a class="dropdown-item" href="#" data-value="@discount.Id">@discount.Name | @discount.Percentage%</a></li>
+                                }
+                            </ul>
+                        </div>
+
+                        <input type="hidden" asp-for="CreateVariantRequestModel.DiscountId" value="noDiscount">
+                 }
+            </div>
+            <div class="col-lg-6 col-12 mb-4">
+                @if (attributes is not null)
+                {
+                    <label for="attributesMultiSelect" class="form-label"><i class="fa-solid fa-sliders me-2"></i>Χαρακτηριστικά</label>
+                    <select asp-for="CreateVariantRequestModel.AttributeIds" multiple>
+                        @foreach (UiAttribute uiAttribute in attributes)
+                        {
+                            <option value="attribute.Id">@uiAttribute.Name</option>
+                        }
+                    </select>
+                }
+            </div>
+            <div class="col-lg-6 col-12 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label class="form-label" for="imagePickerInput"><i class="fa-solid fa-image me-2"></i>Εικόνες</label>
+                    <i id="imagePickerToggleGaleryIcon" class="fas fa-eye" style="cursor:pointer;"></i>
+                </div>
+                <input type="text" class="form-control" placeholder="Add images..." readonly id="imagePickerInput" style="cursor: pointer;background-color:white;"/>
+            </div>
+            <div class="col-12 mb-4 d-none">
+                <label class="form-label"><i class="fa-solid fa-image me-2"></i>Επιλεγμένες Εικόνες</label>
+                <div class="row g-3" style="max-height:400px;overflow-y:auto" id="imagePickerGallery" data-col-structure="col-6 col-sm-4 col-lg-3 col-xl-4 col-xxxl-2">
+
+                </div>
+            </div>
+            <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <label class="form-check-label me-2 text-bigger" asp-for="CreateVariantRequestModel.IsThumbnailVariant">Thumbnail Variant</label>
+                    <input class="form-check-input rounded-0" type="checkbox" asp-for="CreateVariantRequestModel.IsThumbnailVariant" checked/>
+                </div>
+            </div>
+            <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <label class="form-check-label me-2 text-bigger" asp-for="CreateVariantRequestModel.IsActivated">Ενεργοποίηση Variant</label>
+                    <input class="form-check-input rounded-0" type="checkbox" asp-for="CreateVariantRequestModel.IsActivated" checked/>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input asp-for="CreateVariantRequestModel.ProductId" value="newProductId" hidden>
+    <div class="d-flex justify-content-center mt-3 mt-lg-5 px-0">
+        <a asp-controller="ProductManagement" asp-action="ManageProducts" class="btn btn-secondary me-4 px-3 py-2" style="min-width:179px;" id="returnBackButton" data-testid="returnBackButton">Επιστροφή Στην Διαχείριση</a>
+        <button type="submit" class="btn btn-primary px-3 py-2" style="min-width:179px;" id="createProductButton" data-testid="createProductButton">Δημιουργία Νέου Προϊόντος</button>
+    </div>
+    <input asp-for="CreateVariantRequestModel.ImageIds" value="" hidden/>
+</form>
+
+<div class="modal fade custom-image-picker-modal" id="imagePickerModal" tabindex="-1" aria-labelledby="imagePickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Επιλογή Φωτογραφιών</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row mb-3 align-items-center">
+                    <div class="col-10 col-sm-8 col-lg-6">
+                        <div class="input-group">
+                            <input type="text" id="imageSearch" class="form-control" placeholder="Αναζήτηση φωτογραφίας...">
+                            <button type="button" class="btn btn-secondary border-0" id="searchButton"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-2 col-sm-4 offset-lg-2 col-lg-4 text-end">
+                        <label class="btn btn-outline-primary mb-0 border border-1">
+                            <i id="uploadFileButtonIcon" class="fa fa-upload me-1"></i><span id="uploadFileButtonText"> Προσθήκη από δίσκο</span><input type="file" id="imageUpload" accept="image" hidden>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row g-3" id="imageGrid" data-save-to-input-with-id="CreateVariantRequestModel_ImageIds">
+                    @foreach (UiImage image in images)
+                    {
+                        <div class="col-6 col-sm-4 col-lg-2">
+                            <div class="image-selectable text-center border p-1" data-id="@image.Id" data-name="@image.Name">
+                                <img src="/DynamicImages/@image.ImagePath" height="135" style="width:100%" />
+                                <div class="text-truncate p-1" style="background-color:white;" title="@image.Name">@image.Name</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelSaveImagesButton">Ακύρωση</button>
+                <button type="button" class="btn btn-primary" id="saveImagesButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="~/js/customImagePicker.js"></script>
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customModals.js"></script>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.js"></script>
+    <script type="text/javascript" src="~/js/customSelect.js"></script>
+    <script>
+        new SlimSelect({select: '#CategoryIds',
+        placeholder: 'Επιλέξτε Κατηγορίες Προϊόντος',
+        closeOnSelect: false,
+        showSearch: true,
+        searchPlaceholder: 'Αναζήτηση'
+        });
+
+        new SlimSelect({select: '#CreateVariantRequestModel_AttributeIds',
+        placeholder: 'Επιλέξτε Χαρακτηριστικά Παραλλαγής Προϊόντος',
+        closeOnSelect: false,
+        showSearch: true,
+        searchPlaceholder: 'Αναζήτηση'
+        });
+    </script>
+
+    <script>
+        function updateFormSizeClasses() {
+            const productSection = document.getElementById("productSection");
+            const variantSection = document.getElementById("variantSection");
+            const returnBackButton = document.getElementById('returnBackButton');
+            const createProductButton = document.getElementById('createProductButton');
+
+            if (window.innerWidth < 576) {
+                productSection.style.width = "66%";
+                variantSection.style.width = "66%";
+            }
+            else if (window.innerWidth < 992) {
+                productSection.style.width = "80%";
+                variantSection.style.width = "80%";
+            }
+            else {
+                productSection.style.width = "";
+                variantSection.style.width = "";
+            }
+
+            if(window.innerWidth < 576){
+                returnBackButton.textContent = "Επιστροφή";
+                createProductButton.textContent = "Δημιουργία";
+                returnBackButton.style.minWidth = "";
+                createProductButton.style.minWidth = "";
+            }
+            else if (window.innerWidth < 992) {
+                returnBackButton.textContent = "Επιστροφή";
+                createProductButton.textContent = "Δημιουργία";
+                returnBackButton.style.minWidth = "179px";
+                createProductButton.style.minWidth = "179px";
+            }
+            else {
+                returnBackButton.textContent = "Επιστροφή Στην Διαχείριση";
+                createProductButton.textContent = "Δημιουργία Νέου Προϊόντος";
+                returnBackButton.style.minWidth = "145px";
+                createProductButton.style.minWidth = "145px";
+            }
+
+            // if (window.innerWidth < 576) {
+            //     sensitiveSettingsSection.style.maxWidth = "";
+            //     basicSettingsSection.style.maxWidth = "";
+            // }
+            // else if (window.innerWidth < 992) {
+            //     basicSettingsSection.style.maxWidth = "500px";
+            //     sensitiveSettingsSection.style.maxWidth = "500px";
+            // }
+            // else if (window.innerWidth >= 992) {
+            //     sensitiveSettingsSection.style.maxWidth = "540px";
+            //     basicSettingsSection.style.maxWidth = "540px";
+            // }
+        }
+
+        window.addEventListener("load", updateFormSizeClasses);
+        window.addEventListener("resize", updateFormSizeClasses);
+
+        setUpCustomSelect('discountDropdownButton', 'discountLabel', 'CreateVariantViewModel_DiscountId'); //exists in customSelect.js
+        setImagePicker('imagePickerInput', 'imagePickerModal', 'imagePickerGallery', 'imagePickerToggleGaleryIcon');
+
+        //this is coming from the customValidation script
+        /* Client Validation Handling */
+        setUpValidationListeners();
+        setUpFormSubmissionValidationListener("createProductForm");
+
+        /* Server Validation Handling */
+        const duplicateProductCode = '@TempData["DuplicateProductCode"]' === 'True';
+        const duplicateEntityName = '@TempData["DuplicateEntityName"]' === 'True';
+        const duplicateVariantSku = '@TempData["DuplicateVariantSku"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        let resultModal = document.getElementById("resultModal");
+
+        if(duplicateProductCode){
+            resultModal.setAttribute("popUpValue", "duplicateProductCode");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Προϊόντος", "Ο κωδικός προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο κωδικός προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό προϊόντος.");
+        }
+        else if(duplicateEntityName){
+            resultModal.setAttribute("popUpValue", "duplicateEntityName");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Προϊόντος", "Ο τίτλος προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο τίτλος προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο προϊόντος.");
+        }
+        else if(duplicateVariantSku){
+            resultModal.setAttribute("popUpValue", "duplicateEntitySku");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Προϊόντος", "Το sku της παραλλαγής προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Το sku της παραλλαγής προϊόντος που εισήγατε κατά την δημιουργία του νέου προϊόντος υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος.");
+        }
+        else if (unknownError) {
+            resultModal.setAttribute("popUpValue", "unknownError");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Λογαριασμού", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα.",
+                "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα.");
+        }
+    </script>
+}
