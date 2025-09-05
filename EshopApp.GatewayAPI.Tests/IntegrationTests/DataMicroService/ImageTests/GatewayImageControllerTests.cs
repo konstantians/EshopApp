@@ -166,7 +166,7 @@ internal class GatewayImageControllerTests
         testImage.Should().NotBeNull();
         testImage!.Id.Should().NotBeNull();
         testImage!.Name.Should().NotBeNull().And.Be(testGatewayCreateImageRequestModel.Name);
-        testImage!.ImagePath.Should().NotBeNull().And.StartWith(testGatewayCreateImageRequestModel.Name + "_");
+        //testImage!.ImagePath.Should().NotBeNull().And.StartWith(testGatewayCreateImageRequestModel.Name + "_");
         _chosenImageId = testImage.Id;
     }
 

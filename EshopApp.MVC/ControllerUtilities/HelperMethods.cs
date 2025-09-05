@@ -46,22 +46,22 @@ public static class HelperMethods
     }
 
     public static async Task<IActionResult?> CommonErrorValidation(Controller controller, ILogger logger, HttpResponseMessage response, string? responseBody, string redirectToAction,
-        string redirectToController, object? routeValues = null, bool responseBodyWasPassedIn = false)
+        string redirectToController, object? routeValues = null, bool responseBodyWasPassedIn = false, bool shouldRedirect = true)
     {
         //this deals with 5xx errors
         if (response.StatusCode == HttpStatusCode.InternalServerError)
-            return controller.RedirectToAction("Error500");
+            return shouldRedirect ? controller.RedirectToAction("Error500") : controller.StatusCode((int)response.StatusCode);
         else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
-            return controller.RedirectToAction("Error503");
+            return shouldRedirect ? controller.RedirectToAction("Error503") : controller.StatusCode((int)response.StatusCode);
         else if ((int)response.StatusCode >= 500)
-            return controller.RedirectToAction("Error500");
+            return shouldRedirect ? controller.RedirectToAction("Error500") : controller.StatusCode((int)response.StatusCode);
 
         //this deals with 4xx errors with empty response bodies
         responseBody = responseBodyWasPassedIn ? responseBody : await response.Content.ReadAsStringAsync();
         if ((int)response.StatusCode >= 400 && string.IsNullOrEmpty(responseBody))
         {
             controller.TempData["UnknownError"] = true;
-            return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
+            return shouldRedirect ? controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues) : controller.StatusCode((int)response.StatusCode, new { ErrorMessage = "UnknownError" });
         }
         //this deals with 4xx errors with non-empty response bodies
         else if ((int)response.StatusCode >= 400)
@@ -71,13 +71,13 @@ public static class HelperMethods
                 var responseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody!);
                 responseObject!.TryGetValue("errorMessage", out string? errorMessage);
                 controller.TempData[errorMessage ?? "UnknownError"] = true;
-                return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
+                return shouldRedirect ? controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues) : controller.StatusCode((int)response.StatusCode, new { ErrorMessage = errorMessage ?? "UnknownError" });
             }
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Unexpected front end error");
                 controller.TempData["UnknownError"] = true;
-                return controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues);
+                return shouldRedirect ? controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues) : controller.StatusCode((int)response.StatusCode, new { ErrorMessage = "UnknownError" });
             }
         }
 

@@ -15,6 +15,10 @@
         /* cursor: pointer; */
     }
 
+    .dropdown-menu {
+        min-width: 100%;
+        width: auto;
+    }
 </style>
 
 <link href="~/css/filtersStyles.css" rel="stylesheet"/>
@@ -48,9 +52,9 @@
                             <button type="button" class="btn btn-primary"> <i id="searchButtonIconIndicator" class="fa-solid fa-envelope"></i> </button>
                             <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
                             <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
-                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="email">Αναζήτηση με Email<i class="fa-solid fa-envelope ms-2"></i></a>
-                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="phoneNumber">Αναζήτηση με Τηλέφωνο<i class="fa-solid fa-phone ms-2"></i></a>
-                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="lastName">Αναζήτηση με Επώνυμο<i class="fa-solid fa-user ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="email" data-search-mode-icon="fa-envelope">Αναζήτηση με Email<i class="fa-solid fa-envelope ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="phoneNumber" data-search-mode-icon="fa-phone">Αναζήτηση με Τηλέφωνο<i class="fa-solid fa-phone ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="lastName" data-search-mode-icon="fa-user">Αναζήτηση με Επώνυμο<i class="fa-solid fa-user ms-2"></i></a>
                             </div>
                         </div>
                     </div>
@@ -68,7 +72,7 @@
                         <div class="custom-accordion-content">
                             <ul class="list-unstyled" id="roleFiltersUl"> 
                                 @foreach((string, int) roleCount in roleCounts){
-                                    <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight" data-role-name = "@roleCount.Item1">
+                                    <li class="toggle-check d-flex justify-content-between align-items-center px-2 py-1 hover-highlight" data-filter="@roleCount.Item1">
                                         <label class="mb-0 text-smaller" style="cursor:pointer;">@roleCount.Item1 (@roleCount.Item2)</label>
                                         <input type="checkbox" class="form-check-input rounded-0" style="cursor:pointer;">
                                     </li>
@@ -127,20 +131,16 @@
             <div class="col-12 col-md-6 px-0 mb-1 mb-sm-0">
                 <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
                     <div class="dropdown option-dropdown">
-                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">
-                            Προεπιλεγμένη Σειρά
-                        </button>
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
                         <ul class="dropdown-menu py-0" id="sortingDropdown">
-                            <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
-                            <li data-order="emailOrder"><a class="dropdown-item" href="#">Αλφαβητικά κατά Email</a></li>
-                            <li data-order="lastNameOrder"><a class="dropdown-item" href="#">Αλφαβητικά κατά Επώνυμο</a></li>
-                            <li data-order="roleOrder"><a class="dropdown-item" href="#">Αλφαβητικά κατά Ρόλο</a></li>
+                            <li data-order="defaultOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
+                            <li data-order="emailOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Email</a></li>
+                            <li data-order="lastNameOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Επώνυμο</a></li>
+                            <li data-order="roleOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Ρόλο</a></li>
                         </ul>
                     </div>
                     <div class="dropdown option-dropdown">
-                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">
-                            18 Ανά Σελίδα
-                        </button>
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
                         <ul class="dropdown-menu py-0">
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
@@ -251,6 +251,7 @@
 @section Scripts{
     <script type="text/javascript" src="~/js/customModals.js"></script>
     <script type="text/javascript" src="~/js/filtersBehaviour.js"></script>
+    <script type="text/javascript" src="~/js/filtersRepeatedNonStaticCode.js"></script>
 
     <script>
         let users = JSON.parse('@Html.Raw(Json.Serialize(Model))');
@@ -260,188 +261,47 @@
             isFilteredBySearch: false,
             protectedByRoleLis: []
         }));
-        let usersTableTBody = document.getElementById('usersTable').querySelector('tbody');
-        let userTrs = usersTableTBody.querySelectorAll('tr');
-
-        let isRoleFilterActive = 0;
-        let searchInput = document.getElementById('searchInput');
-        let searchButtonIconIndicator = document.getElementById('searchButtonIconIndicator');
-        let searchMode = "email";
+        let tbody = document.getElementById('usersTable').querySelector('tbody');
+        let isRoleFilterActive = { value: 0 };
 
         /* pagination change */
         document.addEventListener('pagination:pageChange', function (event) {
-            renderUsers();
+            renderTable(users);
         });
 
         /* items per page change */
         document.addEventListener('itemsPerPage:changed', function (event) {
-            renderUsers();
+            renderTable(users);
         });
 
-        /* checkbox filters */
-        document.getElementById('roleFiltersUl').querySelectorAll('li').forEach(li => {
-            li.addEventListener("click", function () {
-                let filterCheckBox = li.querySelector('input');
-                let liRoleName = li.getAttribute('data-role-name').toLowerCase().trim();
-                if (filterCheckBox.checked) {
-                    users = users.map(user => {
-                        const userRole = user.userRoleName?.toLowerCase().trim();
-                        // If user role does not match the li role, add the liRoleName to the filter(the second part of the && is for safety)
-                        if (userRole === liRoleName && !user.protectedByRoleLis.includes(liRoleName)) {
-                            user.protectedByRoleLis.push(liRoleName);
-                        }
-
-                        return user;
-                    });
-
-                    isRoleFilterActive++;
-                }
-                else {
-                    users.forEach(user => {
-                        const index = user.protectedByRoleLis.indexOf(liRoleName);
-                        if (index > -1) {
-                            user.protectedByRoleLis.splice(index, 1);
-                        }
-                    });
-
-                    isRoleFilterActive--;
-                }
-
-                countHowManyUsersAreLeftUnfilteredAndUpdatePagination();
-                renderUsers();
-            });
-        });
-
-        /* search filters */
-        const searchModeLinks = document.querySelectorAll('a[data-search-mode]').forEach(link => {
-            link.addEventListener("click", function () {
-                if (searchMode === link.getAttribute('data-search-mode')) {
-                    return;
-                }
-
-                searchInput.value = "";
-                searchMode = link.getAttribute('data-search-mode');
-                if (searchMode === "email") {
-                    searchButtonIconIndicator.classList.remove('fa-user', 'fa-phone');
-                    searchButtonIconIndicator.classList.add('fa-envelope');
-                }
-                else if (searchMode === "phoneNumber") {
-                    searchButtonIconIndicator.classList.remove('fa-user', 'fa-envelope');
-                    searchButtonIconIndicator.classList.add('fa-phone');
-                }
-                else if (searchMode === "lastName") {
-                    searchButtonIconIndicator.classList.remove('fa-phone', 'fa-envelope');
-                    searchButtonIconIndicator.classList.add('fa-user');
-                }
-
-                users.forEach(user => user.isFilteredBySearch = false);
-                countHowManyUsersAreLeftUnfilteredAndUpdatePagination();
-                renderUsers();
-            });
-        });
-
-        let searchTimeOut;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeOut);
-            searchTimeOut = setTimeout(() => {
-                let query = searchInput.value.trim().toLowerCase();
-                if(query === ""){
-                    users = users.map(user => ({
-                        ...user,
-                        isFilteredBySearch: false
-                    }));
-                }
-                else if (searchMode === "email") {
-                    users = users.map(user => {
-                        const match = user.email?.toLowerCase().includes(query);
-                        return {
-                            ...user,
-                            isFilteredBySearch: !match
-                        };
-                    });
-                }
-                else if (searchMode === "phoneNumber") {
-                    users = users.map(user => {
-                        const match = user.phoneNumber?.toLowerCase().includes(query);
-                        return {
-                            ...user,
-                            isFilteredBySearch: !match
-                        };
-                    });
-                }
-                else if (searchMode === "lastName") {
-                    users = users.map(user => {
-                        const match = user.lastName?.toLowerCase().includes(query);
-                        return {
-                            ...user,
-                            isFilteredBySearch: !match
-                        };
-                    });
-                }
-
-                countHowManyUsersAreLeftUnfilteredAndUpdatePagination();
-                renderUsers();
-            }, 500);
-        });
-
-        function countHowManyUsersAreLeftUnfilteredAndUpdatePagination() {
-            let userCount = 0;
+        function countHowManyEntriesAreLeftUnfilteredAndUpdatePagination() {
+            let count = 0;
             users.forEach(user => {
-                if (!user.isFilteredBySearch && (isRoleFilterActive === 0 || user.protectedByRoleLis.length > 0)) {
-                    userCount++;
+                if (!user.isFilteredBySearch && (isRoleFilterActive.value === 0 || user.protectedByRoleLis.length > 0)) {
+                    count++;
                 }
             });
 
-            //this exists in filtersBehaviour.js
-            updateTotalItems(userCount);
+            updateTotalItems(count); //this exists in filtersBehaviour.js
         }
 
-        /* sorting */
-        document.getElementById('sortingDropdown').querySelectorAll('li').forEach(li => {
-            li.addEventListener('click', function () {
-                if (li.getAttribute('data-order') === "defaultOrder") {
-                    users.sort((a, b) => a.originalIndex - b.originalIndex);
+        function roleFilterCheckboxCheckedProcedures(liRoleName, li){
+            users.forEach(user => {
+                const userRole = user.userRoleName?.toLowerCase().trim();
+                if (userRole === liRoleName && !user.protectedByRoleLis.includes(liRoleName)) {
+                    user.protectedByRoleLis.push(liRoleName);
                 }
-                else if (li.getAttribute('data-order') === "emailOrder") {
-                    users.sort((userA, userB) => (userA.email || '').localeCompare(userB.email || ''));
-                }
-                else if (li.getAttribute('data-order') === "lastNameOrder") {
-                    users.sort((userA, userB) => (userA.lastName || '').localeCompare(userB.lastName || ''));
-                }
-                else if (li.getAttribute('data-order') === "roleOrder") {
-                    users.sort((userA, userB) => (userA.userRoleName || '').localeCompare(userB.userRoleName || ''));
-                }
-
-                renderUsers();
             });
-        });
 
-        /* user rendering */
-        function renderUsers() {
-            usersTableTBody.innerHTML = '';
+            isRoleFilterActive.value++;
+        }
 
-            const start = (currentPage - 1) * itemsPerPage;
-            let counter = 0;
-            let renderedCount = 0;
+        function checkIfItemFilteredByCheckboxFilters(item){
+            return (isRoleFilterActive.value > 0 && item.protectedByRoleLis.length === 0);
+        }
 
-            for (const user of users) {
-                if (renderedCount >= itemsPerPage) {
-                    break
-                };
-
-                if (user.isFilteredBySearch) {
-                    continue;
-                }
-                else if(isRoleFilterActive > 0 && user.protectedByRoleLis.length === 0){
-                    continue;
-                }
-
-                if (counter < start) {
-                    counter++;
-                    continue;
-                }
-
-                const tr = document.createElement('tr');
+        function addTrToTableBody(user){
+            const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${user.email}</td>
                     <td>${user.userRoleName}</td>
@@ -454,12 +314,13 @@
                         <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteUserAccountConfirmationModal-${user.id}"><i class="fa-solid fa-user-xmark"></i></a>
                     </td>
                 `;
-                usersTableTBody.appendChild(tr);
-
-                renderedCount++;
-                counter++;
-            }
+                tbody.appendChild(tr);
         }
+
+        setUpSortingDropdownListeners(users);
+        setUpSearchInputMode(users, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpSearchInput(users, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpCheckBoxFilterUl('roleFiltersUl', roleFilterCheckboxCheckedProcedures, 'protectedByRoleLis', isRoleFilterActive, users, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
 
         /* ------------------------------------- */
         document.querySelectorAll('.custom-accordion-button').forEach(button => {
@@ -511,54 +372,8 @@
 
         window.addEventListener("load", updateObjectsContainer);
         window.addEventListener("resize", updateObjectsContainer);
-
-        //TODO do filters
-        //Here we will have to somehow read all the data from the Model
         
-        /* Delete Account Custom Modal Validation */
-        let modalDeleteAccountsInputs = document.querySelectorAll('[id^="modalDeleteAccountInput"]');
-        modalDeleteAccountsInputs.forEach(modalDeleteAccountInput => {
-            modalDeleteAccountInput.addEventListener("focusout", function () {
-                modalDeleteAccountInput.setAttribute('data-custom-validation', 'true');
-                let userAccountEmail = modalDeleteAccountInput.getAttribute('data-account-email');
-                if (modalDeleteAccountInput.value !== userAccountEmail) {
-                    modalDeleteAccountInput.nextElementSibling.textContent = "The provided value does not match the user account's email";
-                }
-                else {
-                    modalDeleteAccountInput.nextElementSibling.textContent = '';
-                }
-            });
-        });
-
-        modalDeleteAccountsInputs.forEach(modalDeleteAccountInput => {
-            modalDeleteAccountInput.addEventListener("input", function () {
-                let userAccountEmail = modalDeleteAccountInput.getAttribute('data-account-email');
-                if (modalDeleteAccountInput.value === "" && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteAccountInput.nextElementSibling.textContent = "This field is required";
-                }
-                else if (modalDeleteAccountInput.value !== userAccountEmail && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteAccountInput.nextElementSibling.textContent = "The provided value does not match the user account's email";
-                }
-                else if (modalDeleteAccountInput.value === userAccountEmail && modalDeleteAccountInput.getAttribute('data-custom-validation') === 'true') {
-                    modalDeleteAccountInput.nextElementSibling.textContent = '';
-                }
-            });
-        });
-
-        //this means pick all the ids that start with this "deleteUserAccountForm"
-        document.querySelectorAll('[id^="deleteUserAccountForm"]').forEach(form => {
-            form.addEventListener('submit', function (e) {
-                let modalDeleteAccountInput = form.querySelector('input');
-                let modalDeleteAccountValidationSpan = form.querySelector('span');
-                if (modalDeleteAccountInput.getAttribute('data-custom-validation') !== 'true' || modalDeleteAccountValidationSpan.textContent !== '') {
-                    if (modalDeleteAccountInput.value === "") {
-                        modalDeleteAccountValidationSpan.textContent = "This field is required";
-                    }
-
-                    e.preventDefault();
-                }
-            });
-        });
+        setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteUserAccountConfirmationModal', 'deleteUserAccountForm', 'modalDeleteAccountInput', 'data-account-email', "The provided value does not match the user account's email");
 
         /* Server Validation Handling */
         const userDeletionSuccess = '@TempData["UserDeletionSuccess"]' === 'True';

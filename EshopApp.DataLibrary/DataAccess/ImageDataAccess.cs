@@ -96,10 +96,12 @@ public class ImageDataAccess : IImageDataAccess
             while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.Id == image.Id) is not null)
                 image.Id = Guid.NewGuid().ToString();
 
-            string prefix = image.Name!.Replace(' ', '_') + '_';
-            image.ImagePath = prefix + Guid.NewGuid().ToString();
-            while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.ImagePath == image.ImagePath) is not null)
-                image.ImagePath = prefix + Guid.NewGuid().ToString();
+            //Here we can add logic if we ever try to add a BLOB storage service or something along these lines.
+            //The following logic was commented, because it now contradicts with the storing of the images in the server where the frontend runs.
+            //string prefix = image.Name!.Replace(' ', '_') + '_';
+            //image.ImagePath = prefix + Guid.NewGuid().ToString();
+            //while (await _appDataDbContext.Images.FirstOrDefaultAsync(otherImage => otherImage.ImagePath == image.ImagePath) is not null)
+            //    image.ImagePath = prefix + Guid.NewGuid().ToString();
 
             image.ShouldNotShowInGallery = image.ShouldNotShowInGallery ?? false;
             image.ExistsInOrder = image.ExistsInOrder ?? false;

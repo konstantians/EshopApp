@@ -161,6 +161,9 @@ public class AuthenticationController : ControllerBase
             if (_cache.TryGetValue(confirmEmailToken, out IActionResult? cachedResult))
                 return cachedResult!;
 
+            if (redirectUrl is not null && !CheckIfUrlIsTrusted(redirectUrl))
+                return BadRequest(new { ErrorMessage = "InvalidRedirectUrl" });
+
             ReturnTokenAndCodeResponseModel returnCodeAndTokenResponseModel = await _authenticationProcedures.ConfirmEmailAsync(userId, confirmEmailToken);
             //this appends in the end of the redirectUrl either an errorMesage or an accessToken depending on whether or not the confirming of the email was completed successfully
             if (redirectUrl is not null)

@@ -1,0 +1,715 @@
+﻿@model EditProductContainerViewModel
+
+@{
+    ViewData["Title"] = "Edit Product";
+    List<UiCategory>? categories = ViewData["Categories"] as List<UiCategory> ?? new List<UiCategory>();
+    List<UiAttribute>? attributes = ViewData["Attributes"] as List<UiAttribute> ?? new List<UiAttribute>();
+    List<UiDiscount>? discounts = ViewData["Discounts"] as List<UiDiscount> ?? new List<UiDiscount>();
+    List<UiImage>? images = ViewData["Images"] as List<UiImage> ?? new List<UiImage>();
+}
+
+<link href="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.css" rel="stylesheet" />
+<link href="~/css/multiSelectStyles.css" rel="stylesheet" />
+<link href="~/css/filtersStyles.css" rel="stylesheet" />
+
+<style>
+     .form-check-input {
+          width: 1.35rem !important;
+          height: 1.35rem !important;
+          border: 2px solid #ced4da !important
+    }
+
+    .image-selectable {
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .image-selectable.selected {
+        background-color: var(--accent-orange);
+    }
+</style>
+
+<div class="row">
+    <form asp-controller="ProductManagement" asp-action="EditProduct" class="col-lg-4 col-12 mx-auto" id="updateProductForm">
+        <h4 class="text-center mb-3 mb-lg-4">Στοιχεία Προϊόντος</h4>
+        <div class="mb-4">
+            <label class="form-label" asp-for="EditProductViewModel.Code"><i class="fa-solid fa-tag me-2"></i>Κωδικός</label>
+            <input type="text" class="form-control" asp-for="EditProductViewModel.Code" data-testid="productCodeInput">
+            <span asp-validation-for="EditProductViewModel.Code" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label class="form-label" asp-for="EditProductViewModel.Name"><i class="fa-solid fa-box me-2"></i>Όνομα</label>
+            <input type="text" class="form-control" asp-for="EditProductViewModel.Name" placeholder="Enter product name" data-testid="productNameInput">
+            <span asp-validation-for="EditProductViewModel.Name" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label class="form-label" asp-for="EditProductViewModel.Description"><i class="fa-solid fa-pen-to-square me-2"></i>Περιγραφή</label>
+            <textarea class="form-control" asp-for="EditProductViewModel.Description" data-testid="productDescriptionTextArea" rows="3"></textarea>
+            <span asp-validation-for="EditProductViewModel.Description" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label asp-for="EditProductViewModel.CategoryIds" class="form-label"><i class="fa-solid fa-box-archive me-2"></i>Κατηγορίες</label>
+            <select asp-for="EditProductViewModel.CategoryIds" multiple>
+                @foreach (UiCategory category in categories)
+                {
+                    if (Model.EditProductViewModel!.CategoryIds!.Contains(category.Id!))
+                    {
+                        <option value="@category.Id" selected>@category.Name</option>
+                    }
+                    else{
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div style="margin-bottom: 1.75rem;" class="d-flex align-items-center justify-content-between">
+            <label class="form-check-label me-2 text-bigger" asp-for="EditProductViewModel.IsActivated">Ενεργοποίηση Προϊόντος</label>
+            <input class="form-check-input rounded-0" type="checkbox" asp-for="EditProductViewModel.IsActivated"/>
+        </div>
+        <div class="d-flex justify-content-center mt-2 mb-4 mt-lg-2 mb-lg-2 px-0 d-none d-sm-flex">
+            <button type="submit" class="btn btn-primary me-4 px-3 py-2" style="min-width:179px;" id="saveProductChangesButton">Αποθήκευση Αλλαγών</button>
+            <a id="deleteProductButton" data-bs-toggle="modal" data-bs-target="#deleteProductConfirmationModal" class="btn btn-secondary px-3 py-2" style="min-width:179px;">Διαγραφή Προϊόντος</a>
+        </div>
+        <div class="d-sm-none text-center mb-4">
+            <a class="btn btn-secondary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#deleteProductConfirmationModal">Διαγραφή</a>
+            <button type="submit" class="btn btn-primary w-100">Αποθήκευση</button>
+        </div>
+        <input hidden asp-for="EditProductViewModel.Id"/>
+    </form>
+    <div class="col-lg-8 col-12 mx-auto" id="variantsSection">
+        <div class="row g-0 mb-3">
+            <div class="col-8 offset-2 col-sm-6 offset-sm-3 text-center">
+                <h4 id="variantsSectionHeader">Παραλλαγές Προϊόντος</h4>
+            </div>
+            <div class="col-2 col-sm-3 text-end">
+                <a class="btn btn-outline-primary border border-1 px-2 py-0 py-sm-1" id="addVariantToProductButton" data-bs-toggle="modal" data-bs-target="#createVariantModal">Δημιουργία Παραλλαγής</a>
+            </div>
+        </div>
+        @for(int i = 0; i < Model.EditVariantViewModels.Count; i++)
+        {
+            EditVariantViewModel editVariantViewModel = Model.EditVariantViewModels[i];
+            string collapsed = "";
+            string expanded = "";
+            string ariaExpanedValue = "false";
+            if((ViewData["VariantId"] is not null && (string)ViewData["VariantId"]! == editVariantViewModel.Id) || (i == 0 && Model.EditVariantViewModels.Count == 1)){
+                collapsed = "collapsed";
+                expanded = "expanded";
+                ariaExpanedValue = "true";
+            }
+            <form asp-controller="ProductManagement" asp-action="EditVariant" id="updateVariantForm-@editVariantViewModel.Id" class="custom-accordion-item">
+                <button class="custom-accordion-button @collapsed" type="button" aria-expanded="@ariaExpanedValue">SKU: @editVariantViewModel.SKU</button>
+                <div class="custom-accordion-content @expanded">
+                    <div class="row">
+                        <div class="col-lg-6 col-12 mb-4">
+                            <label class="form-label" for="editVariantViewModel_SKU-@editVariantViewModel.Id"><i class="fa-solid fa-tag me-2"></i>SKU</label>
+                            <input type="text" class="form-control" asp-for="@editVariantViewModel.SKU" id="editVariantViewModel_SKU-@editVariantViewModel.Id" placeholder="Enter variant SKU" data-testid="variantSkuInput">
+                            <span asp-validation-for="@editVariantViewModel.SKU" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6 col-12 mb-4">
+                            <label class="form-label" for="editVariantViewModel_Price-@editVariantViewModel.Id"><i class="fa-solid fa-money-bill-wave me-2"></i>Τιμή</label>
+                            <input type="number" class="form-control" asp-for="@editVariantViewModel.Price" id="editVariantViewModel_Price-@editVariantViewModel.Id" placeholder="Enter variant price" data-testid="variantPriceInput" step="0.01">
+                            <span asp-validation-for="@editVariantViewModel.Price" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6 col-12 mb-4">
+                            <label class="form-label" for="editVariantViewModel_UnitsInStock-@editVariantViewModel.Id"><i class="fa-solid fa-chart-bar me-2"></i>Διαθέσιμες Μονάδες</label>
+                            <input type="number" class="form-control" asp-for="@editVariantViewModel.UnitsInStock" id="editVariantViewModel_UnitsInStock-@editVariantViewModel.Id" placeholder="Enter variant units count">
+                            <span asp-validation-for="@editVariantViewModel.UnitsInStock" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6 col-12 mb-4">
+                            @{
+                                string currentDiscountName = Model.EditVariantViewModels[i].Discount?.Name ?? "Καμία έκπτωση";
+                                string currentDiscountId = Model.EditVariantViewModels[i].Discount?.Id ?? "noDiscount";
+                            }
+                            <label class="form-label" id="discountLabel-@editVariantViewModel.Id"><i class="fa-solid fa-money-bill-wave me-2"></i>Έκπτωση</label>
+                            <div class="dropdown">
+                                <button class="form-select text-start custom-outline" type="button" id="discountDropdownButton-@editVariantViewModel.Id" data-bs-toggle="dropdown" aria-expanded="false">@currentDiscountName</button>
+                                <ul class="dropdown-menu w-100 py-0" aria-labelledby="discountDropdownButton" id="discountsDropdown-@editVariantViewModel.Id">
+                                    <li><a class="dropdown-item" href="#" data-value="noDiscount">Καμία έκπτωση</a></li>
+                                    @foreach (UiDiscount discount in discounts)
+                                    {
+                                        <li><a class="dropdown-item" href="#" data-value="@discount.Id">@discount.Name | @discount.Percentage%</a></li>
+                                    }
+                                </ul>
+                            </div>
+
+                            <input type="hidden" asp-for="@editVariantViewModel.DiscountId" id="editVariantViewModel_DiscountId-@editVariantViewModel.Id" value='@currentDiscountId'>
+                        </div>
+                        <div class="col-lg-6 col-12 mb-4">
+                            <label for="editVariantViewModel_AttributeIds-@editVariantViewModel.Id" class="form-label"><i class="fa-solid fa-sliders me-2"></i>Χαρακτηριστικά</label>
+                            <select asp-for="@editVariantViewModel.AttributeIds" id="editVariantViewModel_AttributeIds-@editVariantViewModel.Id" multiple class="attribute-select">
+                                @foreach (UiAttribute attribute in attributes)
+                                {
+                                    if (Model.EditVariantViewModels[i].AttributeIds!.Contains(attribute.Id!))
+                                    {
+                                        // <option value="@category.Id" selected>@category.Name</option>
+                                    }
+                                    else
+                                    {
+                                        // <option value="@category.Id">@category.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-6 col-12 mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label" for="imagePickerInput-@Model.EditVariantViewModels[i].Id"><i class="fa-solid fa-image me-2"></i>Εικόνες</label>
+                                <i id="imagePickerToggleEyeIcon-@editVariantViewModel.Id" class="fas fa-eye" style="cursor:pointer;"></i>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Edit images..." readonly id="imagePickerInput-@Model.EditVariantViewModels[i].Id" style="cursor: pointer;background-color:white;"/>
+                        </div>
+                        <div class="col-12 mb-4 d-none">
+                            <label class="form-label"><i class="fa-solid fa-image me-2"></i>Επιλεγμένες Εικόνες</label>
+                            @if(editVariantViewModel.Images is null ||  (editVariantViewModel.ImagesIds != null && editVariantViewModel.ImagesIds.Any()))
+                            {
+                                <div class="alert d-flex align-items-center" role="alert" style="background: var(--accent-orange); opacity: 0.9;">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                    <div>Δεν υπάρχουν επιλεγμένες εικόνες για την παραλλαγή.</div>
+                                </div>
+                            }
+                            <div class="row g-3" style="max-height:400px;overflow-y:auto" id="imagePickerGallery-@editVariantViewModel.Id" data-col-structure="col-6 col-sm-4 col-lg-3 col-xl-4 col-xxxl-2">
+                                @foreach (UiImage image in images)
+                                {
+                                    if(editVariantViewModel.ImagesIds!.Any(imageId => imageId == image.Id))
+                                    {
+                                        <div class="col-6 col-sm-4 col-lg-3 col-xl-4 col-xxxl-2">
+                                            <div class="text-center border p-1" data-id="@image.Id" data-name="@image.Name">
+                                                <img src="/DynamicImages/@image.ImagePath" height="135" style="width:100%; cursor:pointer;" data-bs-target="#imageModal-@editVariantViewModel.Id" onclick="openImage(this)"/>
+                                                <div class="text-truncate p-1" style="background-color:white;" title="@image.Name">@image.Name</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="modal fade custom-center-modal-for-image" id="imageModal-@editVariantViewModel.Id" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered" style="margin:auto;">
+                                                <div class="modal-content border-0 shadow-none p-0">
+                                                    <div class="modal-header border-2 p-2 mb-1">
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body d-flex justify-content-center p-0">
+                                                        <img src="" style="max-height:370px; max-width:370px; width:auto; height:auto;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <label class="form-check-label me-2 text-bigger" for="editVariantViewModel_IsThumbnailVariant-@editVariantViewModel.Id">Thumbnail Variant</label>
+                                <input class="form-check-input rounded-0" type="checkbox" asp-for="@editVariantViewModel.IsThumbnailVariant" id="editVariantViewModel_IsThumbnailVariant-@editVariantViewModel.Id"/>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <label class="form-check-label me-2 text-bigger" for="editVariantViewModel_IsActivated-@editVariantViewModel.Id">Ενεργοποίηση Variant</label>
+                                <input class="form-check-input rounded-0" type="checkbox" asp-for="@editVariantViewModel.IsActivated" id="editVariantViewModel_IsActivated-@editVariantViewModel.Id" />
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center my-2 px-0 d-none d-sm-flex">
+                            <button type="submit" class="btn btn-primary me-4 px-3 py-2" style="min-width:179px;">Αποθήκευση Αλλαγών</button>
+                            <a data-bs-toggle="modal" data-bs-target="#deleteVariantConfirmationModal-@Model.EditVariantViewModels[i].Id" class="btn btn-secondary px-3 py-2" style="min-width:179px;">Διαγραφή Παραλλαγής</a>
+                        </div>
+                        <div class="d-sm-none text-center">
+                            <a data-bs-toggle="modal" data-bs-target="#deleteVariantConfirmationModal-@Model.EditVariantViewModels[i].Id" class="btn btn-secondary w-100 mb-2">Διαγραφή</a>
+                            <button type="submit" class="btn btn-primary w-100">Αποθήκευση</button>
+                        </div>
+                        <input asp-for="@editVariantViewModel.ImagesIds" value="" id="editVariantViewModel_ImagesIds-@editVariantViewModel.Id" hidden />
+                        <input asp-for="@editVariantViewModel.Id" id="editVariantViewModel_Id-@editVariantViewModel.Id" hidden />
+                        <input asp-for="@editVariantViewModel.ProductId" id="editVariantViewModel_ProductId-@editVariantViewModel.Id" value="@Model.EditProductViewModel.Id" hidden />
+                    </div>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal" id="deleteProductConfirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="ProductManagement" asp-action="DeleteProduct" id="deleteProductForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Επιβεβαίωση Διαγραφής Προϊόντος</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <strong style="font-size: 18px;">Η παρακάτω ενέργεια δεν είναι αντιστρέψιμη!</strong>
+                <p>
+                    Αν είστε σίγουροι πως θέλετε να διαγράψατε το συγκεκριμένο προϊόν παρακαλώ συμπληρώστε τον κωδικό του προϊόντος και πατήστε συνέχεια. Όλες οι παραλλαγές του προϊόντος
+                    θα διαγραφτούν αν προχωρίσετε! Σε περίπτωση που το προϊόν υπάρχει σε κάποια παραγγελία, τότε απλώς θα απενεργοποιηθεί μέχρι να διαγραφτούν όλες οι παραγγελίες στις οποίες αυτό υπάρχει.
+                </p>
+                <label for="modalDeleteProductInput" class="form-label"><i class="fa-solid fa-envelope me-2"></i>Κωδικός Προϊόντος</label>
+                <input class="form-control" id="modalDeleteProductInput" type="text" data-custom-validation="false" data-testid="productCodeInput" data-code="@Model.EditProductViewModel!.Code">
+                <span id="modalDeleteProductValidationSpan" class="text-danger"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelDeleteProductButton">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="deleteProductButton" data-testid="deleteProductButton">Συνέχεια</button>
+            </div>
+            <input name="productId" value="@Model.EditProductViewModel!.Id" hidden />
+        </form>
+    </div>
+</div>
+
+@foreach (EditVariantViewModel editVariantViewModel in Model.EditVariantViewModels)
+{
+    int count = 0;
+    <div class="modal fade custom-center-modal" id="deleteVariantConfirmationModal-@editVariantViewModel.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" asp-controller="ProductManagement" asp-action="DeleteVariant" id="deleteVariantForm-@editVariantViewModel.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επιβεβαίωση Διαγραφής Παραλλαγής Προϊόντος</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <strong style="font-size: 18px;">Η παρακάτω ενέργεια δεν είναι αντιστρέψιμη!</strong>
+                    <p>
+                        Αν είστε σίγουροι πως θέλετε να διαγράψατε την συγκεκριμένη παραλλαγή προϊόντος παρακαλώ συμπληρώστε το SKU της παραλλαγής και πατήστε συνέχεια. Σε περίπτωση που η παραλλαγή προϊόντος υπάρχει
+                        σε κάποια παραγγελία, τότε απλώς θα απενεργοποιηθεί μέχρι να διαγραφτούν όλες οι παραγγελίες στις οποίες αυτή υπάρχει.
+                    </p>
+                    <label for="modalDeleteVariantInput-@editVariantViewModel.Id" class="form-label"><i class="fa-solid fa-envelope me-2"></i>SKU Παραλλαγής Προϊόντος</label>
+                    <input class="form-control" id="modalDeleteVariantInput-@editVariantViewModel.Id" type="text" data-custom-validation="false" data-testid="variantSkuInput" data-sku="@editVariantViewModel.SKU">
+                    <span id="modalDeleteVariantValidationSpan-@editVariantViewModel.Id" class="text-danger"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelDeleteVariantButton">Ακύρωση</button>
+                    <button type="submit" class="btn btn-primary" id="deleteVariantButton" data-testid="deleteVariantButton">Συνέχεια</button>
+                </div>
+                <input name="variantId" value="@editVariantViewModel.Id" hidden />
+                <input name="productId" value="@editVariantViewModel.ProductId" hidden />
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade custom-image-picker-modal" id="imagePickerModal-@editVariantViewModel.Id" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επιλογή Φωτογραφιών</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-10 col-sm-8 col-lg-6">
+                            <div class="input-group">
+                                <input type="text" id="imageSearch-@editVariantViewModel.Id" class="form-control" placeholder="Αναζήτηση φωτογραφίας...">
+                                <button type="button" class="btn btn-secondary border-0" id="searchButton-@editVariantViewModel.Id"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-2 col-sm-4 offset-lg-2 col-lg-4 text-end">
+                            <label class="btn btn-outline-primary mb-0 border border-1">
+                                <i id="uploadFileButtonIcon-@editVariantViewModel.Id" class="fa fa-upload me-1"></i><span id="uploadFileButtonText-@editVariantViewModel.Id"> Προσθήκη από δίσκο</span><input type="file" id="imageUpload-@editVariantViewModel.Id" accept="image" hidden>
+                            </label>
+                        </div>
+                    </div>
+                    @{
+                        string hiddenInputId = $"editVariantViewModel_ImagesIds-{editVariantViewModel.Id}";
+                    }
+
+                    <div class="row g-3" id="imageGrid-@editVariantViewModel.Id" data-save-to-input-with-id="@hiddenInputId">
+                        @foreach (UiImage image in images)
+                        {
+                            string selectedClass = editVariantViewModel.ImagesIds!.Any(imageId => imageId == image.Id) ? "selected" : "";
+                            <div class="col-6 col-sm-4 col-lg-2">
+                                <div class="image-selectable text-center border p-1 @selectedClass" data-id="@image.Id" data-name="@image.Name">
+                                    <img src="/DynamicImages/@image.ImagePath" height="135" style="width:100%" />
+                                    <div class="text-truncate p-1" style="background-color:white;" title="@image.Name">@image.Name</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelSaveImagesButton-@editVariantViewModel.Id">Ακύρωση</button>
+                    <button type="button" class="btn btn-primary" id="saveImagesButton-@editVariantViewModel.Id">Εντάξει</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    count++;
+}
+
+<div class="modal fade custom-image-picker-modal" id="createVariantModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <form class="modal-content" method="post" asp-controller="ProductManagement" asp-action="CreateVariant" id="createVariantForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Δημιουργία Παραλλαγής Προϊόντος</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-6 col-12 mb-4">
+                        <label class="form-label" asp-for="CreateVariantViewModel.SKU"><i class="fa-solid fa-tag me-2"></i>SKU</label>
+                        <input type="text" class="form-control" asp-for="CreateVariantViewModel.SKU" placeholder="Enter variant SKU" data-testid="variantSkuInput">
+                        <span asp-validation-for="CreateVariantViewModel.SKU" class="text-danger"></span>
+                    </div>
+                    <div class="col-lg-6 col-12 mb-4">
+                        <label class="form-label" asp-for="CreateVariantViewModel.Price"><i class="fa-solid fa-money-bill-wave me-2"></i>Τιμή</label>
+                        <input type="number" class="form-control" asp-for="CreateVariantViewModel.Price" placeholder="Enter variant price" data-testid="variantPriceInput" step="0.01">
+                        <span asp-validation-for="CreateVariantViewModel.Price" class="text-danger"></span>
+                    </div>
+                    <div class="col-lg-6 col-12 mb-4">
+                        <label class="form-label" asp-for="CreateVariantViewModel.UnitsInStock"><i class="fa-solid 	fa-chart-bar me-2"></i>Διαθέσιμες Μονάδες</label>
+                        <input type="number" class="form-control" asp-for="CreateVariantViewModel.UnitsInStock" placeholder="Enter variant units count" data-testid="CreateVariantViewModel.UnitsInStock">
+                        <span asp-validation-for="CreateVariantViewModel.UnitsInStock" class="text-danger"></span>
+                    </div>
+                    <div class="col-lg-6 col-12 mb-4">
+                        @if (discounts is not null)
+                            {
+                                <label class="form-label" id="discountLabelCreateVariant"><i class="fa-solid fa-money-bill-wave me-2"></i>Έκπτωση</label>
+                                <div class="dropdown">
+                                    <button class="form-select text-start custom-outline" type="button" id="discountDropdownButtonCreateVariant" data-bs-toggle="dropdown" aria-expanded="false">Καμία έκπτωση</button>
+                                    <ul class="dropdown-menu w-100 py-0" aria-labelledby="discountDropdownButtonCreateVariant" id="discountDropdownCreateVariant">
+                                        <li><a class="dropdown-item" href="#" data-value="noDiscount">Καμία έκπτωση</a></li>
+                                        @foreach (UiDiscount discount in discounts)
+                                        {
+                                            <li><a class="dropdown-item" href="#" data-value="@discount.Id">@discount.Name | @discount.Percentage%</a></li>
+                                        }
+                                    </ul>
+                                </div>
+
+                                <input type="hidden" asp-for="CreateVariantViewModel.DiscountId" value="noDiscount">
+                         }
+                    </div>
+                    <div class="col-lg-6 col-12 mb-4">
+                        @if (attributes is not null)
+                        {
+                            <label asp-for="CreateVariantViewModel.AttributeIds" class="form-label"><i class="fa-solid fa-sliders me-2"></i>Χαρακτηριστικά</label>
+                            <select asp-for="CreateVariantViewModel.AttributeIds" multiple class="attribute-select">
+                                @foreach (UiAttribute uiAttribute in attributes)
+                                {
+                                    <option value="attribute.Id">@uiAttribute.Name</option>
+                                }
+                            </select>
+                            // data-bs-toggle="modal" data-bs-target="#imagePickerModal"
+                        }
+                    </div>
+                    <div class="col-lg-6 col-12 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label" for="imagePickerInputCreateVariant"><i class="fa-solid fa-image me-2"></i>Εικόνες</label>
+                            <i id="imagePickerToggleGaleryIconCreateVariant" class="fas fa-eye" style="cursor:pointer;"></i>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Add images..." readonly id="imagePickerInputCreateVariant" style="cursor: pointer;background-color:white;"/>
+                    </div>
+                    <div class="col-12 mb-4 d-none" id="imagePickerModalCreateVariant">
+                        <div class="border border-1 p-2">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-10 col-sm-8 col-lg-6">
+                                    <div class="input-group">
+                                        <input type="text" id="imageSearchCreateVariant" class="form-control" placeholder="Αναζήτηση φωτογραφίας...">
+                                        <button type="button" class="btn btn-secondary border-0" id="searchButtonCreateVariant"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-2 col-sm-4 offset-lg-2 col-lg-4 p-0 text-sm-end">
+                                    <label class="btn btn-outline-primary mb-0 border border-1 me-3">
+                                        <i id="uploadFileButtonIconCreateVariant" class="fa fa-upload me-1"></i><span id="uploadFileButtonTextCreateVariant"> Προσθήκη από δίσκο</span><input type="file" id="imageUploadCreateVariant" accept="image" hidden>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row g-3" id="imageGridCreateVariant" style="max-height:400px;overflow-y:auto" data-save-to-input-with-id="CreateVariantViewModel_ImageIds" data-col-structure="col-6 col-sm-4 col-lg-3 col-xl-4 col-xxxl-2">
+                                @foreach (UiImage image in images)
+                                {
+                                    <div class="col-6 col-sm-4 col-lg-2">
+                                        <div class="image-selectable text-center border p-1" data-id="@image.Id" data-name="@image.Name">
+                                            <img src="/DynamicImages/@image.ImagePath" height="135" style="width:100%" />
+                                            <div class="text-truncate p-1" style="background-color:white;" title="@image.Name">@image.Name</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-secondary" id="cancelSaveImagesButtonCreateVariant">Ακύρωση</button>
+                                <button type="button" class="btn btn-primary" id="saveImagesButtonCreateVariant">Εντάξει</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-4 d-none">
+                        <label class="form-label"><i class="fa-solid fa-image me-2"></i>Επιλεγμένες Εικόνες</label>
+                        <div class="alert d-flex align-items-center" role="alert" style="background: var(--accent-orange); opacity: 0.9;">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                            <div>Δεν υπάρχουν επιλεγμένες εικόνες για την παραλλαγή.</div>
+                        </div>
+                        <div class="row g-3" style="max-height:400px;overflow-y:auto" id="imagePickerGalleryCreateVariant" data-dont-create-image-modals>
+                            
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <label class="form-check-label me-2 text-bigger" asp-for="CreateVariantViewModel.IsThumbnailVariant">Thumbnail Variant</label>
+                            <input class="form-check-input rounded-0" type="checkbox" asp-for="CreateVariantViewModel.IsThumbnailVariant"/>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <label class="form-check-label me-2 text-bigger" asp-for="CreateVariantViewModel.IsActivated">Ενεργοποίηση Variant</label>
+                            <input class="form-check-input rounded-0" type="checkbox" asp-for="CreateVariantViewModel.IsActivated" checked/>
+                        </div>
+                    </div>
+                    <input asp-for="CreateVariantViewModel.ImageIds" hidden/>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelCreateVariantButton">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="createVariantButton" data-testid="createVariantButton">Συνέχεια</button>
+            </div>
+            <input asp-for="CreateVariantViewModel.ProductId" value="@Model.EditProductViewModel.Id" hidden/>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customModals.js"></script>
+<script type="text/javascript" src="~/js/customImagePicker.js"></script>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.js"></script>
+    <script type="text/javascript" src="~/js/customSelect.js"></script>
+    <script>
+        new SlimSelect({select: '#EditProductViewModel_CategoryIds',
+            placeholder: 'Επιλέξτε Κατηγορίες Προϊόντος',
+            closeOnSelect: false,
+            showSearch: true,
+            searchPlaceholder: 'Αναζήτηση'
+        });
+
+        document.querySelectorAll('.attribute-select').forEach(element => {
+            new SlimSelect({
+                select: element,
+                placeholder: 'Επιλέξτε Χαρακτηριστικά Παραλλαγής Προϊόντος',
+                closeOnSelect: false,
+                showSearch: true,
+                searchPlaceholder: 'Αναζήτηση'
+            });
+        });
+
+        document.querySelectorAll('label[for^="editVariantViewModel"], label[for^="CreateVariantViewModel"], label[for^="EditProductViewModel"]').forEach(label => {
+            label.addEventListener('click', () => {
+                const selectId = label.htmlFor;
+                const input = document.querySelector(`#${selectId} ~ .ss-main .ss-search input`);
+                if (input) input.focus();
+            });
+        });
+    </script>
+
+    <script>
+        let imagePickerModal = document.getElementById('imagePickerModalCreateVariant');
+        document.getElementById("imagePickerInputCreateVariant").addEventListener("click", function () {
+            imagePickerModal.classList.remove('d-none');
+        });
+
+        const createVariantModal = document.getElementById('createVariantModal');
+        const createVariantModalForm = createVariantModal.querySelector('form');
+
+        createVariantModal.addEventListener('hidden.bs.modal', () => {
+            createVariantModalForm.reset();
+            const errorSpans = createVariantModal.querySelectorAll("span.text-danger");
+            errorSpans.forEach(span => {
+                span.textContent = "";
+            });
+            setDropdownValue('discountDropdownButtonCreateVariant', 'CreateVariantViewModel_DiscountId', 'noDiscount');
+            document.getElementById("imagePickerModalCreateVariant").classList.add('d-none');
+            document.getElementById("imagePickerGalleryCreateVariant").innerHTML = "";
+            document.getElementById("imagePickerGalleryCreateVariant").parentElement.classList.add('d-none');
+            document.getElementById("imagePickerToggleGaleryIconCreateVariant").classList.add("fa-eye");
+            document.getElementById("imagePickerToggleGaleryIconCreateVariant").classList.remove("fa-eye-slash");
+            document.getElementById("CreateVariantViewModel_ImageIds").value = "";
+            document.getElementById("imagePickerModalCreateVariant").querySelectorAll('.image-selectable.selected').forEach(selectedImage => {
+                selectedImage.classList.remove("selected");
+            });
+        });
+
+        function updateFormSizeClasses() {
+            const updateProductForm = document.getElementById("updateProductForm");
+            const variantsSection = document.getElementById("variantsSection");
+            const addVariantToProductButton = document.getElementById("addVariantToProductButton");
+            const variantsSectionHeader = document.getElementById("variantsSectionHeader");
+            const saveProductChangesButton = document.getElementById("saveProductChangesButton");
+            const deleteProductButton = document.getElementById("deleteProductButton");
+
+            if (window.innerWidth < 992) {
+                updateProductForm.style.width = "80%";
+                variantsSection.style.width = "80%";
+            }
+            else {
+                updateProductForm.style.width = "";
+                variantsSection.style.width = "";
+            }
+
+            if(window.innerWidth < 576){
+                addVariantToProductButton.textContent = "+"
+                variantsSectionHeader.textContent = "Παραλλαγές";
+            }
+            else if(window.innerWidth < 770){
+                addVariantToProductButton.textContent = "Δημιουργία";
+                variantsSectionHeader.textContent = "Παραλλαγές";
+            }
+            else if (window.innerWidth < 1605) {
+                addVariantToProductButton.textContent = "Δημιουργία";
+                variantsSectionHeader.textContent = "Παραλλαγές Προϊόντος";
+            }
+            else {
+                addVariantToProductButton.textContent = "Δημιουργία Παραλλαγής";
+                variantsSectionHeader.textContent = "Παραλλαγές Προϊόντος";
+            }
+
+
+            if(window.innerWidth < 576){
+                saveProductChangesButton.textContent = "Αποθήκευση";
+                saveProductChangesButton.style.minWidth = "120px";
+                deleteProductButton.textContent = "Διαγραφή";
+                deleteProductButton.style.minWidth = "120px";
+            }
+            else if(window.innerWidth < 992){
+                 saveProductChangesButton.textContent = "Αποθήκευση Αλλαγών";
+                saveProductChangesButton.style.minWidth = "179px";
+                deleteProductButton.textContent = "Διαγραφή Προϊόντος";
+                deleteProductButton.style.minWidth = "179px";
+            }
+            else if(window.innerWidth < 1680){
+                saveProductChangesButton.textContent = "Αποθήκευση";
+                saveProductChangesButton.style.minWidth = "120px";
+                deleteProductButton.textContent = "Διαγραφή";
+                deleteProductButton.style.minWidth = "120px";
+            }
+            else {
+                saveProductChangesButton.textContent = "Αποθήκευση Αλλαγών";
+                saveProductChangesButton.style.minWidth = "179px";
+                deleteProductButton.textContent = "Διαγραφή Προϊόντος";
+                deleteProductButton.style.minWidth = "179px";
+            }
+        }
+
+        setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteProductConfirmationModal', 'deleteProductForm', 'modalDeleteProductInput', 'data-code', "The provided value does not match the product's code");
+        setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteVariantConfirmationModal', 'deleteVariantForm', 'modalDeleteVariantInput', 'data-sku', "The provided value does not match the variant's sku");
+
+        window.addEventListener("load", updateFormSizeClasses);
+        window.addEventListener("resize", updateFormSizeClasses);
+
+        document.querySelectorAll('[id^="discountDropdownButton-"]').forEach(dropdown => {
+            const idPart = dropdown.id.split("discountDropdownButton-")[1];
+            setUpCustomSelect('discountDropdownButton-' + idPart, 'discountLabel-' + idPart, 'editVariantViewModel_DiscountId-' + idPart);
+        });
+        setUpCustomSelect('discountDropdownButtonCreateVariant', 'discountLabelCreateVariant', 'CreateVariantViewModel_DiscountId');
+
+        document.querySelectorAll('[id^="imagePickerModal-"]').forEach(modal => {
+            const idPart = modal.id.split("imagePickerModal-")[1];
+            setImagePicker('imagePickerInput-' + idPart, 'imagePickerModal-' + idPart, 'imagePickerGallery-' + idPart, 'imagePickerToggleEyeIcon-' + idPart, false);
+        });
+        setImagePicker('imagePickerInputCreateVariant', 'imagePickerModalCreateVariant', 'imagePickerGalleryCreateVariant', 'imagePickerToggleGaleryIconCreateVariant', true , false);
+
+        document.querySelectorAll('.custom-accordion-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isExpanded = content.classList.contains('expanded');
+
+                this.setAttribute('aria-expanded', !isExpanded);
+                this.classList.toggle('collapsed', !isExpanded);
+                content.classList.toggle('expanded', !isExpanded);
+            });
+        });
+
+        //this is coming from the customValidation script
+        /* Client Validation Handling */
+        setUpValidationListeners();
+        setUpFormSubmissionValidationListener("updateProductForm");
+        document.querySelectorAll('[id^="updateVariantForm-"]').forEach(form => {
+            setUpFormSubmissionValidationListener(form.id);
+        });
+        setUpFormSubmissionValidationListener("createVariantForm");
+
+        /* Server Validation Handling */
+        const variantCreationSuccess = '@TempData["VariantCreationSuccess"]' === 'True';
+        const productUpdateSuccess = '@TempData["ProductUpdateSuccess"]' === 'True';
+        const variantUpdateSuccess = '@TempData["VariantUpdateSuccess"]' === 'True';
+        const variantDeletionSuccess = '@TempData["VariantDeletionSuccess"]' === 'True';
+        const variantDeletionSuccessWarning = '@TempData["VariantDeletionSuccessWarning"]' === 'True';
+        const duplicateProductCode = '@TempData["DuplicateProductCode"]' === 'True';
+        const duplicateEntityName = '@TempData["DuplicateEntityName"]' === 'True';
+        const duplicateVariantSku = '@TempData["DuplicateVariantSku"]' === 'True';
+        const errorFromCreateVariant = '@TempData["ErrorFromCreateVariant"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        let resultModal = document.getElementById("resultModal");
+
+        if(variantCreationSuccess){
+            resultModal.setAttribute("popUpValue", "variantCreationSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Δημιουργίας Παραλλαγής Προϊόντος", "Ή παραλαγή προϊόντος δημιουργήθηκε επιτυχώς!", "Επιτυχία",
+                "Ή παραλαγή προϊόντος δημιουργήθηκε επιτυχώς!", "success");
+        }
+        else if(productUpdateSuccess){
+            resultModal.setAttribute("popUpValue", "productUpdateSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Ανανέωσης Προϊόντος", "To προϊόν ανανεώθηκε επιτυχώς!", "Επιτυχία",
+                "To προϊόν ανανεώθηκε επιτυχώς!!", "success");
+        }
+        else if(variantUpdateSuccess){
+            resultModal.setAttribute("popUpValue", "variantUpdateSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Ανανέωσης Παραλλαγής Προϊόντος", "Ή παραλαγή προϊόντος ανανεώθηκε επιτυχώς!", "Επιτυχία",
+                "Ή παραλαγή προϊόντος ανανεώθηκε επιτυχώς!", "success");
+        }
+        else if(variantDeletionSuccess){
+            resultModal.setAttribute("popUpValue", "variantDeletionSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Διαγραφής Παραλλαγής Προϊόντος", "Η παραλλαγή προϊόντος διαγράφτηκε επιτυχώς!", "Επιτυχία",
+                "Η παραλλαγή προϊόντος διαγράφτηκε επιτυχώς!", "success");
+        }
+        else if(variantDeletionSuccessWarning){
+            resultModal.setAttribute("popUpValue", "productDeletionSuccessWarning");
+            showPopUpModal("resultModal", "Επιτυχία Διαγραφής Προϊόντος", "Η παραλλαγή προϊόντος απενεργοποιήθηκε, επειδή υπάρχει σε τουλάχιστον μία παραγγελία. Αν θέλετε να διαγραφτεί πλήρως πρέπει να διαγραφούν πρώτα όλες οι παραγγελίες στις οποίες βρίσκεται.", "Επιτυχία",
+                "Το παραλλαγή προϊόντος απενεργοποιήθηκε, επειδή υπάρχει σε τουλάχιστον μία παραγγελία.", "success");
+        }
+        else if(duplicateProductCode){
+            resultModal.setAttribute("popUpValue", "duplicateProductCode");
+            showPopUpModal('resultModal', "Αποτυχία Ενημέρωσης Προϊόντος", "Ο κωδικός προϊόντος που εισήγατε για την ενημέρωση του προϊόντος υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο κωδικός προϊόντος που εισήγατε για την ενημέρωση προϊόντος υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό προϊόντος.");
+        }
+        else if(duplicateEntityName){
+            resultModal.setAttribute("popUpValue", "duplicateEntityName");
+            showPopUpModal('resultModal', "Αποτυχία Ενημέρωσης Προϊόντος", "Ο τίτλος προϊόντος που εισήγατε για την ενημέρωση του προϊόντος υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο τίτλος προϊόντος που εισήγατε για την ενημέρωση προϊόντος υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο προϊόντος.");
+        }
+        else if(duplicateVariantSku && errorFromCreateVariant){
+            resultModal.setAttribute("popUpValue", "duplicateEntitySku");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Παραλλαγής Προϊόντος", "Το sku της παραλλαγής προϊόντος που εισήγατε κατά την δημιουργία της παραλλαγής υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Το sku της παραλλαγής προϊόντος που εισήγατε κατά την δημιουργία της παραλλαγής υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος.");
+        }
+        else if(duplicateVariantSku){
+            resultModal.setAttribute("popUpValue", "duplicateEntitySku");
+            showPopUpModal('resultModal', "Αποτυχία Ενημέρωσης Παραλλαγής Προϊόντος", "Το sku της παραλλαγής προϊόντος που εισήγατε για την ενημέρωση της παραλλαγής υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Το sku της παραλλαγής προϊόντος που εισήγατε για την ενημέρωση της παραλλαγής υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό sku για την παραλλαγή προϊόντος.");
+        }
+        else if (unknownError) {
+            resultModal.setAttribute("popUpValue", "unknownError");
+            showPopUpModal('resultModal', "Αποτυχία", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα.",
+                "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα.");
+        }
+    </script>
+}

@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Views\ProductManagement\EditProduct.cshtml~RF58dae80.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\DynamicImages\" />
   </ItemGroup>
 
 </Project>

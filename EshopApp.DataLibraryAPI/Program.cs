@@ -4,7 +4,8 @@ using EshopApp.DataLibraryAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace EshopApp.DataLibraryAPI;
 
@@ -16,10 +17,12 @@ public class Program()
         IConfiguration configuration = builder.Configuration;
         // Add services to the container.
 
-        builder.Services.AddControllers().AddJsonOptions(options =>
+        builder.Services.AddControllers().AddNewtonsoftJson(options =>
         {
-            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
         });
+
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();

@@ -88,7 +88,7 @@ public class VariantDataAccess : IVariantDataAccess
                 .Include(v => v.Discount)
                 .Include(v => v.Product)
                     .ThenInclude(p => p!.Categories)
-                .Where(variant => !variant.IsDeactivated!.Value && skus.Contains(variant.SKU!))
+                .Where(variant => skus.Contains(variant.SKU!))
                 .ToListAsync();
             }
 
