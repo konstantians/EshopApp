@@ -23,6 +23,10 @@ function setUpFormSubmissionValidationListener(formId) {
 
         //pick the inputs, selects and textareas of this form
         this.querySelectorAll("input, select, textarea").forEach(field => {
+            if (field.hasAttribute("multiple")) {
+                return;
+            }
+
             if (field.type !== "password" && typeof field.value === "string") {
                 field.value = field.value.trim();
             }

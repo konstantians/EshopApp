@@ -2,11 +2,6 @@
 
 @{
     ViewData["Title"] = "Manage Products";
-    // List<UiRole>? roles = ViewData["UserRoles"] as List<UiRole>;
-    // List<(string, int)> roleCounts = Model
-    //     .GroupBy(user => user.UserRoleName!)
-    //     .Select(group => (Role: group.Key, Count: group.Count()))
-    //     .ToList();
 }
 
 <style>
@@ -18,11 +13,6 @@
     .card:hover {
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
     }
-
-    .dropdown-menu {
-        min-width: 100%; /* at least as wide as the button */
-        width: auto; /* but grow if needed */
-    }
 </style>
 
 <link href="~/css/filtersStyles.css" rel="stylesheet" />
@@ -31,7 +21,7 @@
     <div class="col-3 col-xl-2 d-flex align-items-center px-2 px-sm-0 d-none d-md-block" id="itemViewDropdownContainer">
         <div class="dropdown">
             <button class="form-select text-start custom-outline" type="button" id="itemViewDropdown" data-bs-toggle="dropdown">Προβολή Προϊόντων</button>
-            <ul class="dropdown-menu py-0">
+            <ul class="dropdown-menu py-0 dropdown-menu-custom-width">
                 <li><a class="dropdown-item" href="#" data-view="product">Προβολή Προϊόντων</a></li>
                 <li><a class="dropdown-item" href="#" data-view="variant">Προβολή Παραλλαγών</a></li>
             </ul>
@@ -63,7 +53,7 @@
                         <div class="btn-group dropdown" role="group">
                             <button type="button" class="btn btn-primary"> <i id="searchButtonIconIndicator" class="fa-solid fa-box"></i> </button>
                             <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                            <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
+                            <div class="dropdown-menu dropdown-menu-end py-0 dropdown-menu-custom-width" style="margin-top: 0 !important;">
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="name" data-search-mode-icon="fa-box">Αναζήτηση με Τίτλο<i class="fa-solid fa-box ms-2"></i></a>
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="code" data-search-mode-icon="fa-tag">Αναζήτηση με Κωδικό<i class="fa-solid fa-tag ms-2"></i></a>
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="sku" data-search-mode-icon="fa-hashtag">Αναζήτηση με SKU<i class="fa-solid fa-hashtag ms-2"></i></a>
@@ -257,7 +247,7 @@
                 <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
-                        <ul class="dropdown-menu py-0" id="sortingDropdown">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width" id="sortingDropdown">
                             <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
                             <li class="d-none" data-order="price" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Φθίνουσα Σειρά</a></li>
                             <li class="d-none" data-order="price" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Αύξουσα Σειρά</a></li>
@@ -267,7 +257,7 @@
                     </div>
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
-                        <ul class="dropdown-menu py-0">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width">
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>
@@ -644,7 +634,6 @@
 
         /* ------------------------------------- */
 
-        //TODO check that all the variants stuff work
         //this will change the filters and what the user is seeings(variants or only products)
         function switchViewModes(){
             document.querySelectorAll('[id*="FiltersUl"]').forEach(filterUl => {

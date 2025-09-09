@@ -11,4 +11,5 @@ public class CreateDiscountRequestModel
     [Range(1, 99, ErrorMessage = "Percentage must be between 1 and 99")]
     public int? Percentage { get; set; }
     public bool? IsDeactivated { get; set; }
+    public List<string>? VariantIds { get; set; }
 }

@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EshopApp.DataLibraryAPI.Models.RequestModels.CategoryModels;
+namespace EshopApp.MVC.ViewModels.CategoryModels;
 
-public class CreateCategoryRequestModel
+public class CreateCategoryViewModel
 {
     [Required]
     [MaxLength(50)]

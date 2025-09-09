@@ -58,6 +58,7 @@ public class CategoryController : ControllerBase
         {
             Category category = new Category();
             category.Name = createCategoryRequestModel.Name;
+            category.Products = createCategoryRequestModel.ProductIds?.Select(productId => new Product { Id = productId }).ToList()!;
             ReturnCategoryAndCodeResponseModel response = await _categoryDataAccess.CreateCategoryAsync(category);
             if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
                 return BadRequest(new { ErrorMessage = "DuplicateEntityName" });

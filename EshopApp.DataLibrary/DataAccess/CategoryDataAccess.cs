@@ -85,6 +85,18 @@ public class CategoryDataAccess : ICategoryDataAccess
             DateTime dateTimeNow = DateTime.Now;
             category.CreatedAt = dateTimeNow;
             category.ModifiedAt = dateTimeNow;
+
+            if (category.Products != null)
+            {
+                List<string> updatedProducts = category.Products.Select(product => product.Id!).ToList(); // just add them here, for filtering below
+                List<Product> filteredProducts = await _appDataDbContext.Products
+                    .Where(databaseProduct => updatedProducts.Contains(databaseProduct.Id!))
+                    .ToListAsync();
+
+                category.Products.Clear();
+                category.Products.AddRange(filteredProducts);
+            }
+
             await _appDataDbContext.Categories.AddAsync(category);
 
             await _appDataDbContext.SaveChangesAsync();
@@ -136,7 +148,6 @@ public class CategoryDataAccess : ICategoryDataAccess
                 foundCategory.Products.Clear();
                 foundCategory.Products.AddRange(filteredProducts);
             }
-
 
             foundCategory.ModifiedAt = DateTime.Now;
             await _appDataDbContext.SaveChangesAsync();

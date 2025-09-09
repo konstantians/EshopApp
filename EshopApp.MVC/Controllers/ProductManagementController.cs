@@ -378,6 +378,9 @@ public class ProductManagementController : Controller
         if (!ModelState.IsValid)
             return View("EditProduct");
 
+        if (editVariantViewModel.DiscountId == "noDiscount")
+            editVariantViewModel.DiscountId = "";
+
         editVariantViewModel.IsDeactivated = !editVariantViewModel.IsActivated;
         if (editVariantViewModel.ImagesIds is not null && editVariantViewModel.ImagesIds.Count > 0)
             editVariantViewModel.ImagesIds = editVariantViewModel.ImagesIds[0] is not null ? editVariantViewModel.ImagesIds[0].Split(',').ToList() : null;
