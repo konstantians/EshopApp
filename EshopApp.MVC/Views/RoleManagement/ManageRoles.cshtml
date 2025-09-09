@@ -22,11 +22,6 @@
     .card:hover {
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
     }
-
-    .dropdown-menu {
-        min-width: 100%;
-        width: auto;
-    }
 </style>
 
 <link href="~/css/filtersStyles.css" rel="stylesheet" />
@@ -60,7 +55,7 @@
                         <div class="btn-group dropdown" role="group">
                             <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicator" class="fa-solid fa-user-tag"></i> </button>
                             <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                            <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
+                            <div class="dropdown-menu dropdown-menu-end py-0 dropdown-menu-custom-width" style="margin-top: 0 !important;">
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="name" data-search-mode-icon="fa-user-tag">Αναζήτηση με Τίτλο<i class="fa-solid fa-user-tag ms-2"></i></a>
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="id" data-search-mode-icon="fa-id-badge">Αναζήτηση με Id<i class="fa-solid fa-id-badge ms-2"></i></a>
                             </div>
@@ -141,7 +136,7 @@
                 <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
-                        <ul class="dropdown-menu py-0" id="sortingDropdown">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width" id="sortingDropdown">
                             <li data-order="defaultOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
                             <li data-order="nameOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Τίτλο Ρόλου</a></li>
                             <li data-order="usersInRoleCountOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Βάση Αριθμό Χρηστών Στον Ρόλο</a></li>
@@ -150,7 +145,7 @@
                     </div>
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
-                        <ul class="dropdown-menu py-0">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width">
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>
@@ -287,7 +282,7 @@
         <div class="modal-dialog">
             <form class="modal-content" method="post" asp-controller="roleManagement" asp-action="DeleteRole" id="deleteRoleForm-@role.Id">
                 <div class="modal-header">
-                    <h5 class="modal-title">Επιβεβαίωση Διαγραφής Λογαριασμού</h5>
+                    <h5 class="modal-title">Επιβεβαίωση Διαγραφής Ρόλου</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

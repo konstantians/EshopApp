@@ -14,11 +14,6 @@
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
         /* cursor: pointer; */
     }
-
-    .dropdown-menu {
-        min-width: 100%;
-        width: auto;
-    }
 </style>
 
 <link href="~/css/filtersStyles.css" rel="stylesheet"/>
@@ -51,7 +46,7 @@
                         <div class="btn-group dropdown" role="group">
                             <button type="button" class="btn btn-primary"> <i id="searchButtonIconIndicator" class="fa-solid fa-envelope"></i> </button>
                             <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                            <div class="dropdown-menu dropdown-menu-end py-0" style="margin-top: 0 !important;">
+                            <div class="dropdown-menu dropdown-menu-end py-0 dropdown-menu-custom-width" style="margin-top: 0 !important;">
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="email" data-search-mode-icon="fa-envelope">Αναζήτηση με Email<i class="fa-solid fa-envelope ms-2"></i></a>
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="phoneNumber" data-search-mode-icon="fa-phone">Αναζήτηση με Τηλέφωνο<i class="fa-solid fa-phone ms-2"></i></a>
                                 <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="lastName" data-search-mode-icon="fa-user">Αναζήτηση με Επώνυμο<i class="fa-solid fa-user ms-2"></i></a>
@@ -132,7 +127,7 @@
                 <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
-                        <ul class="dropdown-menu py-0" id="sortingDropdown">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width" id="sortingDropdown">
                             <li data-order="defaultOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
                             <li data-order="emailOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Email</a></li>
                             <li data-order="lastNameOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Επώνυμο</a></li>
@@ -141,7 +136,7 @@
                     </div>
                     <div class="dropdown option-dropdown">
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
-                        <ul class="dropdown-menu py-0">
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width">
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
                             <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>

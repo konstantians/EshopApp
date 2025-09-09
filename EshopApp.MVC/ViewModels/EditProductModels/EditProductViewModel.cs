@@ -16,5 +16,5 @@ public class EditProductViewModel
     public string? Description { get; set; }
     public bool IsActivated { get; set; }
     public bool IsDeactivated { get; set; }
-    public List<string>? CategoryIds { get; set; }
+    public List<string> CategoryIds { get; set; } = new List<string>();
 }

@@ -121,6 +121,18 @@ public class DiscountDataAccess : IDiscountDataAccess
             DateTime dateTimeNow = DateTime.Now;
             discount.CreatedAt = dateTimeNow;
             discount.ModifiedAt = dateTimeNow;
+
+            if (discount.Variants is not null)
+            {
+                List<string> updatedVariantIds = discount.Variants.Select(variant => variant.Id!).ToList(); // just add them here, for filtering below
+                List<Variant> filteredVariants = await _appDataDbContext.Variants
+                    .Where(databaseVariant => updatedVariantIds.Contains(databaseVariant.Id!))
+                    .ToListAsync();
+
+                discount.Variants.Clear();
+                discount.Variants.AddRange(filteredVariants);
+            }
+
             await _appDataDbContext.Discounts.AddAsync(discount);
 
             await _appDataDbContext.SaveChangesAsync();

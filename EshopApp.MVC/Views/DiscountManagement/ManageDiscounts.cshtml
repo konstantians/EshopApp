@@ -1,0 +1,657 @@
+﻿@model ManageDiscountsViewModel
+
+@{
+    ViewData["Title"] = "Manage Discounts";
+}
+
+<style>
+    .card:hover {
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .custom-negative-margin {
+        margin-top: -15px;
+    }
+
+    @@media (max-width : 768px) {
+        .custom-negative-margin {
+            margin-top: 0;
+        }
+    }
+</style>
+
+<link href="~/css/filtersStyles.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.css" rel="stylesheet" />
+<link href="~/css/multiSelectStyles.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
+
+<div class="row mb-3">
+    <div class="col-8 offset-2 col-sm-6 offset-sm-3 col-lg-8 offset-lg-2 text-center">
+        <h3 class="mb-0 d-none" id="mainPageTitle">Εκπτώσεις Εφαρμογής</h3>
+    </div>
+    <div class="col-2 col-sm-3 col-lg-2 m-0 text-end px-2 px-sm-0 px-lg-2">
+        <a class="btn btn-outline-primary border border-1 d-none px-2 py-1" id="createDiscountPromptButton" data-bs-toggle="modal" data-bs-target="#createDiscountModal">Δημιουργία Έκπτωσης</a>
+    </div>
+</div>
+
+<button id="filterToggleButton" class="btn btn-primary rounded-0 d-xl-none px-3" style="position: fixed; top: 320px; left: 0px; z-index: 1050; transform: rotate(-90deg);
+            transform-origin: top left; background-color:white !important; color: var(--accent-orange) !important; border: #aaa solid 1px; border-top:none; transition: left 0.4s ease;">
+    Φίλτρα
+</button>
+
+<div class="row">
+    <div class="col-3" id="filtersSection">
+        <div class="card" style="position: sticky !important; top:135px; align-self:flex-start !important;" id="cardFilters">
+            <div class="card-header d-none d-xl-block">
+                <h4 class="text-center mb-0">Φίλτρα</h4>
+            </div>
+            <div class="card-body">
+                <div class="p-3 border border-1 mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label id="searchLabel" for="searchInput" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
+                        <div class="btn-group dropdown" role="group">
+                            <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicator" class="fa-solid fa-percent"></i> </button>
+                            <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-custom-width py-0" style="margin-top: 0 !important;">
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="name" data-search-mode-icon="fa-percent">Αναζήτηση με Τίτλο<i class="fa-solid fa-percent ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode="id" data-search-mode-icon="fa-tag">Αναζήτηση με Id<i class="fa-solid fa-tag ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="searchInput" value="">
+                        <a class="btn btn-primary" id="searchButton"><i class="fas fa-search"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-9" id="objectsSection">
+        <div class="row mb-1 mb-sm-2 px-2 px-sm-0 px-lg-2">
+            <div class="col-12 col-md-6 px-0">
+                <ul class="pagination justify-content-md-start justify-content-center align-items-center mb-1 mb-md-0 @(Model.Discounts.Count > 18 ? "" : "d-none")" id="paginationUl" data-total-items="@Model.Discounts.Count">
+                    <li class="page-item me-1" id="goToFirstPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span aria-hidden="true" class="text-md-biggest">«</span>
+                        </a>
+                    </li>
+                    <li class="page-item me-1" id="goToPreviousPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=0">
+                            <span class="text-md-biggest" aria-hidden="true">‹</span>
+                        </a>
+                    </li>
+                    <li class="page-item active page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">1</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Discounts.Count > 54 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">2</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Discounts.Count > 72 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">3</a>
+                    </li>
+                    <li class="page-item page-li @(Model.Discounts.Count > 90 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">4</a>
+                    </li>
+                    <li class="page-item disabled @(Model.Discounts.Count > 108 ? "" : "d-none")">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">…</a>
+                    </li>
+                    <li class="page-item page-li">
+                        <a class="page-link no-background text-md-bigger" style="padding-right:3px !important; padding-left:3px !important;" href="#">@Math.Ceiling((double)@Model.Discounts.Count / 18) </a>
+                    </li>
+                    <li class="page-item ms-1" id="goToNextPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1">
+                            <span aria-hidden="true" class="text-md-biggest">›</span>
+                        </a>
+                    </li>
+                    <li class="page-item ms-1" id="goToLastPaginationLi">
+                        <a class="page-link special rounded-0" style="padding-top:4px !important; padding-bottom:4px !important; width:35px;" href="?page=1182">
+                            <span aria-hidden="true" class="text-md-biggest">»</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-12 col-md-6 px-0 mb-1 mb-sm-0">
+                <div class="d-flex gap-2 justify-content-md-end justify-content-sm-center justify-content-between">
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width" id="sortingDropdown">
+                            <li data-order="defaultOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
+                            <li data-order="nameOrder" data-order-direction="ascending"><a class="dropdown-item" href="#">Αλφαβητικά κατά Τίτλο</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown option-dropdown">
+                        <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;" id="pagesDropdown">18 Ανά Σελίδα</button>
+                        <ul class="dropdown-menu py-0 dropdown-menu-custom-width">
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(18)" href="#">18 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(36)" href="#">36 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(72)" href="#">72 Ανά Σελίδα</a></li>
+                            <li><a class="dropdown-item" onclick="updateItemsPerPage(120)" href="#">120 Ανά Σελίδα</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
+            <div class="table-responsive w-100 p-0">
+                <table class="table table-hover table-striped" id="discountsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th class="text-nowrap">Τίτλος Έκπτωσης</th>
+                            <th class="text-nowrap">Ποσοστό</th>
+                            <th class="text-nowrap">Παραλλαγές Στην Έκπτωση</th>
+                            <th>Επεξεργασία</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int counter = 0;
+                        }
+                        @foreach (UiDiscount discount in Model.Discounts)
+                        {
+                            if (counter > 9)
+                                break;
+
+                            <tr>
+                                <td class="text-nowrap">@discount.Id</td>
+                                <td class="text-nowrap">@discount.Name</td>
+                                <td class="text-nowrap">@discount.Percentage</td>
+                                <td class="text-nowrap">@discount.Variants.Count</td>
+                                <td class="text-nowrap">
+                                    <a class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editDiscountModal-@discount.Id"><i class="fas fa-pen"></i></a>
+                                    <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteDiscountConfirmationModal-@discount.Id"><i class="fas fa-trash"></i></a>
+                                </td>
+                            </tr>
+
+                            counter++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal" id="createDiscountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" asp-controller="DiscountManagement" asp-action="CreateDiscount" id="createDiscountForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Δημιουργία Έκπτωσης</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label asp-for="CreateDiscountViewModel.Name" class="form-label"><i class="fa-solid fa-percent me-2"></i>Τίτλος Έκπτωσης</label>
+                    <input class="form-control" asp-for="CreateDiscountViewModel.Name" type="text" data-custom-validation="false">
+                    <span asp-validation-for="CreateDiscountViewModel.Name" class="text-danger"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="CreateDiscountViewModel.Percentage" class="form-label"><i class="fa-solid fa-percent me-2"></i>Ποσοστό Έκπτωσης</label>
+                    <input class="form-control" asp-for="CreateDiscountViewModel.Percentage" type="number" data-custom-validation="false" min="1" step="1">
+                    <span asp-validation-for="CreateDiscountViewModel.Percentage" class="text-danger"></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center" id="searchButtonIconIndicatorContainerCreateDiscount">
+                    <label for="searchInputCreateDiscount" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
+                    <div class="btn-group dropdown" role="group">
+                        <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicatorCreateDiscount" class="fa-solid fa-box-archive"></i> </button>
+                        <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <div class="dropdown-menu dropdown-menu-end py-0 dropdown-menu-custom-width" style="margin-top: 0 !important;">
+                            <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode-X="name" data-search-mode-icon-X="fa-box-archive">Αναζήτηση με Τίτλο<i class="fa-solid fa-box-archive ms-2"></i></a>
+                            <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode-X="sku" data-search-mode-icon-X="fa-tag">Αναζήτηση με SKU<i class="fa-solid fa-tag ms-2"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group mt-2">
+                    <input type="text" class="form-control" id="searchInputCreateDiscount" value="">
+                    <a class="btn btn-primary" id="searchButtonCreateDiscount"><i class="fas fa-search"></i></a>
+                </div>
+                <div class="table-responsive w-100 p-0 custom-negative-margin">
+                    <table class="table table-hover table-striped" id="createDiscountTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-nowrap">Τίτλος Παραλλαγής</th>
+                                <th class="text-nowrap">SKU Παραλλαγής</th>
+                                <th class="text-nowrap">Επιλογή</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int counter = 0;
+                            }
+                            @foreach (UiVariant variant in Model.Variants)
+                            {
+                                if (counter > 17)
+                                    break;
+
+                                <tr>
+                                    <td class="text-nowrap">@variant.Product!.Name</td>
+                                    <td class="text-nowrap">@variant.SKU</td>
+                                    <td class="text-center">
+                                        <div class="form-check d-flex justify-content-center align-items-center">
+                                            <input class="form-check-input external-table-checkbox" type="checkbox" value="@variant.Id" />
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                counter++;
+                            }
+                        </tbody>
+                    </table>
+                    <input asp-for="CreateDiscountViewModel.VariantIds" hidden>
+                </div>
+                <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="form-check-label me-2 text-bigger" asp-for="CreateDiscountViewModel.IsActivated">Ενεργοποίηση Έκπτωσης</label>
+                        <input class="form-check-input rounded-0" type="checkbox" asp-for="CreateDiscountViewModel.IsActivated" checked />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="createDiscountButton" data-testid="createDiscountButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@for (int i = 0; i < Model.UpdateDiscountViewModels.Count; i++)
+{
+    UpdateDiscountViewModel updateDiscountViewModel = Model.UpdateDiscountViewModels[i];
+    <div class="modal fade custom-center-modal" id="deleteDiscountConfirmationModal-@updateDiscountViewModel.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" asp-controller="DiscountManagement" asp-action="DeleteDiscount" id="deleteDiscountForm-@updateDiscountViewModel.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επιβεβαίωση Διαγραφής Έκπτωσης</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <strong style="font-size: 18px;">Η παρακάτω ενέργεια δεν είναι αντιστρέψιμη!</strong>
+                    <p>
+                        Αν είστε σίγουροι πως θέλετε να διαγράψατε την συγκεκριμένη έκπτωση παρακαλώ συμπληρώστε τον τίτλο της έκπτωσης και πατήστε συνέχεια.
+                    </p>
+                    <label for="modalDeleteDiscountInput-@updateDiscountViewModel.Id" class="form-label"><i class="fa-solid fa-percent me-2"></i>Τίτλος Έκπτωσης</label>
+                    <input class="form-control" id="modalDeleteDiscountInput-@updateDiscountViewModel.Id" type="text" data-custom-validation="false" data-testid="emailInput" data-discount-name="@updateDiscountViewModel.Name">
+                    <span id="modalDeleteDiscountValidationSpan-@updateDiscountViewModel.Id" class="text-danger"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-testid="cancelDeleteDiscountButton-@updateDiscountViewModel.Id">Ακύρωση</button>
+                    <button type="submit" class="btn btn-primary" id="deleteDiscountButton-@updateDiscountViewModel.Id" data-testid="deleteDiscountButton-@updateDiscountViewModel.Id">Συνέχεια</button>
+                </div>
+                <input name="discountId" value="@updateDiscountViewModel.Id" hidden />
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade custom-center-modal" id="editDiscountModal-@updateDiscountViewModel.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" asp-controller="DiscountManagement" asp-action="EditDiscount" id="editDiscountForm-@updateDiscountViewModel.Id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Επεξεργασία Έκπτωσης</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="updateDiscountViewModel_Id-@updateDiscountViewModel.Name" class="form-label"><i class="fa-solid fa-percent me-2"></i>Τίτλος Έκπτωσης</label>
+                        <input class="form-control" asp-for="@updateDiscountViewModel.Name" id="updateDiscountViewModel_Name-@updateDiscountViewModel.Id" type="text" data-custom-validation="false">
+                        <span asp-validation-for="@updateDiscountViewModel.Name" class="text-danger"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label for="updateDiscountViewModel_Id-@updateDiscountViewModel.Percentage" class="form-label"><i class="fa-solid fa-percent me-2"></i>Ποσοστό Έκπτωσης</label>
+                        <input class="form-control" asp-for="@updateDiscountViewModel.Percentage" id="updateDiscountViewModel_Name-@updateDiscountViewModel.Id" type="number" data-custom-validation="false" min="1" step="1">
+                        <span asp-validation-for="@updateDiscountViewModel.Percentage" class="text-danger"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center" id="searchButtonIconIndicatorContainerUpdateDiscount-@updateDiscountViewModel.Id">
+                        <label for="searchInputUpdateDiscount-@updateDiscountViewModel.Id" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
+                        <div class="btn-group dropdown" role="group">
+                            <button type="button" class="btn btn-primary" style="width:40px;"> <i id="searchButtonIconIndicatorUpdateDiscount-@updateDiscountViewModel.Id" class="fa-solid fa-box-archive"></i> </button>
+                            <button type="button" class="btn btn-dark dropdown-toggle" style="width:40px;" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                            <div class="dropdown-menu dropdown-menu-end py-0 dropdown-menu-custom-width" style="margin-top: 0 !important;">
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode-X="name" data-search-mode-icon-X="fa-box-archive">Αναζήτηση με Τίτλο<i class="fa-solid fa-box-archive ms-2"></i></a>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" href="#" data-search-mode-X="sku" data-search-mode-icon-X="fa-tag">Αναζήτηση με SKU<i class="fa-solid fa-tag ms-2"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mt-2">
+                        <input type="text" class="form-control" id="searchInputUpdateDiscount-@updateDiscountViewModel.Id" value="">
+                        <a class="btn btn-primary" id="searchButtonUpdateDiscount-@updateDiscountViewModel.Id"><i class="fas fa-search"></i></a>
+                    </div>
+                    <div class="table-responsive w-100 p-0 custom-negative-margin">
+                        <table class="table table-hover table-striped" id="updateDiscountTable-@updateDiscountViewModel.Id">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-nowrap">Τίτλος Παραλλαγής</th>
+                                    <th class="text-nowrap">SKU Παραλλαγής</th>
+                                    <th class="text-nowrap">Επιλογή</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int counter = 0;
+                                }
+                                @foreach (UiVariant variant in Model.Variants)
+                                {
+                                    if (counter > 9)
+                                        break;
+
+                                    string checkedClass = "";
+                                    if (updateDiscountViewModel.VariantIds is not null && updateDiscountViewModel.VariantIds.Any(variantId => variantId == variant.Id))
+                                    {
+                                        checkedClass = "checked";
+                                    }
+                                    <tr>
+                                        <td class="text-nowrap">@variant.Product!.Name</td>
+                                        <td class="text-nowrap">@variant.SKU</td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center align-items-center">
+                                                <input class="form-check-input external-table-checkbox" type="checkbox" value="@variant.Id" @checkedClass />
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    counter++;
+                                }
+                            </tbody>
+                        </table>
+                        <input asp-for="@updateDiscountViewModel.VariantIds" id="UpdateDiscountViewModel_VariantIds-@updateDiscountViewModel.Id" hidden>
+                    </div>
+                    <div class="col-lg-6 col-12" style="margin-bottom: 1.75rem;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <label class="form-check-label me-2 text-bigger" asp-for="@updateDiscountViewModel.IsActivated">Ενεργοποίηση Έκπτωσης</label>
+                            <input class="form-check-input rounded-0" type="checkbox" asp-for="@updateDiscountViewModel.IsActivated" checked />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                    <button type="submit" class="btn btn-primary" id="editDiscountButton-@updateDiscountViewModel.Id">Συνέχεια</button>
+                </div>
+                <input asp-for="@updateDiscountViewModel.Id" id="updateDiscountViewModel_Id-@updateDiscountViewModel.Id" hidden />
+            </form>
+        </div>
+    </div>
+}
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/customValidation.js"></script>
+    <script type="text/javascript" src="~/js/customModals.js"></script>
+    <script type="text/javascript" src="~/js/filtersBehaviour.js"></script>
+    <script type="text/javascript" src="~/js/filtersRepeatedNonStaticCode.js"></script>
+    <script type="text/javascript" src="~/js/externalTableSearchFunctionality.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/slim-select@1.27.1/dist/slimselect.min.js"></script>
+    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+
+    <script>
+        function returnTrRow(itemX, isCheckedX){
+            return [
+                itemX.name,
+                itemX.sku,
+                `<div class="form-check d-flex justify-content-center align-items-center">
+                    <input class="form-check-input external-table-checkbox" type="checkbox" value="${itemX.id}" ${isCheckedX} />
+                </div>`
+            ];
+        }
+
+        let variants = JSON.parse('@Html.Raw(Json.Serialize(Model.Variants))');
+
+        let variantsX = variants.map((variant, index) => {
+            let deepVariant = JSON.parse(JSON.stringify(variant));
+
+            return {
+                ...deepVariant,
+                originalIndex: index,
+                name: variant.product?.name ?? null,
+                isFilteredBySearch: false,
+                checked: false
+            };
+        });
+
+        let tableAndHandlersX = setUpExternalTable(variantsX, "createDiscountTable", "searchInputCreateDiscount", "searchButtonIconIndicatorContainerCreateDiscount", "searchButtonIconIndicatorCreateDiscount", "CreateDiscountViewModel_VariantIds");
+
+        let createDiscountModal = document.getElementById("createDiscountModal");
+        let createDiscountForm = document.getElementById("createDiscountForm");
+        createDiscountModal.addEventListener('hidden.bs.modal', () => {
+            createDiscountForm.reset();
+            const errorSpans = createDiscountForm.querySelectorAll("span.text-danger");
+            errorSpans.forEach(span => {
+                span.textContent = "";
+            });
+            resetExternaltable("createDiscountTable", tableAndHandlersX.table, variantsX, tableAndHandlersX.handlers);
+        });
+
+        let discounts = JSON.parse('@Html.Raw(Json.Serialize(Model.Discounts))');
+        discounts = discounts.map((discount, index) => ({
+            ...discount,
+            originalIndex: index,
+            isFilteredBySearch: false,
+        }));
+
+        discounts.forEach(discount => {
+            let variantsXForThisDiscount = variants.map((variant, index) => {
+                let deepVariant = JSON.parse(JSON.stringify(variant));
+
+                return {
+                    ...deepVariant,
+                    originalIndex: index,
+                    name: variant.product?.name ?? null,
+                    isFilteredBySearch: false,
+                    checked: false,
+                    initiallyChecked: false
+                };
+            });
+
+            let checkedItemsX = [];
+            variantsXForThisDiscount.forEach(variantX => {
+                if (discount.variants.some(variant => variant.id === variantX.id)) {
+                    variantX.checked = true;
+                    variantX.initiallyChecked = true;
+                    checkedItemsX.push(variantX.id);
+                }
+            });
+
+            document.getElementById("UpdateDiscountViewModel_VariantIds-" + discount.id).value = checkedItemsX.join(',');
+
+            let tableAndHandlersXForThisDiscount = setUpExternalTable(variantsXForThisDiscount, "updateDiscountTable-" + discount.id, "searchInputUpdateDiscount-" + discount.id,
+                "searchButtonIconIndicatorContainerUpdateDiscount-" + discount.id, "searchButtonIconIndicatorUpdateDiscount-" + discount.id, "UpdateDiscountViewModel_VariantIds-" + discount.id);
+
+            let editDiscountModal = document.getElementById("editDiscountModal-" + discount.id);
+            let editDiscountForm = document.getElementById("editDiscountForm-" + discount.id);
+            editDiscountModal.addEventListener('hidden.bs.modal', () => {
+                editDiscountForm.reset();
+                document.getElementById("updateDiscountViewModel_Name-" + discount.id).value = discount.name;
+                document.getElementById("UpdateDiscountViewModel_VariantIds-" + discount.id).value = checkedItemsX.join(',');
+                const errorSpans = editDiscountForm.querySelectorAll("span.text-danger");
+                errorSpans.forEach(span => {
+                    span.textContent = "";
+                });
+                resetExternaltable("updateDiscountTable-" + discount.id, tableAndHandlersXForThisDiscount.table, variantsXForThisDiscount, tableAndHandlersXForThisDiscount.handlers);
+            });
+        });
+
+        let tbody = document.getElementById('discountsTable').querySelector('tbody');
+
+        /* pagination change */
+        document.addEventListener('pagination:pageChange', function (event) {
+            renderTable(discounts);
+        });
+
+        /* items per page change */
+        document.addEventListener('itemsPerPage:changed', function (event) {
+            renderTable(discounts);
+        });
+
+        function countHowManyEntriesAreLeftUnfilteredAndUpdatePagination() {
+            let count = 0;
+            discounts.forEach(discount => {
+                if (!discount.isFilteredBySearch) {
+                    count++;
+                }
+            });
+
+            updateTotalItems(count);
+        }
+
+        function addTrToTableBody(discount){
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-nowrap">${discount.id}</td>
+                <td class="text-nowrap">${discount.name}</td>
+                <td class="text-nowrap">${discount.percentage}</td>
+                <td class="text-nowrap">${discount.variants.length}</td>
+
+                <td class="text-nowrap">
+                    <a class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editDiscountModal-${discount.id}"><i class="fa-solid fa-pen"></i></a>
+                    <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteDiscountConfirmationModal-${discount.id}"><i class="fa-solid fa-trash"></i></a>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        setUpSortingDropdownListeners(discounts);
+        setUpSearchInputMode(discounts, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpSearchInput(discounts, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        /* ------------------------------------- */
+        document.querySelectorAll('.custom-accordion-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                const isExpanded = content.classList.contains('expanded');
+
+                this.setAttribute('aria-expanded', !isExpanded);
+                this.classList.toggle('collapsed', !isExpanded);
+                content.classList.toggle('expanded', !isExpanded);
+            });
+        });
+
+        let createDiscountPromptButton = document.getElementById('createDiscountPromptButton');
+        let mainPageTitle = document.getElementById("mainPageTitle");
+        function updateCreateDiscountButtonText() {
+            if(window.innerWidth < 768){
+                mainPageTitle.textContent = "Κατηγορίες";
+            }
+            else{
+                mainPageTitle.textContent = "Κατηγορίες Εφαρμογής";
+            }
+
+            if (window.innerWidth < 576) {
+                createDiscountPromptButton.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            }
+            else if (window.innerWidth < 1700) {
+                createDiscountPromptButton.innerHTML = 'Δημιουργία';
+                createDiscountPromptButton.classList.remove('py-1', 'px-2');
+            }
+            else {
+                createDiscountPromptButton.innerHTML = 'Δημιουργία Έκπτωσης';
+                createDiscountPromptButton.classList.remove('py-1', 'px-2');
+            }
+
+            createDiscountPromptButton.classList.remove('d-none');
+        }
+
+        window.addEventListener("load", updateCreateDiscountButtonText);
+        window.addEventListener("resize", updateCreateDiscountButtonText);
+
+        function updateObjectsContainer() {
+            if (window.innerWidth < 1650) {
+                objectsSection.classList.remove('col-xl-9');
+                objectsSection.classList.add('col-xl-8');
+            }
+            else if (window.innerWidth < 2350) {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+            }
+            //for very big screens
+            else {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+            }
+        }
+
+        window.addEventListener("load", updateObjectsContainer);
+        window.addEventListener("resize", updateObjectsContainer);
+
+        setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteDiscountConfirmationModal', 'deleteDiscountForm', 'modalDeleteDiscountInput', 'data-discount-name', "The provided value does not match the name of the discount");
+
+        setUpValidationListeners();
+        setUpFormSubmissionValidationListener("createDiscountForm");
+        document.querySelectorAll('[id^="editDiscountForm-"]').forEach(form => {
+            setUpFormSubmissionValidationListener(form.id);
+        });
+
+        /* Server Validation Handling */
+
+        const discountDeletionSuccess = '@TempData["DiscountDeletionSuccess"]' === 'True';
+        const discountDeletionSuccessWarning = '@TempData["DiscountDeletionSuccessWarning"]' === 'True';
+        const discountCreationSuccess = '@TempData["DiscountCreationSuccess"]' === 'True';
+        const discountUpdateSuccess = '@TempData["DiscountUpdateSuccess"]' === 'True';
+        const discountNotFoundWithGivenId = '@TempData["DiscountNotFoundWithGivenId"]' === 'True';
+        const duplicateEntityName = '@TempData["DuplicateEntityName"]' === 'True';
+        const errorFromCreateDiscount = '@TempData["ErrorFromCreateDiscount"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        let resultModal = document.getElementById("resultModal");
+
+        if (discountDeletionSuccess) {
+            resultModal.setAttribute("popUpValue", "discountDeletionSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Διαγραφής Έκπτωσης", "Η έκπτωση διαγράφτηκε επιτυχώς!", "Επιτυχία",
+                "Η έκπτωση διαγράφτηκε επιτυχώς!", "success");
+        }
+        else if(discountDeletionSuccessWarning){
+            resultModal.setAttribute("popUpValue", "productDeletionSuccessWarning");
+            showPopUpModal("resultModal", "Επιτυχία Απενεργοποίησης Έκπτωσης", "Η έκπτωση απενεργοποιήθηκε, επειδή υπάρχει σε τουλάχιστον μία παραγγελία. Αν θέλετε να διαγραφτεί πλήρως πρέπει να διαγραφούν πρώτα όλες οι παραγγελίες στις οποίες βρίσκεται.", "Επιτυχία",
+                "Η έκπτωση απενεργοποιήθηκε, επειδή υπάρχει σε τουλάχιστον μία παραγγελία.", "success");
+        }
+        else if(discountCreationSuccess){
+            resultModal.setAttribute("popUpValue", "discountCreationSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Δημιουργίας Έκπτωσης", "Η έκπτωση δημιουργήθηκε επιτυχώς, μπορείτε να την διαχειριστείτε χρησιμοποιώντας αυτό το menu!", "Επιτυχία",
+                "Η έκπτωση δημιουργήθηκε επιτυχώς, μπορείτε να την διαχειριστείτε χρησιμοποιώντας αυτό το menu!", "success");
+        }
+        else if(discountUpdateSuccess){
+            resultModal.setAttribute("popUpValue", "discountUpdateSuccess");
+            showPopUpModal("resultModal", "Επιτυχία Επεξεργασίας Έκπτωσης", "Η έκπτωση ανανεώθηκε επιτυχώς!", "Επιτυχία",
+                "Η έκπτωση ανανεώθηκε επιτυχώς!", "success");
+        }
+        else if(duplicateEntityName && errorFromCreateDiscount){
+            resultModal.setAttribute("popUpValue", "duplicateEntityName");
+            showPopUpModal('resultModal', "Αποτυχία Δημιουργίας Έκπτωσης", "Ο τίτλος έκπτωσης που εισήγατε κατά την δημιουργία της έκπτωσης υπάρχει ήδη στο σύστημα." +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο έκπτωσης. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο τίτλος έκπτωσης που εισήγατε κατά την δημιουργία της έκπτωσης υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο έκπτωσης.");
+        }
+        else if(duplicateEntityName){
+            resultModal.setAttribute("popUpValue", "duplicateEntityName");
+            showPopUpModal('resultModal', "Αποτυχία Ενημέρωσης Έκπτωσης", "Ο τίτλος έκπτωσης που εισήγατε για την ενημέρωση της έκπτωσης υπάρχει ήδη στο σύστημα. " +
+                "Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο έκπτωσης. " +
+                "Σε περίπτωση που αντιμετωπίζετε πρόβλημα παρακαλώ επικοινωνήστε μαζί μας μέσω του email υποστήριξης μας kinnaskonstantinos0@gmail.com.",
+                "Αποτυχία", "Ο τίτλος έκπτωσης που εισήγατε για την ενημέρωση της έκπτωσης υπάρχει ήδη στο σύστημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικό τίτλο έκπτωσης.");
+        }
+        else if (discountNotFoundWithGivenId) {
+            resultModal.setAttribute("popUpValue", "discountNotFoundWithGivenId");
+            showPopUpModal('resultModal', "Αποτυχία Εύρεσης Έκπτωσης", "Η έκπτωση που προσπαθίσατε να τροποποιήσετε δεν βρέθηκε στο σύστημα. Παρακαλώ ανανεώστε την σελίδα σας και δοκιμάστε ξανά.",
+                "Αποτυχία", "Η έκπτωση που προσπαθίσατε να τροποποιήσετε δεν βρέθηκε στο σύστημα. Παρακαλώ ανανεώστε την σελίδα σας και δοκιμάστε ξανά.");
+        }
+        else if (unknownError) {
+            resultModal.setAttribute("popUpValue", "unknownError");
+            showPopUpModal('resultModal', "Απρόβλεπτο Πρόβλημα", "Κάποιο πρόβλημα συνέβη από την μεριά του συστήματος. Παρακαλώ δοκιμάστε αργότερα.",
+                "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε αργότερα.");
+        }
+    </script>
+}

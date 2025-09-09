@@ -1,9 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EshopApp.DataLibraryAPI.Models.RequestModels.CategoryModels;
+namespace EshopApp.MVC.ViewModels.CategoryModels;
 
-public class CreateCategoryRequestModel
+public class UpdateCategoryViewModel
 {
+    [Required]
+    [MaxLength(50)]
+    public string? Id { get; set; }
     [Required]
     [MaxLength(50)]
     public string? Name { get; set; }
