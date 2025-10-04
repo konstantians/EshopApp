@@ -26,7 +26,6 @@ public class EditVariantViewModel
     public UiDiscount? Discount { get; set; }
     [MaxLength(50)]
     public string? DiscountId { get; set; }
-    public List<UiImage>? Images { get; set; }
     public List<string>? ImagesIds { get; set; }
     public List<string>? AttributeIds { get; set; }
     [MaxLength(50)]

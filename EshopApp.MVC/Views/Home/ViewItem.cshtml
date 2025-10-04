@@ -1,0 +1,120 @@
+﻿@model UiProduct
+
+@{
+    ViewData["Title"] = "View Item";
+    string activeClass = "active";
+}
+
+<style>
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 0-.708 0L4.5 8l6.146 6.354a.5.5 0 0 0 .708-.708L5.707 8l5.647-5.646a.5.5 0 0 0 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0L11.5 8l-6.146 6.354a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    @@media (max-width: 991.99px) {
+        .border-1 {
+            border: 0 !important;
+        }
+    }
+</style>
+
+
+<div class="row d-flex align-items-stretch">
+    <div class="col-12 col-xl-5 d-flex flex-column">
+        <div id="itemCarousel" class="carousel slide" data-bs-interval="false">
+            <div class="carousel-inner">
+                @foreach (UiVariantImage variantImage in Model.Variants[0].VariantImages)
+                {
+                <div class="carousel-item @activeClass">
+                    <img src="~/DynamicImages/@variantImage.Image!.ImagePath" class="d-block w-100 img-fluid" style="height: auto; max-height: 70vh;">
+                </div>
+                activeClass = "";
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+        <div class="d-flex justify-content-start mt-2 gap-2">
+            @for (int i = 0; i < Model.Variants[0].VariantImages.Count; i++)
+            {
+            <img src="~/DynamicImages/@Model.Variants[0].VariantImages[i].Image!.ImagePath"
+                 class="img-thumbnail"
+                 style="width:102px; height:102px; object-fit:cover; cursor:pointer;"
+                 data-bs-target="#itemCarousel"
+                 data-bs-slide-to="@i"
+                 aria-label="Slide @(i+1)" />
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-7 d-flex flex-column">
+        <div class="mt-2">
+            <h1>@Model.Name</h1>
+            <span>@Model.Code</span>
+            <hr>
+            @if (string.IsNullOrEmpty(Model.Description))
+            {
+            <div>Δεν υπάρχει περιγραφή για αυτήν την παραλλαγή προϊόντος ακόμα.</div>
+            }
+            else
+            {
+            <div>@Model.Description</div>
+            }
+        </div>
+        <div class="row mt-auto">
+            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center text-lg-start">
+                <span style="color:#999999" class="mb-2 text-smaller">ΤΙΜΗ</span>
+                <div style="font-size:30px;" class="text-info">@Model.Variants[0].Price&#8364;</div>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center">
+                <span style="color:#999999" class="text-smaller">ΠΟΣΟΤΗΤΗΤΑ</span>
+                <div class="d-flex align-items-center mt-2 justify-content-center">
+                    <i class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
+                    <input class="form-control" type="number" style="max-width:60px;">
+                    <i class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-6 border-1 border py-2 text-center text-lg-end">
+                <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-check me-1"></i> ΔΙΑΘΕΣΙΜΟ</div>
+                <a class="btn btn-primary px-3 text-center" id="addItemToCartButton" style="padding-top:0.7rem; padding-bottom:0.7rem;">ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ<i class="fa-solid fa-cart-plus ms-2"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateLayout() {
+            let addItemToCartButton = document.getElementById("addItemToCartButton");
+            if (window.innerWidth < 1050) {
+                addItemToCartButton.textContent = "ΠΡΟΣΘΗΚΗ";
+            }
+            else if (window.innerWidth < 1400) {
+                addItemToCartButton.textContent = "ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ";
+            }
+            else {
+                objectsSection.classList.add('col-xl-9');
+                objectsSection.classList.remove('col-xl-8');
+
+                Array.from(itemsContainer.children).forEach(cardItem => {
+                    cardItem.classList.add('col-xl-2');
+                    cardItem.classList.remove('col-xl-3');
+                    cardItem.classList.remove('col-xl-4');
+                });
+            }
+        }
+
+        window.addEventListener("load", updateLayout);
+        window.addEventListener("resize", updateLayout);
+    </script>
+}

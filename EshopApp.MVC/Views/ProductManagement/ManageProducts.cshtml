@@ -443,7 +443,7 @@
             }
         });
 
-            function countHowManyEntriesAreLeftUnfilteredAndUpdatePagination() {
+        function countHowManyEntriesAreLeftUnfilteredAndUpdatePagination() {
             let count = 0;
             itemsLeftForCheckBoxCounts = [];
             if(currentViewMode === "ProductView"){
@@ -591,10 +591,12 @@
         //these 2 functions are used by renderTable function in filtersRepeatedNonStaticCode
         function checkIfItemFilteredByCheckboxFilters(item){
             if(currentViewMode === "ProductView"){
-                return false;
+                return isCategoryFilterActive.value > 0 && item.protectedByCategoryLis.length === 0;
             }
             else{
-                return (isPriceFilterActive.value > 0 && item.protectedByPriceLis.length === 0) || (isUnitsInStockFilterActive.value > 0 && item.protectedByUnitsInStockLis.length === 0);
+                return (isCategoryFilterActive.value > 0 && item.protectedByCategoryLis.length === 0) || 
+                    (isPriceFilterActive.value > 0 && item.protectedByPriceLis.length === 0) || 
+                    (isUnitsInStockFilterActive.value > 0 && item.protectedByUnitsInStockLis.length === 0);
             }
         }
 
@@ -780,7 +782,7 @@
             return itemViewDropdown.textContent;
         });
 
-        /* Delete Account Custom Modal Validation */
+        /* Delete Product And Variant Custom Modal Validation */
         setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteProductConfirmationModal', 'deleteProductForm', 'modalDeleteProductInput', 'data-code', "The provided value does not match the product's code");
         setUpDeleteModalsCustomValidationAndSubmissionProcedures('deleteVariantConfirmationModal', 'deleteVariantForm', 'modalDeleteVariantInput', 'data-sku', "The provided value does not match the variant's sku");
 
