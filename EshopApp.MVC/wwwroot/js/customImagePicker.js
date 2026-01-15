@@ -6,6 +6,7 @@
     const imageSearch = imagePickerModal.querySelector('input[id^="imageSearch"]');
     const imageUpload = imagePickerModal.querySelector('input[id^="imageUpload"]');
     const imageGrid = imagePickerModal.querySelector('div[id^="imageGrid"]');
+    const hiddenInput = document.getElementById(imageGrid.dataset.saveToInputWithId);
     const saveImagesButton = imagePickerModal.querySelector('button[id^="saveImagesButton"]');
     const cancelSaveImagesButton = imagePickerModal.querySelector('button[id^="cancelSaveImagesButton"]');
 
@@ -101,7 +102,7 @@
             //replace the id with the correct one and add the listener
             const newDiv = imagePickerModal.querySelector('.image-selectable[data-id="new"]');
             if (newDiv) {
-                newDiv.dataset.id = result.ImageId;
+                newDiv.dataset.id = result.imageId;
                 newDiv.addEventListener('click', () => {
                     if (newDiv.classList.contains('selected')) {
                         newDiv.classList.remove('selected');
@@ -139,8 +140,9 @@
         imagePickerGallery.innerHTML = "";
         if (imagePickerGallery && selectedImages.length == 0) {
             imagePickerGallery.previousElementSibling.classList.remove('d-none');
-            //let alert = createNoImagesAlert();
-            //imagePickerGallery.appendChild(alert);
+            hiddenInput.value = "";
+            if (shouldChangeImagePickerInput)
+                imagePickerInput.value = "Add images...";
 
             if (isModal) {
                 modal.hide();
@@ -191,7 +193,6 @@
         });
 
         if (selectedImages && selectedImages.length > 0) {
-            const hiddenInput = document.getElementById(imageGrid.dataset.saveToInputWithId);
             hiddenInput.value = selectedIds.join(',');
 
             if (shouldChangeImagePickerInput) {

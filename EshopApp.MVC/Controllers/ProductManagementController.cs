@@ -382,7 +382,9 @@ public class ProductManagementController : Controller
             editVariantViewModel.DiscountId = "";
 
         editVariantViewModel.IsDeactivated = !editVariantViewModel.IsActivated;
-        if (editVariantViewModel.ImagesIds is not null && editVariantViewModel.ImagesIds.Count > 0)
+        if (editVariantViewModel.ImagesIds is not null && editVariantViewModel.ImagesIds.Count > 0 && editVariantViewModel.ImagesIds[0] == null)
+            editVariantViewModel.ImagesIds = new List<string>();
+        else if (editVariantViewModel.ImagesIds is not null && editVariantViewModel.ImagesIds.Count > 0)
             editVariantViewModel.ImagesIds = editVariantViewModel.ImagesIds[0] is not null ? editVariantViewModel.ImagesIds[0].Split(',').ToList() : null;
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -429,5 +431,4 @@ public class ProductManagementController : Controller
         else
             return RedirectToAction("ManageProducts", "ProductManagement");
     }
-
 }

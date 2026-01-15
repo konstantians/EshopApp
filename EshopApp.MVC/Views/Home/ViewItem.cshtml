@@ -1,0 +1,288 @@
+﻿@model UiProduct
+
+@{
+    ViewData["Title"] = "View Item";
+    string activeClass = "active";
+}
+
+<style>
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 0-.708 0L4.5 8l6.146 6.354a.5.5 0 0 0 .708-.708L5.707 8l5.647-5.646a.5.5 0 0 0 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0L11.5 8l-6.146 6.354a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    @@media (max-width: 991.99px) {
+        .border-1 {
+            border: 0 !important;
+        }
+    }
+
+    .shake-cart {
+        animation: shake 0.3s ease;
+    }
+</style>
+
+
+<div class="row d-flex align-items-stretch">
+    <div class="col-12 col-xl-5 d-flex flex-column">
+        <div id="itemCarousel" class="carousel slide" data-bs-interval="false">
+            <div class="carousel-inner">
+                @foreach (UiVariantImage variantImage in Model.Variants[0].VariantImages)
+                {
+                    <div class="carousel-item @activeClass">
+                        <img src="~/DynamicImages/@variantImage.Image!.ImagePath" class="d-block w-100 img-fluid" style="height: auto; max-height: 70vh;">
+                    </div>
+                    activeClass = "";
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+        <div class="d-flex justify-content-start mt-2 gap-2">
+            @{
+                var variantImages = Model.Variants?.FirstOrDefault()?.VariantImages ?? new List<UiVariantImage>();
+            }
+            @for (int i = 0; i < variantImages.Count; i++)
+            {
+                <img src="~/DynamicImages/@variantImages[i].Image!.ImagePath"
+                     class="img-thumbnail"
+                     style="width:102px; height:102px; object-fit:cover; cursor:pointer;"
+                     data-bs-target="#itemCarousel"
+                     data-bs-slide-to="@i"
+                     aria-label="Slide @(i+1)" />
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-7 d-flex flex-column">
+        <div class="mt-2">
+            <h1>@Model.Name</h1>
+            <span>@Model.Code</span>
+            <hr>
+            @if (string.IsNullOrEmpty(Model.Description))
+            {
+            <div>Δεν υπάρχει περιγραφή για αυτήν την παραλλαγή προϊόντος ακόμα.</div>
+            }
+            else
+            {
+            <div>@Model.Description</div>
+            }
+        </div>
+        <div class="row mt-auto">
+            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center text-lg-start">
+                <span style="color:#999999" class="mb-2 text-smaller">ΤΙΜΗ</span>
+                <div id="variantPriceDiv" data-price="@Model.Variants![0].Price" style="font-size:30px;" class="text-info">@Model.Variants![0].Price&#8364;</div>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center">
+                <span style="color:#999999" class="text-smaller">ΠΟΣΟΤΗΤΗΤΑ</span>
+                <div class="d-flex align-items-center mt-2 justify-content-center">
+                    <i id="quantityMinusButton" class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
+                    <input id="quantityInput" class="form-control" type="number" style="max-width:60px;" value="1" min="1" step="1">
+                    <i id="quantityPlusButton" class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-6 border-1 border py-2 text-center text-lg-end">
+                <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-check me-1"></i> ΔΙΑΘΕΣΙΜΟ</div>
+                <a data-variantId="@Model.Variants[0].Id" class="btn btn-primary px-3 text-center" id="addItemToCartButton" style="padding-top:0.7rem; padding-bottom:0.7rem;">ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ<i class="fa-solid fa-cart-plus ms-2"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let variantPriceDiv = document.getElementById("variantPriceDiv");
+        let addItemToCartButton = document.getElementById("addItemToCartButton");
+        let quantityInput = document.getElementById("quantityInput");
+
+        function updateLayout() {
+            if(window.innerWidth < 576){
+                addItemToCartButton.innerHTML = 'ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ <i class="fa-solid fa-cart-plus ms-2"></i>';
+            }
+            else if (window.innerWidth < 1050) {
+                addItemToCartButton.textContent = "ΠΡΟΣΘΗΚΗ";
+            }
+            else if (window.innerWidth < 1400) {
+                addItemToCartButton.textContent = "ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ";
+            }
+            else {
+                addItemToCartButton.innerHTML = 'ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ <i class="fa-solid fa-cart-plus ms-2"></i>';
+            }
+        }
+
+        window.addEventListener("load", updateLayout);
+        window.addEventListener("resize", updateLayout);
+
+        addItemToCartButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            try {
+                const response = await fetch('/cart/addItemToCart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        variantId: addItemToCartButton.dataset.variantid,
+                        quantity: quantityInput.value,
+                        shouldUpdate: false
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    alert(data.errorMessage);
+                    return;
+                }
+
+                const data = await response.json();
+                if(data.authenticated === false)
+                {
+                    addToCartLocal();
+                    animateToCart();
+                    return;
+                }
+
+                animateToCart();
+                localStorage.removeItem('cart');
+                document.getElementById("cartItemsContainer").innerHTML = "";
+                document.getElementById("cartItemsContainerSmall").innerHTML = "";
+
+                initiateCart();
+
+
+            } catch (err) {
+                alert(err)
+                console.error('Request failed:', err);
+            }
+        });
+
+        function addToCartLocal() {
+            //TODO here probably we should do a get variant instead of this crap... To also check for quantity.
+            let cart = JSON.parse(localStorage.getItem("cart")) || { cartItems: [] };
+
+            // Check if this variant is already in the cart
+            const existingItem = cart.cartItems.find(item => item.variant.id === addItemToCartButton.dataset.variantid);
+
+            if (existingItem) {
+                document.getElementById("cartItemsContainer").innerHTML = "";
+                document.getElementById("cartItemsContainerSmall").innerHTML = "";
+                existingItem.quantity += Number(quantityInput.value);
+            } else {
+                // Add new item
+                cart.cartItems.push({
+                    variant: {
+                        product : {
+                            name: document.querySelector("h1").textContent
+                        },
+                        id : addItemToCartButton.dataset.variantid,
+                        price : Number(variantPriceDiv.dataset.price),
+                        variantImages: [
+                            {
+                                isThumbNail : true,
+                                image:{
+                                    imagePath: document.querySelector(".carousel-item.active img").src.split('/').pop()
+                                }
+                            }
+                        ]
+                    },
+                    quantity: Number(quantityInput.value),
+                    id: crypto.randomUUID(),
+                });
+            }
+
+            // Save back to localStorage
+
+            localStorage.setItem("cart", JSON.stringify(cart));
+            document.getElementById("cartItemsContainer").innerHTML = "";
+            document.getElementById("cartItemsContainerSmall").innerHTML = "";
+
+            // Render cart
+            renderUserCart(cart);
+        }
+
+        const minusBtn = document.getElementById('quantityMinusButton');
+        const plusBtn = document.getElementById('quantityPlusButton');
+
+
+        quantityInput.addEventListener('input', () => {
+            let value = parseInt(quantityInput.value);
+            if (isNaN(value) || value < 1) value = 1;
+            quantityInput.value = value;
+        });
+
+        minusBtn.addEventListener('click', () => {
+            let value = parseInt(quantityInput.value) || 1;
+            value = Math.max(1, value - 1);
+            quantityInput.value = value;
+        });
+
+        plusBtn.addEventListener('click', () => {
+            let value = parseInt(quantityInput.value) || 1;
+            quantityInput.value = value + 1;
+        });
+
+        function animateToCart() {
+            const img = document.querySelector(".carousel-item.active");
+            const cart = document.getElementById("cartSection");
+            
+            if (window.innerWidth < 1200) {
+                cart.classList.add('shake-cart');
+                setTimeout(() => cart.classList.remove('shake-cart'), 300);
+                return;
+            }
+
+            if (!img || !cart) return;
+
+            // Get positions
+            const imgRect = img.getBoundingClientRect();
+            const cartRect = cart.getBoundingClientRect();
+
+            // Initial size: keep same as original (or small if you want)
+            const initialWidth = imgRect.width * 0.5;   // starting size
+            const initialHeight = imgRect.height * 0.5;
+
+            // Create a clone
+            const flyImg = img.cloneNode(true);
+            flyImg.style.position = 'fixed';
+            flyImg.style.left = imgRect.left + imgRect.width / 2 - initialWidth / 2 + 'px';
+            flyImg.style.top = imgRect.top + imgRect.height / 2 - initialHeight / 2 + 'px';
+            flyImg.style.width = initialWidth + 'px';
+            flyImg.style.height = initialHeight + 'px';
+            flyImg.style.transition = 'all 0.8s ease-in-out';
+            flyImg.style.zIndex = 10000;
+            flyImg.style.pointerEvents = 'none';
+            flyImg.style.borderRadius = '8px';
+            document.body.appendChild(flyImg);
+
+            // Force reflow so transition works
+            flyImg.getBoundingClientRect();
+
+            // Move to cart **and shrink**
+            const targetWidth = initialWidth * 0.2;   // shrink while moving
+            const targetHeight = initialHeight * 0.2;
+            flyImg.style.left = cartRect.left + cartRect.width / 2 - targetWidth / 2 + 'px';
+            flyImg.style.top = cartRect.top + cartRect.height / 2 - targetHeight / 2 + 'px';
+            flyImg.style.width = targetWidth + 'px';
+            flyImg.style.height = targetHeight + 'px';
+            flyImg.style.opacity = '0.6';
+
+            // Remove after animation
+            flyImg.addEventListener('transitionend', () => {
+                flyImg.remove();
+                cart.classList.add('shake-cart');
+                setTimeout(() => cart.classList.remove('shake-cart'), 300);
+            });
+        }
+    </script>
+}

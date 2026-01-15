@@ -1,4 +1,6 @@
-﻿namespace EshopApp.MVC.Models;
+﻿using EshopApp.MVC.Models.DataModels;
+
+namespace EshopApp.MVC.Models;
 
 public class UiUser
 {
@@ -10,7 +12,7 @@ public class UiUser
     public string? LastName { get; set; }
     public bool EmailConfirmed { get; set; }
     public DateTime? LockoutEnd { get; set; }
-    //public Cart? Cart { get; set; }
+    public UiCart? Cart { get; set; }
     //public List<UserCoupon> UserCoupons { get; set; } = new List<UserCoupon>();
     //public List<Order> Orders { get; set; } = new List<Order>();
 }

@@ -603,3 +603,21 @@ input:focus, textarea:focus, select:focus {
     min-width: 100% !important; /* at least as wide as the button */
     width: auto !important; /* but grow if needed */
 }
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    50% {
+        transform: translateX(5px);
+    }
+
+    75% {
+        transform: translateX(-5px);
+    }
+}

@@ -1,4 +1,4 @@
-﻿function setUpSortingDropdownListeners(items) {
+﻿function setUpSortingDropdownListeners(items, customRenderFunction) {
     const handlers = [];
     const sortingDropdown = document.getElementById('sortingDropdown');
     if (!sortingDropdown) return handlers;
@@ -8,7 +8,12 @@
             let directionOrder = li.getAttribute('data-order-direction') || "ascending";
             let isNumeric = li.hasAttribute('data-numeric');
             sortByOrderAttribute(items, li.getAttribute('data-order'), directionOrder, isNumeric);
-            renderTable(items);
+            if (typeof itemCountFunction === 'function') {
+                customRenderFunction(items);
+            }
+            else {
+                renderTable(items);
+            }
         };
         li.addEventListener('click', handler);
         handlers.push({ li, handler });
@@ -44,7 +49,7 @@ function sortByOrderAttribute(items, attribute, direction = 'ascending', isNumer
 
 ///////////////////////////////
 
-function setUpCheckBoxFilterUl(ulId, ifCheckedLogicFunction, protectedByArray, isFilterActiveCounter, items, itemCountFunction) {
+function setUpCheckBoxFilterUl(ulId, ifCheckedLogicFunction, protectedByArray, isFilterActiveCounter, items, itemCountFunction, customRenderFunction) {
     document.getElementById(ulId).querySelectorAll('li').forEach(li => {
         li.addEventListener("click", function () {
             let filterCheckBox = li.querySelector('input');
@@ -67,7 +72,12 @@ function setUpCheckBoxFilterUl(ulId, ifCheckedLogicFunction, protectedByArray, i
             if (typeof itemCountFunction === 'function') {
                 itemCountFunction();
             }
-            renderTable(items);
+            if (typeof customRenderFunction === 'function') {
+                customRenderFunction(items);
+            }
+            else {
+                renderTable(items);
+            }
         });
     });
 }
@@ -143,7 +153,7 @@ let searchInput = document.getElementById('searchInput');
 let searchButtonIconIndicator = document.getElementById('searchButtonIconIndicator');
 let searchMode = document.querySelector('a[data-search-mode]')?.getAttribute("data-search-mode");
 
-function setUpSearchInputMode(items, itemCountFunction) {
+function setUpSearchInputMode(items, itemCountFunction, customRenderFunction) {
     const handlers = [];
 
     document.querySelectorAll('a[data-search-mode]').forEach(link => {
@@ -165,7 +175,12 @@ function setUpSearchInputMode(items, itemCountFunction) {
             if (typeof itemCountFunction === 'function') {
                 itemCountFunction();
             }
-            renderTable(items);
+            if (typeof itemCountFunction === 'function') {
+                customRenderFunction(items);
+            }
+            else {
+                renderTable(items);
+            }
         };
 
         link.addEventListener('click', handler);
@@ -179,7 +194,7 @@ function removeSearchInputModeListeners(handlers) {
     handlers.forEach(({ link, handler }) => link.removeEventListener('click', handler));
 }
 
-function setUpSearchInput(items, itemCountFunction) {
+function setUpSearchInput(items, itemCountFunction, customRenderFunction) {
     let searchInput = document.getElementById('searchInput');
     if (!searchInput) return null;
 
@@ -201,7 +216,12 @@ function setUpSearchInput(items, itemCountFunction) {
             if (typeof itemCountFunction === 'function') {
                 itemCountFunction();
             }
-            renderTable(items);
+            if (typeof itemCountFunction === 'function') {
+                customRenderFunction(items);
+            }
+            else {
+                renderTable(items);
+            }
         }, 500);
     };
 
