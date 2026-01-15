@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using System.Text.Json
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -191,40 +192,12 @@
                         </div>
                         <div class="icon-container icon-container-sm dropdown dropdown-hoverable me-2 me-md-3" id="cartIconContainerSmall">
                             <i class="fa-solid fa-cart-shopping fa-sm"></i>
-                            <span class="custom-badge" id="cartBadgeSmall">2</span>
+                            <span class="custom-badge" id="cartBadgeSmall">0</span>
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-cart custom-box-shadow-no-top pb-0 border-0 rounded-0" id="dropdownMenuCartSmall">
-                                <div class="container p-4">
-                                    <div class="row">
-                                        <div class="col-4">
-                                            <a href="#">
-                                                <img src="~/Images/testJacket.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
-                                            </a>
-                                        </div>
-                                        <div class="col-8 d-flex flex-column justify-content-between">
-                                            <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN SLIM DENIM JACKET</a>
-                                            <div class="d-flex justify-content-between">
-                                                <div class="text-info text-smaller">103.90 &#8364;</div>
-                                                <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-4">
-                                        <div class="col-4">
-                                            <a href="#">
-                                                <img src="~/Images/testDress.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
-                                            </a>
-                                        </div>
-                                        <div class="col-8 d-flex flex-column justify-content-between">
-                                            <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN ELASTIC STRAPPY</a>
-                                            <div class="d-flex justify-content-between">
-                                                <div class="text-info text-smaller">92.90 &#8364;</div>
-                                                <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="container p-4" id="cartItemsContainerSmall">
                                 </div>
                                 <div class="d-grid gap-2 mt-1">
-                                    <a class="btn btn-primary border-0 rounded-0 py-3" href="#">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
+                                    <a class="btn btn-primary border-0 rounded-0 py-3" asp-controller="Home" asp-action="ViewCart">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
                                 </div>
                             </div>
                         </div>
@@ -306,25 +279,32 @@
                                     </li>
 
                                     <li class="mt-3 text-center user-account-link">
-                                        <form asp-controller="Account" asp-action="LogOut" method="post">
+                                        <form id="signOutForm" asp-controller="Account" asp-action="LogOut" method="post">
                                             <button class="btn text-info text-decoration-none text-start px-3 me-1" type="submit" data-testid="signOutButton">
                                                 <i class="fa-solid fa-right-from-bracket me-2"></i> Αποσύνδεση
                                             </button>
                                         </form>
+
+                                        <script>
+                                            const signOutForm = document.getElementById('signOutForm');
+                                            signOutForm.addEventListener('submit', () => {
+                                                localStorage.clear();
+                                            });
+                                        </script>
                                     </li>
                                 </ul>
                             </div>
                             <div class="d-flex align-items-center" id="cartSection">
                                 <div>
                                     <div class="text-secondary text-smallest">ΤΟ ΚΑΛΑΘΙ ΣΑΣ</div>
-                                    <a class="custom-link text-primary float-end" href="/bullshit" id="finalPriceLink">0.00 &#8364;</a> @* TODO fix this link when functionality for that is added *@
+                                    <a class="custom-link text-primary float-end" asp-controller="Home" asp-action="ViewCart" id="finalPriceLink">0.00 &#8364;</a>
                                 </div>
                                 <div class="icon-container icon-container-lg ms-3 dropdown dropdown-hoverable position-relative" id="cartIconContainer">
                                     <i class="fa-solid fa-cart-shopping"></i>
-                                    <span class="custom-badge" id="cartBadge">2</span>
+                                    <span class="custom-badge" id="cartBadge">0</span>
                                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-cart custom-box-shadow-no-top pb-0 border-0" id="dropdownMenuCart" style="border-radius:0 !important;">
-                                        <div class="container p-4">
-                                            <div class="row">
+                                        <div class="container p-4" id="cartItemsContainer">
+                                            @* <div class="row">
                                                 <div class="col-4">
                                                     <a href="#">
                                                         <img src="~/Images/testJacket.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
@@ -351,10 +331,10 @@
                                                         <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </div> *@
                                         </div>
                                         <div class="d-grid gap-2 mt-1">
-                                            <a class="btn btn-primary border-0 rounded-0 py-3" href="#">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
+                                            <a class="btn btn-primary border-0 rounded-0 py-3" asp-controller="Home" asp-action="ViewCart">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
                                         </div>
                                     </div>
                                 </div>
@@ -497,7 +477,204 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             checkAuthenticationStatus();
+
+            const shouldSynchronizeCart = @Html.Raw(JsonSerializer.Serialize(ViewData["ShouldSynchronizeCart"] ?? ""));
+            if(shouldSynchronizeCart){
+                localStorage.removeItem("cart");
+            }
+            initiateCart();
         });
+
+        async function initiateCart() {
+            if (!localStorage.getItem('cart')) {
+                try {
+                    const response = await fetch('/cart/initializeUserCart');
+
+                    if (!response.ok) {
+                        // probably send the user to the custom 500 page
+                        throw new Error(`HTTP error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (data.authenticated === false && data.hadAccessToken) {
+                        window.location.href = '/account/signInAndSignUp';
+                        return;
+                    }
+                    else if(data.authenticated === false){
+                        return;
+                    }
+
+                    // Save cart if present
+                    if (data.cart) {
+                        localStorage.setItem('cart', JSON.stringify(data.cart));
+                        renderUserCart(data.cart);
+                    }
+                } catch (err) {
+                    console.error('Cart initialization failed:', err);
+                }
+            }
+            else{
+                let cart = localStorage.getItem('cart');
+                cart = JSON.parse(cart);
+                if (cart.cartItems.length === 0) {
+                    document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
+                    document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
+                }
+                else{
+                    renderUserCart(cart);
+                }
+            }
+        }
+
+        function renderUserCart(cart){
+            const dynamicImagesUrl = '@Url.Content("~/DynamicImages/")';
+            let cartItemsContainerSmall = document.getElementById("cartItemsContainerSmall");
+            let cartItemsContainer = document.getElementById("cartItemsContainer");
+
+            document.getElementById("cartBadgeSmall").textContent = cart.cartItems.length;
+            document.getElementById("cartBadge").textContent = cart.cartItems.length;
+            if(cart.cartItems.length === 0){
+                document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
+                document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
+            }
+            
+            let totalCartPrice = 0;
+            cart.cartItems.forEach(item => {
+                const variant = item.variant;
+                if (!variant) return;
+
+                // Choose thumbnail image if exists
+                let imgUrl = '@Url.Content("~/Images/noProductImage.jpg")';
+                const thumbnailVariantImage = variant.variantImages.find(variantImage => variantImage.isThumbNail);
+                if(!thumbnailVariantImage && variant.variantImages[0]){
+                    imgUrl = dynamicImagesUrl + variant.variantImages[0].image.imagePath;
+                }
+                else if (thumbnailVariantImage){
+                    imgUrl = dynamicImagesUrl + variant.variantImages[0].image.imagePath;
+                }
+
+                const row = document.createElement('div');
+                row.className = 'row mb-2';
+
+                // Image column
+                const colImg = document.createElement('div');
+                colImg.className = 'col-4';
+                const aImg = document.createElement('a');
+                aImg.href = '/Home/ViewItem/' + variant.id;
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.className = 'img-fluid';
+                img.style.objectFit = 'fill';
+                img.style.width = '100%';
+                img.style.height = '60px';
+                img.style.border = '1px solid #ccc';
+                aImg.appendChild(img);
+                colImg.appendChild(aImg);
+
+                // Details column
+                const colDetails = document.createElement('div');
+                colDetails.className = 'col-8 d-flex flex-column justify-content-between';
+
+                const aName = document.createElement('a');
+                aName.href = '#';
+                aName.className = 'text-secondary text-decoration-none hover-black';
+                aName.textContent = `${item.quantity} x ${variant.product?.name || 'Unknown product'}`;
+
+                const priceRow = document.createElement('div');
+                priceRow.className = 'd-flex justify-content-between align-items-center';
+
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'text-info text-smaller';
+                priceDiv.innerHTML = `${variant.price?.toFixed(2) || '0.00'} &#8364;`;
+                totalCartPrice += item.quantity * (variant.price != null ? Number(variant.price.toFixed(2)) : 0);
+
+                const removeLink = document.createElement('a');
+                removeLink.href = '#';
+                const removeIcon = document.createElement('i');
+                removeIcon.className = 'fa-regular fa-x text-secondary hover-black';
+                removeIcon.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    removeFromCart(item.id); 
+                });
+
+                removeLink.appendChild(removeIcon);
+                priceRow.appendChild(priceDiv);
+                priceRow.appendChild(removeLink);
+
+                colDetails.appendChild(aName);
+                colDetails.appendChild(priceRow);
+
+                row.appendChild(colImg);
+                row.appendChild(colDetails);
+
+                cartItemsContainer.appendChild(row);
+                cartItemsContainerSmall.appendChild(row.cloneNode(true));
+            });
+
+            document.getElementById("finalPriceLink").textContent = totalCartPrice.toFixed(2) + " €";
+        }
+
+        async function removeFromCart(cartItemId) {
+            if (!cartItemId) return;
+
+            try {
+                const response = await fetch('/cart/removeItemFromCart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cartItemId)
+                });
+
+                if(response.status === 200){
+
+                    let cart = localStorage.getItem("cart");
+                    if (!cart) return;
+                        
+                    cart = JSON.parse(cart);
+
+                    if(cart.cartItems && cart.cartItems.length === 1){
+                        localStorage.removeItem("cart");
+                        document.getElementById("cartItemsContainer").innerHTML = "";
+                        document.getElementById("cartItemsContainerSmall").innerHTML = "";
+                        document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
+                        document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
+                        document.getElementById("cartBadgeSmall").textContent = "0";
+                        document.getElementById("cartBadge").textContent = "0";
+                        document.getElementById("finalPriceLink").textContent =  "0.00 €";
+                        return;
+                    }
+                        
+                    if (cart.cartItems) {
+                        cart.cartItems = cart.cartItems.filter(item => item.id !== cartItemId);
+                    }
+
+                    localStorage.removeItem("cart");
+                    document.getElementById("cartItemsContainer").innerHTML = "";
+                    document.getElementById("cartItemsContainerSmall").innerHTML = "";
+                    localStorage.setItem("cart", JSON.stringify(cart));
+                    initiateCart();
+                    return;
+                }
+                else if (response.status === 204) {
+                    localStorage.removeItem("cart");                    
+                    document.getElementById("cartItemsContainer").innerHTML = "";
+                    document.getElementById("cartItemsContainerSmall").innerHTML = "";
+                    initiateCart();
+                    return;
+                }
+
+                console.error('Error removing item:', data?.errorMessage || response.statusText);
+                const data = await response.json();
+                alert(data?.errorMessage || "Failed to remove item from cart.");
+                initiateCart();
+            } catch (err) {
+                console.error('Request failed:', err);
+                alert("Could not remove item from cart. Try again later.");
+            }
+        }
+
+
     </script>
 
     <div class="custom-container container" style="margin-top:140px" id="bodySection">
@@ -688,23 +865,24 @@
         }
 
         function trackCursor() {
+            let cartBadge = document.getElementById("cartBadge");
+
             //cart dropdown
-            if (isCursorInZone && !shouldShowSmallSections) {
+            if (isCursorInZone && !shouldShowSmallSections && cartBadge.textContent !== "0") {
                 dropdownMenuCart.classList.add("show");
             }
-            else if (!isCursorInZone && !shouldShowSmallSections) {
+            else if (!isCursorInZone && !shouldShowSmallSections && cartBadge.textContent !== "0") {
                 dropdownMenuCart.classList.remove("show");
             }
-            else if (isCursorInZone && shouldShowSmallSections) {
+            else if (isCursorInZone && shouldShowSmallSections && cartBadge.textContent !== "0") {
                 dropdownMenuCartSmall.classList.add("show");
             }
-            else if (!isCursorInZone && shouldShowSmallSections) {
+            else if (!isCursorInZone && shouldShowSmallSections && cartBadge.textContent !== "0") {
                 dropdownMenuCartSmall.classList.remove("show");
             }
 
             //user dropdown
             if (isUserAuthenticated && isCursorInUserZone && !shouldShowSmallSections) {
-                //TODO fix the stupid bug probably by checking if the mouse is on another dropdown. Maybe think a little bit about how the dropdowns should popup
                 dropdownUserMenu.classList.add("show");
             }
             else if (isUserAuthenticated && !isCursorInUserZone && !shouldShowSmallSections) {

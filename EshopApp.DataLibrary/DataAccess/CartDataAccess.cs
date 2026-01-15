@@ -28,6 +28,10 @@ public class CartDataAccess : ICartDataAccess
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Variant)
                         .ThenInclude(v => v!.Product)
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Variant)
+                        .ThenInclude(v => v!.VariantImages)
+                            .ThenInclude(vi => vi.Image)
                 .FirstOrDefaultAsync(cart => cart.Id == id);
             return new ReturnCartAndCodeResponseModel(foundCart!, DataLibraryReturnedCodes.NoError);
         }
@@ -50,6 +54,10 @@ public class CartDataAccess : ICartDataAccess
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Variant)
                         .ThenInclude(v => v!.Product)
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Variant)
+                        .ThenInclude(v => v!.VariantImages)
+                            .ThenInclude(vi => vi.Image)
                 .FirstOrDefaultAsync(cart => cart.UserId == userId);
             return new ReturnCartAndCodeResponseModel(foundCart!, DataLibraryReturnedCodes.NoError);
         }

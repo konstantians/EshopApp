@@ -1,10 +1,12 @@
-﻿@{
+﻿@model UiUser?
+
+@{
     ViewData["Title"] = "View Cart";
 }
 
 <link rel="stylesheet" href="~/css/timelineStyles.css"/>
 
-<div class="mt-5">
+<div class="mt-5 pb-2">
     <div class="d-flex justify-content-between timeline-step mx-auto px-4">
         <div class="dot active text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
@@ -17,3 +19,122 @@
         <div class="dot text-extra-smallest text-sm-smaller"></div>
     </div>
 </div>
+
+<div class="mt-5">
+    <h3 class="fw-semibold mb-4 text-center text-lg-start">Το Καλάθι Μου</h3>
+
+    <div class="row">
+        <div class="col-lg-8">
+            @if (Model is not null)
+            {
+                @foreach (UiCartItem cartItem in Model.Cart!.CartItems)
+                {
+                    <div class="card mb-3" id="cardId_@cartItem.Id">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <img src="~/DynamicImages/@cartItem.Variant!.VariantImages[0].Image!.ImagePath"
+                                         class="d-block mx-auto"
+                                         height="90"
+                                         width="90"
+                                    >
+                                </div>
+
+                                <div class="col-md-4">
+                                    <p class="mb-1 fw-medium">@cartItem.Variant!.Product!.Name</p>
+                                    <small class="text-muted">SKU: @cartItem.Variant!.SKU</small>
+                                </div>
+
+                                <div class="col-md-3 py-2 text-center">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i id="quantityMinusButton" class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
+                                        <input id="quantityInput" class="form-control" type="number" style="max-width:100px;" value="1" min="1" step="1">
+                                        <i id="quantityPlusButton" class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2 fw-medium">@cartItem.Variant!.Price &#8364;</div>
+
+                                <div class="col-md-1 text-center ps-2" style="cursor:pointer;">
+                                    <a onclick="removeFromCartAndUpdateUI('@cartItem.Id', 'cardId_@cartItem.Id')"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="fw-semibold mb-3">Σύνοψη Παραγγελίας</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-semibold">Τιμή Άνα Προϊόν</span>
+                    </div>
+
+                    @{
+                        decimal? finalPrice = 0;
+                    }
+                    @if (Model is not null)
+                    {
+                        @foreach (UiCartItem cartItem in Model.Cart!.CartItems)
+                        {
+                            <div class="d-flex justify-content-between mb-2" id="summarySection_cardId_@cartItem.Id">
+                                <span data-quantity="@cartItem.Quantity">@cartItem.Quantity x @cartItem.Variant!.Product!.Name</span>
+                                <span data-price="@cartItem.Variant.Price">@cartItem.Variant.Price &#8364;</span>
+                            </div>
+
+                            finalPrice += cartItem.Quantity * cartItem.Variant.Price!.Value;
+                        }
+                    }
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between fw-semibold mb-3">
+                        <span>Σύνολο</span>
+                        <span id="finalPriceSpan" data-final-Price="@finalPrice">@finalPrice &#8364;</span>
+                    </div>
+
+                    <a asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelection" class="btn btn-primary w-100 mb-2">
+                        Ολοκλήρωση Παραγγελίας
+                    </a>
+
+                    <a asp-controller="Home" asp-action="ViewItems" class="btn btn-secondary w-100">
+                        Συνέχεια Αγορών
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function removeFromCartAndUpdateUI(cartItemId, cartItemContainerId) {
+            const cardItemContainer = document.getElementById(cartItemContainerId);
+            const summarySection = document.getElementById("summarySection_" + cartItemContainerId);
+            const finalPriceSpan = document.getElementById("finalPriceSpan");
+
+            let finalPrice = Number(finalPriceSpan.dataset.finalPrice) || 0;
+
+            if (cardItemContainer) {
+                cardItemContainer.remove();
+            }
+
+            if (summarySection) {
+                const quantity = Number(summarySection.querySelector('span[data-quantity]').dataset.quantity);
+                const price = Number(summarySection.querySelector('span[data-price]').dataset.price);
+
+                finalPrice -= quantity * price;
+
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+                finalPriceSpan.dataset.finalprice = finalPrice;
+                summarySection.remove();
+            }
+
+            removeFromCart(cartItemId);
+        }
+    </script>
+}

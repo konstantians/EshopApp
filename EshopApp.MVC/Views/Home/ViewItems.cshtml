@@ -282,7 +282,7 @@
                             <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 18px;"> @product.Name </span>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <span class="text-info" style="font-size:24px;">@product.Variants[0].Price &#8364;</span>
-                                <a href="#">
+                                <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@product.Id">
                                     <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
                                 </a>
                             </div>
@@ -300,6 +300,9 @@
     <script type="text/javascript" src="~/js/filtersRepeatedNonStaticCode.js"></script>
 
     <script>
+        const dynamicImagesUrl = '@Url.Content("~/DynamicImages/")';
+        const noProductImageUrl = '@Url.Content("~/Images/noProductImage.jpg")';
+
         let products = JSON.parse('@Html.Raw(Json.Serialize(Model))');
         let variantsWithProductInformation = [];
 
@@ -318,6 +321,7 @@
                 sku: products[i].variants[0].sku,
                 price: products[i].variants[0].price,
                 unitsInStock: products[i].variants[0].unitsInStock,
+                variantImages: products[i].variants[0].variantImages,
                 isFilteredBySearch: false,
                 protectedByCategoryLis: [],
                 protectedByPriceLis: [],
@@ -492,7 +496,7 @@
                 carouselOnlyItem.href = `/Home/ViewItem?id=${item.productId}`;
                 carouselOnlyItem.className = "carousel-item active";
                 let carouselOnlyImage = document.createElement("img");
-                carouselOnlyImage.src = "~/Images/noProductImage";
+                carouselOnlyImage.src = noProductImageUrl;
                 carouselOnlyImage.className = "d-block w-100 img-fluid";
                 carouselOnlyImage.style.maxHeight = "380px";
                 carouselOnlyItem.appendChild(carouselOnlyImage);
@@ -507,7 +511,7 @@
                     if (index === 0) carouselItem.classList.add("active");
 
                     let carouselItemImage = document.createElement("img");
-                    carouselItemImage.src = variantImage.image.ImagePath;
+                    carouselItemImage.src = dynamicImagesUrl + variantImage.image.imagePath;
                     carouselItemImage.className = "d-block w-100 img-fluid";
                     carouselItemImage.style.maxHeight = "380px";
                     carouselItem.appendChild(carouselItemImage);
@@ -543,7 +547,7 @@
 
             // Card body
             const cardBody = document.createElement("div");
-            cardBody.className = "card-body py-2 px-3 px-lg-5";
+            cardBody.className = "card-body py-2";
             const title = document.createElement("span");
             title.style.cssText = "font-weight:600; color:#272727; line-height:1.2; display:block; font-size:14px;";
             title.textContent = item.name;
@@ -556,7 +560,7 @@
             price.innerHTML = item.price + "&#8364;";
 
             const cartLink = document.createElement("a");
-            cartLink.href = "#";
+            cartLink.href = `/Home/ViewItem?id=${item.productId}`;
             cartLink.innerHTML = `<i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>`;
 
             // Assemble price row
@@ -570,6 +574,7 @@
             cardDiv.appendChild(cardBody);
             colDiv.appendChild(cardDiv);
             itemsContainer.appendChild(colDiv);
+            updateObjectsContainer();
         }
 
         setUpSortingDropdownListeners(variantsWithProductInformation, renderProductCards);

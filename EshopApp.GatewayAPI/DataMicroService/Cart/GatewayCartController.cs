@@ -164,7 +164,7 @@ public class GatewayCartController : ControllerBase
             if (!userCart!.CartItems.Any(cartItem => cartItem.Id == id))
                 return StatusCode(403, new { ErrorMessage = "GivenCartItemDoesNotBelongToGivenUser" });
 
-            //create the cartItem
+            //delete the cartItem
             response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Cart/CartItem/{id}"));
 
             if ((int)response.StatusCode >= 400)
