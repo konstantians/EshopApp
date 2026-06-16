@@ -446,5 +446,88 @@ public class AppDataDbContext : DbContext
 
         modelBuilder.Entity<CartItem>()
             .Property(cartItem => cartItem.Quantity).IsRequired();
+
+
+        /******************* Seeding *******************/
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ShippingOption>().HasData(
+            new ShippingOption
+            {
+                Id = "ship_standard",
+                Name = "Κανονική Αποστολή",
+                Description = "Παράδοση σε 3–5 εργάσιμες μέρες",
+                ExtraCost = 3.00m,
+                ContainsDelivery = true,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            },
+            new ShippingOption
+            {
+                Id = "ship_express",
+                Name = "Ταχεία Αποστολή",
+                Description = "Παράδοση σε 1–2 εργάσιμες μέρες",
+                ExtraCost = 5.00m,
+                ContainsDelivery = true,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            },
+            new ShippingOption
+            {
+                Id = "ship_pickup",
+                Name = "Παραλαβή Από Το Κατάστημα",
+                Description = "Παραλάβετε την παραγγελία σας από το κατάστημα μας",
+                ExtraCost = 0.00m,
+                ContainsDelivery = false,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            }
+        );
+
+        modelBuilder.Entity<PaymentOption>().HasData(
+            new PaymentOption
+            {
+                Id = "payment_cod",
+                Name = "Αντικαταβολή",
+                NameAlias = "cod",
+                Description = "Πληρώστε με μετρητά κατά την παράδοση της παραγγελίας σας",
+                ExtraCost = 2.00m,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            },
+            new PaymentOption
+            {
+                Id = "payment_card",
+                Name = "Πιστωτική/Χρεωστική Κάρτα",
+                NameAlias = "card",
+                Description = "Ασφαλής πληρωμή με κάρτα Visa, Mastercard ή Maestro",
+                ExtraCost = 0.00m,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            },
+            new PaymentOption
+            {
+                Id = "payment_paypal",
+                Name = "PayPal",
+                NameAlias = "paypal",
+                Description = "Πληρωμή μέσω του ασφαλούς συστήματος PayPal",
+                ExtraCost = 0.00m,
+                IsDeactivated = false,
+                ExistsInOrder = false,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            }
+        );
+
     }
 }

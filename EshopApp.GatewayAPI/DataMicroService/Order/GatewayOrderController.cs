@@ -2,6 +2,7 @@
 using EshopApp.GatewayAPI.DataMicroService.Order.Models.RequestModels;
 using EshopApp.GatewayAPI.DataMicroService.SharedModels;
 using EshopApp.GatewayAPI.HelperMethods;
+using EshopApp.GatewayAPI.HtmlTemplates;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
@@ -20,11 +21,13 @@ public class GatewayOrderController : ControllerBase
     private readonly HttpClient emailHttpClient;
     private readonly IConfiguration _configuration;
     private readonly IUtilityMethods _utilityMethods;
+    private readonly IHtmlBuilder _htmlBuilder;
 
-    public GatewayOrderController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods)
+    public GatewayOrderController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods, IHtmlBuilder htmlBuilder)
     {
         _configuration = configuration;
         _utilityMethods = utilityMethods;
+        _htmlBuilder = htmlBuilder;
         authHttpClient = httpClientFactory.CreateClient("AuthApiClient");
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
         emailHttpClient = httpClientFactory.CreateClient("EmailApiClient");
@@ -169,12 +172,7 @@ public class GatewayOrderController : ControllerBase
             string responseBody = await response.Content.ReadAsStringAsync();
             GatewayOrder order = JsonSerializer.Deserialize<GatewayOrder>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
 
-            var apiSendEmailModel = new Dictionary<string, string>
-                {
-                    { "receiver", order!.OrderAddress!.Email! },
-                    { "title", "Order Placed Successfully" },
-                    { "message", "Here are the details of your order: " } //TODO do this well
-                };
+            var apiSendEmailModel = _htmlBuilder.CreateOrderSummaryEmail(order!);
             _ = Task.Run(async () =>
             {
                 _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);

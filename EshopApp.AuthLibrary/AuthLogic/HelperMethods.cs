@@ -1,6 +1,7 @@
 ﻿using EshopApp.AuthLibrary.Models;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.IdentityModel.Tokens.Jwt;
@@ -49,7 +50,8 @@ public class HelperMethods : IHelperMethods
         var jwtToken = handler.ReadJwtToken(accessToken);
         string userId = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value!;
         string userEmail = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value!;
-        var appUser = await _userManager.FindByIdAsync(userId);
+
+        AppUser? appUser = await _userManager.Users.Include(user => user.Address).SingleOrDefaultAsync(user => user.Id == userId);
         if (appUser is null || appUser.Email != userEmail) //we also check the email to invalidate old access tokens in case the user changed their email account
         {
             _logger.LogWarning(new EventId(templateEvent.Id, templateEvent.Name + "FailureDueToValidTokenButUserNotInSystem"),
@@ -75,7 +77,7 @@ public class HelperMethods : IHelperMethods
         string userId = jwtToken.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier)?.Value!;
         string userEmail = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value!;
         string roleName = jwtToken.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Role)?.Value!;
-        var appUser = await _userManager.FindByIdAsync(userId);
+        AppUser? appUser = await _userManager.Users.Include(user => user.Address).SingleOrDefaultAsync(user => user.Id == userId);
         if (appUser is null || appUser.Email != userEmail) //we also check the email to invalidate old access tokens in case the user changed their email account
         {
             _logger.LogWarning(new EventId(templateEvent.Id, templateEvent.Name + "FailureDueToValidTokenButUserNotInSystem"),

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Concurrent;
 using System.Security.Claims;
@@ -269,23 +270,23 @@ public class AuthenticationController : ControllerBase
     /// or else the whole process will not work. Unlike other endpoints that contain redirects the returnUrl is necessary for the OAuth2 flow. If the operation is successful and the user correctly
     /// authenticates with their external identity provider then the ExternalSignInCallback endpoint will be called to finish the OAuth2 flow.
     /// </summary>
-    /// <param name="apiExternalSignInRequestModel">This model contains 2 properties. The IdentityProvider name and the ReturnUrl property that must be valid for the OAuth2 flow to work. The return Url
-    /// domain part needs to also be registered in the API itself.</param>
+    /// <param name="identityProviderName"></param>
+    /// <param name="returnUrl"></param>
     /// <returns>If successful it returns a Challenge Result(302) that initiate the OAuth2 flow with the external Identity provider. If not successful it returns BadRequest or other error codes 
     /// depending on the error case.</returns>
-    [HttpPost("ExternalSignIn")]
+    [HttpGet("ExternalSignIn")]
     [AllowAnonymous]
-    public IActionResult ExternalSignIn([FromBody] ApiExternalSignInRequestModel apiExternalSignInRequestModel)
+    public IActionResult ExternalSignIn(string identityProviderName, string returnUrl)
     {
         try
         {
-            if (!CheckIfUrlIsTrusted(apiExternalSignInRequestModel.ReturnUrl!))
+            if (!CheckIfUrlIsTrusted(returnUrl))
                 return BadRequest(new { ErrorMessage = "InvalidReturnUrl" });
 
-            string redirectUrl = Url.Action("ExternalSignInCallback", "Authentication", new { ReturnUrl = apiExternalSignInRequestModel.ReturnUrl })!;
-            AuthenticationProperties identityProviderConfiguration = _authenticationProcedures.GetExternalIdentityProvidersProperties(apiExternalSignInRequestModel.IdentityProviderName!, redirectUrl);
+            string redirectUrl = Url.Action("ExternalSignInCallback", "Authentication", new { ReturnUrl = returnUrl })!;
+            AuthenticationProperties identityProviderConfiguration = _authenticationProcedures.GetExternalIdentityProvidersProperties(identityProviderName, redirectUrl);
 
-            return new ChallengeResult(apiExternalSignInRequestModel.IdentityProviderName!, identityProviderConfiguration);
+            return new ChallengeResult(identityProviderName!, identityProviderConfiguration);
         }
         catch
         {
@@ -329,7 +330,7 @@ public class AuthenticationController : ControllerBase
             else if (returnCodeAndTokenResponseModel.LibraryReturnedCodes == LibraryReturnedCodes.UnknownError)
                 return Redirect($"{returnUrl}?errorMessage=UnknownError");
 
-            return Redirect($"{returnUrl}?accessToken={returnCodeAndTokenResponseModel.Token}");
+            return Redirect(QueryHelpers.AddQueryString(returnUrl, "accessToken", returnCodeAndTokenResponseModel.Token!));
         }
         catch
         {
@@ -393,63 +394,6 @@ public class AuthenticationController : ControllerBase
             return StatusCode(500);
         }
     }
-
-    //This might need to go to the gateway api in some way, because here it does not make much sense. Considering that GetCurrentUser is literally the same this probably can go.
-    /*[HttpGet("EditAccount")]
-    [Authorize]
-    public async Task<IActionResult> EditAccount()
-    {
-        try
-        {
-            // Retrieve the Authorization header from the HTTP request
-            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
-            string confirmEmailToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            AppUser? user = await _authenticationProcedures.GetCurrentUserByTokenAsync(confirmEmailToken);
-
-            //this is very unlikely to happen, but someone could craft a valid confirmEmailToken without the user existing.
-            //This check is for a very edge case and will probably never happen.
-            if (user is null)
-                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
-
-            return Ok(user);
-        }
-        catch
-        {
-            return StatusCode(500, "Internal Server Error");
-        }
-    }*/
-
-    //TODO Skip Tests For This Method, because I am considering changing it
-    /*[HttpPost("ChangeBasicAccountSettings")]
-    [Authorize]
-    public async Task<IActionResult> ChangeBasicAccountSettings([FromBody] ApiAccountBasicSettingsRequestModel accountBasicSettingsViewModel)
-    {
-        try
-        {
-            string authorizationHeader = HttpContext.Request.Headers["Authorization"]!;
-            string confirmEmailToken = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            AppUser? user = await _authenticationProcedures.GetCurrentUserByTokenAsync(confirmEmailToken);
-
-            //this is very unlikely to happen, but someone could craft a valid confirmEmailToken without the user existing.
-            //This check is for a very edge case and will probably never happen.
-            if (user is null)
-                return BadRequest(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
-
-            user.PhoneNumber = accountBasicSettingsViewModel.PhoneNumber;
-            bool result = await _authenticationProcedures.UpdateAccountAsync(user);
-            //I am not certain how this can happen, but 
-            if (!result)
-                return BadRequest(new { ErrorMessage = "BasicInformationChangeError" });
-
-            return Ok();
-        }
-        catch
-        {
-            return StatusCode(500, "Internal Server Error");
-        }
-    }*/
 
     /// <summary>
     /// This endpoint allows a user with a valid access token to change their current password. Appropriate status codes will be returned in case of errors.

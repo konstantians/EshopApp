@@ -112,6 +112,38 @@ public class CartController : ControllerBase
         }
     }
 
+    [HttpPost("CartItems/Bulk")]
+    public async Task<IActionResult> CreateCartItemsBulk(List<CreateCartItemRequestModel> createCartItemRequestModels)
+    {
+        try
+        {
+            List<CartItem> cartItems = new List<CartItem>();
+            foreach (CreateCartItemRequestModel createCartItemRequestModel in createCartItemRequestModels)
+            {
+                CartItem cartItem = new CartItem();
+                cartItem.CartId = createCartItemRequestModel.CartId;
+                cartItem.VariantId = createCartItemRequestModel.VariantId;
+                cartItem.Quantity = createCartItemRequestModel.Quantity;
+
+                cartItems.Add(cartItem);
+            }
+
+            DataLibraryReturnedCodes returnedCode = await _cartDataAccess.CreateCartItemsAsync(cartItems);
+            if (returnedCode == DataLibraryReturnedCodes.InvalidVariantIdWasGiven)
+                return NotFound(new { ErrorMessage = "InvalidVariantIdWasGiven" });
+            else if (returnedCode == DataLibraryReturnedCodes.InvalidCartIdWasGiven)
+                return NotFound(new { ErrorMessage = "InvalidCartIdWasGiven" });
+            else if (returnedCode == DataLibraryReturnedCodes.InsufficientStockForVariant)
+                return BadRequest(new { ErrorMessage = "InsufficientStockForVariant" });
+
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
     [HttpPut("CartItem")]
     public async Task<IActionResult> UpdateCartItem(UpdateCartItemRequestModel updateCartItemRequestModel)
     {
@@ -144,6 +176,20 @@ public class CartController : ControllerBase
             if (returnedCode == DataLibraryReturnedCodes.EntityNotFoundWithGivenId)
                 return NotFound();
 
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpDelete("CartItems/{cartId}")]
+    public async Task<IActionResult> ClearUserCart(string cartId)
+    {
+        try
+        {
+            await _cartDataAccess.ClearCartAsync(cartId);
             return NoContent();
         }
         catch (Exception)

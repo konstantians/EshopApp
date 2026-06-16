@@ -1,6 +1,7 @@
 ﻿using EshopApp.MVC.ControllerUtilities;
-using EshopApp.MVC.Models;
+using EshopApp.MVC.Models.AuthModels;
 using EshopApp.MVC.ViewModels;
+using EshopApp.MVC.ViewModels.CartViewModels;
 using EshopApp.MVC.ViewModels.EditAccountViewModels;
 using EshopApp.MVC.ViewModels.SignInAndSignUpModels;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ public class AccountController : Controller
 {
     private readonly HttpClient httpClient;
     private readonly ILogger<AccountController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public AccountController(IHttpClientFactory httpClientFactory, ILogger<AccountController> logger)
+    public AccountController(IHttpClientFactory httpClientFactory, ILogger<AccountController> logger, IConfiguration configuration)
     {
         httpClient = httpClientFactory.CreateClient("GatewayApiClient");
         _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost]
@@ -114,7 +117,7 @@ public class AccountController : Controller
         if (responseObject != null && responseObject.TryGetValue("accessToken", out string? accessToken))
             SetUpAuthenticationCookie(accessToken);
 
-        return RedirectToAction("Index", "Home", new { SuccessfulAccountActivation = true });
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -132,6 +135,14 @@ public class AccountController : Controller
         //if there is an access token just send them to homepage
         if (!string.IsNullOrEmpty(Request.Cookies["EshopAppAuthenticationCookie"]))
             return RedirectToAction("Index", "Home");
+
+        string rawValue = signInViewModel.UserCartJson ?? "[]";
+        List<AddItemToCartViewModel> addItemToCartViewModels;
+        //For whatever reason the string is not sent correctly, so yes I give up this fixes it
+        if (rawValue.StartsWith("\""))
+            rawValue = JsonSerializer.Deserialize<string>(rawValue) ?? "[]";
+
+        addItemToCartViewModels = JsonSerializer.Deserialize<List<AddItemToCartViewModel>>(rawValue, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AddItemToCartViewModel>();
 
         //if the model state is invalid
         if (!ModelState.IsValid)
@@ -151,11 +162,46 @@ public class AccountController : Controller
             return validationResult;
 
         //if status code is 200
+        string? accessToken = null;
         Dictionary<string, string>? noErrorResponseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody);
-        if (noErrorResponseObject != null && noErrorResponseObject.TryGetValue("accessToken", out string? accessToken))
+        if (noErrorResponseObject != null && noErrorResponseObject.TryGetValue("accessToken", out accessToken))
             SetUpAuthenticationCookie(accessToken, signInViewModel.RememberMe ? 30 : 0);
 
+        //Get users cart
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        response = await httpClient.GetAsync("GatewayAuthentication/GetUserByAccessToken?includeCart=true");
+
+        //if the user has no cart is the only way this will return this status code
+        if ((int)response.StatusCode == 404)
+            return RedirectToAction("Index", "Home");
+
+        validationResult = await HelperMethods.CommonErrorValidation(this, _logger, response, responseBody, "SignInAndSignUp", "Account", responseBodyWasPassedIn: true);
+        if (validationResult is not null)
+            return validationResult;
+
+        responseBody = await response.Content.ReadAsStringAsync();
+        UiUser user = JsonSerializer.Deserialize<UiUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        //Now synchronize the items to the cart
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        foreach (AddItemToCartViewModel addItemToCartViewModel in addItemToCartViewModels)
+            addItemToCartViewModel.CartId = user.Cart!.Id;
+        response = await httpClient.PostAsJsonAsync("GatewayCart/CartItems/Bulk", addItemToCartViewModels);
+
+        //If any error happens in adding the cart items just send the user to index and add a message that something has went wrong in synchronizing the cart
+        if ((int)response.StatusCode >= 400)
+            TempData["CartSynchronizationFailure"] = true;
+
         return RedirectToAction("Index", "Home");
+    }
+
+    [HttpGet]
+    public IActionResult ExternalSignIn(string identityProviderName, string? urlAfterAuthentication)
+    {
+        string returnUrl = Url.Action(nameof(HandleExternalSignInRedirect), "Account", new { urlAfterAuthentication }, Request.Scheme)!; //if it is null the query parameter is skipped
+
+        string redirectUrl = $"{new Uri(_configuration["AuthenticationApiBaseUrl"]!)}authentication/externalSignIn?identityProviderName={identityProviderName}&returnUrl={Uri.EscapeDataString(returnUrl)}";
+        return Redirect(redirectUrl);
     }
 
     [HttpPost]
@@ -199,13 +245,9 @@ public class AccountController : Controller
         else if ((int)response.StatusCode >= 500)
             return View("Error");
 
-        //this deals with 4xx errors with empty response bodies
-        //In this case the user should not be here and they just get redirected back to home page
         var responseBody = await response.Content.ReadAsStringAsync();
-        if ((int)response.StatusCode >= 400 && string.IsNullOrEmpty(responseBody))
-            return RedirectToAction("Index", "home");
         //this deals with 4xx errors with non-empty response bodies
-        else if ((int)response.StatusCode >= 400)
+        if ((int)response.StatusCode >= 400)
         {
             var responseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody);
             responseObject!.TryGetValue("errorMessage", out string? errorMessage);
@@ -235,6 +277,15 @@ public class AccountController : Controller
         if (!string.IsNullOrEmpty(Request.Cookies["EshopAppAuthenticationCookie"]))
             return RedirectToAction("Index", "Home");
 
+
+        string rawValue = resetPasswordViewModel.UserCartJson ?? "[]";
+        List<AddItemToCartViewModel> addItemToCartViewModels;
+        //For whatever reason the string is not sent correctly, so yes I give up this fixes it
+        if (rawValue.StartsWith("\""))
+            rawValue = JsonSerializer.Deserialize<string>(rawValue) ?? "[]";
+
+        addItemToCartViewModels = JsonSerializer.Deserialize<List<AddItemToCartViewModel>>(rawValue, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AddItemToCartViewModel>();
+
         var apiResetPasswordModel = new Dictionary<string, string>
         {
             { "userId", resetPasswordViewModel.UserId! },
@@ -249,9 +300,37 @@ public class AccountController : Controller
         if (validationResult is not null)
             return validationResult;
 
-        var responseObjectSuccess = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody);
-        if (responseObjectSuccess != null && responseObjectSuccess.TryGetValue("accessToken", out string? accessToken))
+        //if status code is 200
+        string? accessToken = null;
+        Dictionary<string, string>? noErrorResponseObject = JsonSerializer.Deserialize<Dictionary<string, string>>(responseBody);
+        if (noErrorResponseObject != null && noErrorResponseObject.TryGetValue("accessToken", out accessToken))
             SetUpAuthenticationCookie(accessToken);
+
+        //Get users cart
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        response = await httpClient.GetAsync("GatewayAuthentication/GetUserByAccessToken?includeCart=true");
+
+        //if the user has no cart is the only way this will return this status code
+        if ((int)response.StatusCode == 404)
+            return RedirectToAction("Index", "Home");
+
+        //this deals with 5xx errors
+        validationResult = await HelperMethods.CommonErrorValidation(this, _logger, response, responseBody, "SignInAndSignUp", "Account", responseBodyWasPassedIn: true);
+        if (validationResult is not null)
+            return validationResult;
+
+        responseBody = await response.Content.ReadAsStringAsync();
+        UiUser user = JsonSerializer.Deserialize<UiUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        //Now synchronize the items to the cart
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        foreach (AddItemToCartViewModel addItemToCartViewModel in addItemToCartViewModels)
+            addItemToCartViewModel.CartId = user.Cart!.Id;
+        response = await httpClient.PostAsJsonAsync("GatewayCart/CartItems/Bulk", addItemToCartViewModels);
+
+        //If any error happens in adding the cart items just send the user to index and add a message that something has went wrong in synchronizing the cart
+        if ((int)response.StatusCode >= 400)
+            TempData["CartSynchronizationFailure"] = true;
 
         return RedirectToAction("Index", "Home");
     }
@@ -261,10 +340,7 @@ public class AccountController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await httpClient.GetAsync("GatewayAuthentication/GetUserByAccessToken");
@@ -276,7 +352,6 @@ public class AccountController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
         else if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
@@ -290,7 +365,11 @@ public class AccountController : Controller
         {
             FirstName = user.FirstName,
             LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber
+            PhoneNumber = user.PhoneNumber,
+            Country = user.Address?.Country,
+            City = user.Address?.City,
+            PostalCode = user.Address?.PostalCode,
+            AddressName = user.Address?.AddressName
         };
 
         ChangeEmailViewModel changeEmailViewModel = new()
@@ -298,10 +377,16 @@ public class AccountController : Controller
             OldEmail = user.Email
         };
 
+        ChangePasswordViewModel changePasswordViewModel = new()
+        {
+            UserHasPassword = user.HasPassword
+        };
+
         EditAccountViewModel editAccountModel = new()
         {
             ChangeAccountBasicSettings = changeAccountBasicSettingsViewModel,
-            ChangeEmailViewModel = changeEmailViewModel
+            ChangeEmailViewModel = changeEmailViewModel,
+            ChangePasswordViewModel = changePasswordViewModel
         };
 
         return View(editAccountModel);
@@ -312,19 +397,23 @@ public class AccountController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("EditAccount", "Account");
+
+        UiAddress uiAddress = new UiAddress();
+        uiAddress.Country = changeAccountBasicSettings.Country == "NoValue" || string.IsNullOrEmpty(changeAccountBasicSettings.Country) ? null : changeAccountBasicSettings.Country;
+        uiAddress.City = changeAccountBasicSettings.City;
+        uiAddress.PostalCode = changeAccountBasicSettings.PostalCode;
+        uiAddress.AddressName = changeAccountBasicSettings.AddressName;
 
         UiUser updatedUser = new()
         {
             FirstName = changeAccountBasicSettings.FirstName,
             LastName = changeAccountBasicSettings.LastName,
-            PhoneNumber = changeAccountBasicSettings.PhoneNumber
+            PhoneNumber = changeAccountBasicSettings.PhoneNumber,
+            Address = uiAddress
         };
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -343,17 +432,14 @@ public class AccountController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("EditAccount", "Account");
 
-        var apiChangePasswordModel = new Dictionary<string, string>
+        var apiChangePasswordModel = new Dictionary<string, string?>
         {
-            { "currentPassword", changePasswordViewModel.OldPassword! },
+            { "currentPassword", changePasswordViewModel.OldPassword! == "NoPassword123!" ? null : changePasswordViewModel.OldPassword! },
             { "newPassword", changePasswordViewModel.NewPassword! }
         };
 
@@ -373,10 +459,7 @@ public class AccountController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("EditAccount", "Account");
@@ -422,6 +505,7 @@ public class AccountController : Controller
 
         SetUpAuthenticationCookie(accessToken);
 
+        TempData["ShouldSynchronizeBackEndCart"] = true;
         return RedirectToAction("Index", "Home");
     }
 
@@ -436,8 +520,49 @@ public class AccountController : Controller
 
         SetUpAuthenticationCookie(accessToken);
 
+        TempData["ShouldSynchronizeBackEndCart"] = true;
         return RedirectToAction("Index", "Home");
     }
+
+
+    [HttpGet]
+    public async Task<IActionResult> HandleExternalSignInRedirect(string? errorMessage, string? accessToken, string? urlAfterAuthentication)
+    {
+        if (string.IsNullOrEmpty(accessToken))
+            return BadRequest("Invalid access token.");
+
+        SetUpAuthenticationCookie(accessToken);
+
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var response = await httpClient.GetAsync("GatewayAuthentication/GetUserByAccessToken?includeCart=true");
+
+        var validationResult = await HelperMethods.CommonErrorValidation(this, _logger, response, null, "Index", "Home");
+
+        //if the user has no cart is the only way this will return this status code
+        //so we will create the cart
+        if ((int)response.StatusCode == 404)
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            //we dont have the items here that is fine there are going to be filled by the frontend
+            response = await httpClient.PostAsJsonAsync("GatewayCart", new List<AddItemToCartViewModel>());
+
+            TempData["UnknownError"] = false; //fixes a bug
+            validationResult = await HelperMethods.CommonErrorValidation(this, _logger, response, null, "Index", "Home");
+            if (validationResult is not null)
+                return validationResult;
+        }
+        else if (validationResult is not null)
+            return validationResult;
+
+        //Tell cart to synchronize
+        TempData["ShouldSynchronizeBackEndCart"] = true;
+
+        if (urlAfterAuthentication is not null && !Url.IsLocalUrl(urlAfterAuthentication))
+            return Redirect(urlAfterAuthentication!);
+
+        return RedirectToAction("Index", "Home");
+    }
+
 
     private void SetUpAuthenticationCookie(string accessToken, int duration = 0)
     {
@@ -490,10 +615,7 @@ public class AccountController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("EditAccount");

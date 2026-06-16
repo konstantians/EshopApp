@@ -77,6 +77,28 @@ public class EmailsController : ControllerBase
         }
     }
 
+    [HttpPost("ContactEmail")]
+    public async Task<IActionResult> SendContactEmailAndSaveEmailEntry([FromBody] ApiEmailRequestModel emailRequestModel)
+    {
+        try
+        {
+            //in this case the receiver is the email sender
+            var emailSentResult = await _emailService.SendContactFormEmailAsync(emailRequestModel.Receiver!, emailRequestModel.Title!, emailRequestModel.Message!);
+            if (!emailSentResult)
+                return BadRequest();
+
+            string? result = await _emailDataAccess.SaveEmailEntryAsync(emailRequestModel);
+            if (result is null)
+                return Ok(new { WarningMessage = "DatabaseEntryCreationFailure" });
+
+            return Ok(new { WarningMessage = "None" });
+        }
+        catch
+        {
+            return StatusCode(500, "Internal Server Error");
+        }
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEmailEntry(string id)
     {

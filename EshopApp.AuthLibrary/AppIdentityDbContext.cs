@@ -35,9 +35,17 @@ public class AppIdentityDbContext : IdentityDbContext<AppUser, AppRole, string>
         }
     }
 
+    public DbSet<Address> Addresses { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        builder.Entity<AppUser>()
+            .HasOne(user => user.Address)
+            .WithOne(address => address.AppUser)
+            .HasForeignKey<Address>(address => address.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
 
         string managerRoleGuid = Guid.NewGuid().ToString();
         string adminRoleGuid = Guid.NewGuid().ToString();

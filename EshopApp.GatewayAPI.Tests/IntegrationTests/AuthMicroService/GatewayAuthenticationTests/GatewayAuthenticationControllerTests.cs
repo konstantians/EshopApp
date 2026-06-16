@@ -1,4 +1,4 @@
-﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAdminTests.Models.RequestModels;
+﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAuthenticationTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.SharedModels;
 using EshopApp.GatewayAPI.Tests.Utilities;
 using FluentAssertions;
@@ -199,8 +199,7 @@ internal class GatewayAuthenticationControllerTests
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", signUpModel);
         await Task.Delay(waitTimeInMillisecond);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
-
+        string? confirmationEmailLink = await TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
         //Assert
         confirmationEmailLink.Should().NotBeNull();
@@ -433,7 +432,7 @@ internal class GatewayAuthenticationControllerTests
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/GatewayAuthentication/forgotpassword", testGatewayApiForgotPasswordRequestModel);
         await Task.Delay(waitTimeInMillisecond);
-        string? resetPasswordEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
+        string? resetPasswordEmailLink = await TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
         //Assert
         resetPasswordEmailLink.Should().NotBeNull().And.StartWith(testGatewayApiForgotPasswordRequestModel.ClientUrl);
@@ -685,7 +684,7 @@ internal class GatewayAuthenticationControllerTests
         var signUpResponse = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", testGatewayApiSignUpRequestModel);
 
         await Task.Delay(waitTimeInMillisecond);
-        TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true); //just remove the last email from papercut
+        await TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true); //just remove the last email from papercut
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/requestchangeaccountemail", testChangeEmailRequestModel);
@@ -713,7 +712,7 @@ internal class GatewayAuthenticationControllerTests
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/requestchangeaccountemail", testChangeEmailRequestModel);
 
         await Task.Delay(waitTimeInMillisecond);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
+        string? confirmationEmailLink = await TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
 
 
         //Assert

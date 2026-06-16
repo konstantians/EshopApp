@@ -8,7 +8,7 @@
             let directionOrder = li.getAttribute('data-order-direction') || "ascending";
             let isNumeric = li.hasAttribute('data-numeric');
             sortByOrderAttribute(items, li.getAttribute('data-order'), directionOrder, isNumeric);
-            if (typeof itemCountFunction === 'function') {
+            if (typeof customRenderFunction === 'function') {
                 customRenderFunction(items);
             }
             else {
@@ -175,7 +175,7 @@ function setUpSearchInputMode(items, itemCountFunction, customRenderFunction) {
             if (typeof itemCountFunction === 'function') {
                 itemCountFunction();
             }
-            if (typeof itemCountFunction === 'function') {
+            if (typeof customRenderFunction === 'function') {
                 customRenderFunction(items);
             }
             else {
@@ -216,7 +216,7 @@ function setUpSearchInput(items, itemCountFunction, customRenderFunction) {
             if (typeof itemCountFunction === 'function') {
                 itemCountFunction();
             }
-            if (typeof itemCountFunction === 'function') {
+            if (typeof customRenderFunction === 'function') {
                 customRenderFunction(items);
             }
             else {

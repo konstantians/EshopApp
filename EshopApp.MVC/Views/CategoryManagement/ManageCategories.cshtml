@@ -18,6 +18,22 @@
             margin-top: 0;
         }
     }
+
+    .icon-option {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: .15s ease;
+    }
+
+    .icon-option.active {
+        background: var(--accent-orange);
+        color: white;
+        border-color: var(--accent-orange);
+    }
 </style>
 
 <link href="~/css/filtersStyles.css" rel="stylesheet" />
@@ -132,7 +148,11 @@
             </div>
         </div>
         <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
-            <div class="table-responsive w-100 p-0">
+            @{
+                string shouldTableBeSeen = Model.Categories.Count == 0 ? "d-none" : "";
+                string shouldBeSeen = Model.Categories.Count != 0 ? "d-none" : "";
+            }
+            <div class="@shouldTableBeSeen table-responsive w-100 p-0">
                 <table class="table table-hover table-striped" id="categoriesTable">
                     <thead class="table-dark">
                         <tr>
@@ -166,6 +186,25 @@
                     </tbody>
                 </table>
             </div>
+            <div id="emptyStateBanner" class="@shouldBeSeen">
+                <div class="card border-1 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fa-solid fa-file-circle-xmark fa-4x text-secondary mb-3"></i>
+
+                        <h4 id="emptyStateTitle" class="mb-2">
+                            Δεν βρέθηκαν κατηγορίες
+                        </h4>
+
+                        <p id="emptyStateDescription" class="text-muted mb-4">
+                            Δεν βρέθηκαν κατηγορίες που να ταιριάζουν με τα επιλεγμένα φίλτρα.
+                        </p>
+
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                            Δημιουργία Κατηγορίας
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -183,6 +222,81 @@
                     <input class="form-control" asp-for="CreateCategoryViewModel.Name" type="text" data-custom-validation="false">
                     <span asp-validation-for="CreateCategoryViewModel.Name" class="text-danger"></span>
                 </div>
+                <div class="mb-4">
+                    <label class="form-label"><i class="fa-solid fa-icons me-2"></i>Εικονίδιο Κατηγορίας</label>
+
+                    <div class="d-flex flex-wrap gap-2" id="iconPicker">
+                        <!-- DEFAULT / UNSURE -->
+                        <button type="button" class="btn btn-outline-secondary icon-option active" data-icon="fa-tag">
+                            <i class="fa-solid fa-tag"></i>
+                        </button>
+
+                        <!-- CLOTHING / FASHION -->
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-shirt">
+                            <i class="fa-solid fa-shirt"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-person">
+                            <i class="fa-solid fa-person"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-person-dress">
+                            <i class="fa-solid fa-person-dress"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-socks">
+                            <i class="fa-solid fa-socks"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-bag-shopping">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-shoe-prints">
+                            <i class="fa-solid fa-shoe-prints"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-hat-cowboy">
+                            <i class="fa-solid fa-hat-cowboy"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-glasses">
+                            <i class="fa-solid fa-glasses"></i>
+                        </button>
+
+                        <!-- GENERAL CATEGORIES -->
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-house">
+                            <i class="fa-solid fa-house"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-microchip">
+                            <i class="fa-solid fa-microchip"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-dumbbell">
+                            <i class="fa-solid fa-dumbbell"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary icon-option" data-icon="fa-book">
+                            <i class="fa-solid fa-book"></i>
+                        </button>
+                    </div>
+
+                    <input type="hidden" asp-for="CreateCategoryViewModel.CategoryIconLink" value="fa-tag" />
+                </div>
+
+                <script>
+                    document.querySelectorAll(".icon-option").forEach(btn => {
+                        btn.addEventListener("click", function () {
+
+                            document.querySelectorAll(".icon-option").forEach(button => button.classList.remove("active"));
+                            this.classList.add("active");
+
+                            document.getElementById("CreateCategoryViewModel_CategoryIconLink").value = this.dataset.icon;
+                        });
+                    });
+                </script>
+
                 <div class="d-flex justify-content-between align-items-center" id="searchButtonIconIndicatorContainerCreateCategory">
                     <label for="searchInputCreateCategory" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
                     <div class="btn-group dropdown" role="group">
@@ -270,6 +384,23 @@
     </div>
 
     <div class="modal fade custom-center-modal" id="editCategoryModal-@updateCategoryViewModel.Id" tabindex="-1">
+        @{
+            var icons = new List<string>{
+                "fa-tag",
+                "fa-shirt",
+                "fa-person",
+                "fa-person-dress",
+                "fa-socks",
+                "fa-bag-shopping",
+                "fa-shoe-prints",
+                "fa-hat-cowboy",
+                "fa-glasses",
+                "fa-house",
+                "fa-microchip",
+                "fa-dumbbell",
+                "fa-book"
+            };
+        }
         <div class="modal-dialog">
             <form class="modal-content" method="post" asp-controller="CategoryManagement" asp-action="EditCategory" id="editCategoryForm-@updateCategoryViewModel.Id">
                 <div class="modal-header">
@@ -282,6 +413,36 @@
                         <input class="form-control" asp-for="@updateCategoryViewModel.Name" id="updateCategoryViewModel_Name-@updateCategoryViewModel.Id" type="text" data-custom-validation="false">
                         <span asp-validation-for="@updateCategoryViewModel.Name" class="text-danger"></span>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fa-solid fa-icons me-2"></i>Εικονίδιο Κατηγορίας</label>
+
+                        <div class="d-flex flex-wrap gap-2" id="iconPickerUpdate-@updateCategoryViewModel.Id">
+                            @foreach(string icon in icons)
+                            {
+                                string isActive = updateCategoryViewModel.CategoryIconLink == icon ? "active" : "";
+                                <button type="button" class="btn btn-outline-secondary icon-option @isActive" data-icon="@icon">
+                                    <i class="fa-solid @icon"></i>
+                                </button>
+                            }
+                        </div>
+
+                        <input asp-for="@updateCategoryViewModel.CategoryIconLink" id="UpdateCategoryViewModel_CategoryIconLink-@updateCategoryViewModel.Id" hidden>
+                    </div>
+
+                    <script>
+                        document.getElementById('iconPickerUpdate-@updateCategoryViewModel.Id').
+                            querySelectorAll(".icon-option").forEach(btn => {
+                                btn.addEventListener("click", function () {
+
+                                    document.getElementById('iconPickerUpdate-@(updateCategoryViewModel.Id)')
+                                        .querySelectorAll(".icon-option")
+                                        .forEach(button => button.classList.remove("active"));
+                                    this.classList.add("active");
+
+                                    document.getElementById("UpdateCategoryViewModel_CategoryIconLink-@updateCategoryViewModel.Id").value = this.dataset.icon;
+                                });
+                            });
+                    </script>
                     <div class="d-flex justify-content-between align-items-center" id="searchButtonIconIndicatorContainerUpdateCategory-@updateCategoryViewModel.Id">
                         <label for="searchInputUpdateCategory-@updateCategoryViewModel.Id" class="mt-1">ΑΝΑΖΗΤΗΣΗ</label>
                         <div class="btn-group dropdown" role="group">
@@ -482,6 +643,7 @@
             });
 
             updateTotalItems(count);
+            updateEmptyState(count > 0)
         }
 
         function addTrToTableBody(category){
@@ -497,6 +659,20 @@
                 </td>
             `;
             tbody.appendChild(tr);
+        }
+
+        function updateEmptyState(hasItems) {
+            const table = document.getElementById('categoriesTable').closest('.table-responsive');
+            const banner = document.getElementById('emptyStateBanner');
+
+            if (hasItems) {
+                table.classList.remove('d-none');
+                banner.classList.add('d-none');
+            }
+            else {
+                table.classList.add('d-none');
+                banner.classList.remove('d-none');
+            }
         }
 
         setUpSortingDropdownListeners(categories);

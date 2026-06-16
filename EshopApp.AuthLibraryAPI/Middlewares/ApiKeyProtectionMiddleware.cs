@@ -16,7 +16,8 @@ public class ApiKeyProtectionMiddleware
         var path = context.Request.Path;
 
         // Bypass API key check for specific endpoints(add the external login eventually, because it goes thought sign in
-        if (path.StartsWithSegments("/api/authentication/ConfirmEmail") || path.StartsWithSegments("/api/authentication/ConfirmChangeEmail") || path.StartsWithSegments("/api/authentication/ExternalSignInCallback"))
+        if (path.StartsWithSegments("/api/authentication/ConfirmEmail") || path.StartsWithSegments("/api/authentication/ConfirmChangeEmail") ||
+            path.StartsWithSegments("/api/authentication/ExternalSignIn") || path.StartsWithSegments("/api/authentication/ExternalSignInCallback"))
         {
             await _next(context);
             return;

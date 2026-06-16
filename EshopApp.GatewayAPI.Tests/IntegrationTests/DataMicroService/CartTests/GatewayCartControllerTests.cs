@@ -1,4 +1,5 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAdminTests.Models.RequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAuthenticationTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.SharedModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.CartTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.ProductTests.Models.RequestModels;
@@ -7,6 +8,7 @@ using EshopApp.GatewayAPI.Tests.IntegrationTests.DataMicroService.VariantTests.M
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -47,20 +49,9 @@ internal class GatewayCartControllerTests
         _userCartId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Cart!.Id;
 
         //sign up another user
-        TestGatewayApiSignUpRequestModel signUpModel = new TestGatewayApiSignUpRequestModel();
-        signUpModel.Email = "realag58@gmail.com";
-        signUpModel.PhoneNumber = "6977777777";
-        signUpModel.Password = "Kinas2020!";
-        signUpModel.ClientUrl = "https://localhost:7070/controller/clientAction";
-        await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", signUpModel);
-        await Task.Delay(7000);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
-        try
-        {
-            using HttpClient tempHttpClient = new HttpClient();
-            await tempHttpClient.GetAsync(confirmationEmailLink);
-        }
-        catch { }
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _adminAccessToken);
+        var testCreateUserRequestModel = new TestGatewayApiCreateUserRequestModel("realag58@gmail.com", "Kinas2020!", "6977777777", false);
+        response = await httpClient.PostAsJsonAsync("api/gatewayAdmin", testCreateUserRequestModel);
 
         //get the other user's access token
         TestGatewayApiSignInRequestModel testGatewayApiSignInRequestModel = new TestGatewayApiSignInRequestModel();

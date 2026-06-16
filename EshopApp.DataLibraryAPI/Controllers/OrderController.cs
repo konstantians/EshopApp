@@ -211,13 +211,13 @@ public class OrderController : ControllerBase
                 NetAmountPaidInEuro = updateOrderRequestModel.NetAmountPaidInEuro
             };
 
-            foreach (OrderItemRequestModel createOrderItemRequestModel in updateOrderRequestModel.OrderItemRequestModels ?? Enumerable.Empty<OrderItemRequestModel>())
-            {
-                OrderItem orderItem = new OrderItem();
-                orderItem.Quantity = createOrderItemRequestModel.Quantity;
-                orderItem.VariantId = createOrderItemRequestModel.VariantId;
-                order.OrderItems.Add(orderItem);
-            }
+            order.OrderItems = updateOrderRequestModel.OrderItemRequestModels?
+                .Select(orderItem => new OrderItem
+                {
+                    Quantity = orderItem.Quantity,
+                    VariantId = orderItem.VariantId
+                })
+                .ToList()!;
 
             order.OrderAddress = orderAddress;
             order.PaymentDetails = paymentDetails;

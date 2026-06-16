@@ -163,6 +163,72 @@ public class CartDataAccess : ICartDataAccess
         }
     }
 
+    //this could update the quantity too, but it less efficient(when the user adds something to the cart this is what triggers)
+    public async Task<DataLibraryReturnedCodes> CreateCartItemsAsync(List<CartItem> newCartItems)
+    {
+        try
+        {
+            if (newCartItems.Count == 0)
+                return DataLibraryReturnedCodes.NoError;
+
+            string? cartId = newCartItems[0].CartId;
+
+            // Ensure all items target same cart
+            if (newCartItems.Any(x => x.CartId != cartId))
+                return DataLibraryReturnedCodes.InvalidCartIdWasGiven;
+
+            Cart? foundCart = await _appDataDbContext.Carts.Include(cart => cart.CartItems).FirstOrDefaultAsync(cart => cart.Id == cartId);
+
+            if (foundCart is null)
+                return DataLibraryReturnedCodes.InvalidCartIdWasGiven;
+
+            List<string?> variantIds = newCartItems.Select(newCartItem => newCartItem.VariantId).Distinct().ToList();
+
+            Dictionary<string, Variant> variants = await _appDataDbContext.Variants.Where(variant => variantIds.Contains(variant.Id!)).ToDictionaryAsync(variant => variant.Id!);
+
+            if (variants.Count != variantIds.Count)
+                return DataLibraryReturnedCodes.InvalidVariantIdWasGiven;
+
+            foreach (var newCartItem in newCartItems)
+            {
+                //skip all those who do not have variantId
+                if (newCartItem.VariantId is null)
+                    continue;
+
+                Variant variant = variants[newCartItem.VariantId];
+
+                CartItem? existingItem = foundCart.CartItems.FirstOrDefault(ci => ci.VariantId == newCartItem.VariantId);
+
+                if (existingItem is not null)
+                {
+                    if (existingItem.Quantity + newCartItem.Quantity > variant.UnitsInStock)
+                        return DataLibraryReturnedCodes.InsufficientStockForVariant;
+
+                    existingItem.Quantity += newCartItem.Quantity;
+                }
+                else
+                {
+                    if (newCartItem.Quantity > variant.UnitsInStock)
+                        return DataLibraryReturnedCodes.InsufficientStockForVariant;
+
+                    newCartItem.Id = Guid.NewGuid().ToString();
+                    foundCart.CartItems.Add(newCartItem);
+                }
+            }
+
+            await _appDataDbContext.SaveChangesAsync();
+
+            _logger.LogInformation(new EventId(9999, "CreateCartItemsSuccess"), "Successfully added cart items to CartId={cartId}", cartId);
+
+            return DataLibraryReturnedCodes.NoError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "CreateCartItemsFailure"), ex, "Error creating cart items.");
+            throw;
+        }
+    }
+
     //this is more efficient if the change only happens on the quantity
     public async Task<DataLibraryReturnedCodes> UpdateCartItemAsync(CartItem updatedCartItem)
     {
@@ -219,6 +285,31 @@ public class CartDataAccess : ICartDataAccess
         {
             _logger.LogError(new EventId(9999, "DeleteCartItemFailure"), ex, "An error occurred while deleting the cart item with Id={id}. " +
                 "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", id, ex.Message, ex.StackTrace);
+            throw;
+        }
+    }
+
+    public async Task<DataLibraryReturnedCodes> ClearCartAsync(string cartId)
+    {
+        try
+        {
+            List<CartItem> cartItems = await _appDataDbContext.CartItems.Where(cartItem => cartItem.CartId == cartId).ToListAsync();
+            if (!cartItems.Any())
+            {
+                _logger.LogInformation(new EventId(9999, "ClearCartAlreadyEmpty"), "No cart item found for cart with Id={cartId}. That means there was a logical error or the cart was already empty", cartId);
+                return DataLibraryReturnedCodes.NoError;
+            }
+
+            _appDataDbContext.CartItems.RemoveRange(cartItems);
+            await _appDataDbContext.SaveChangesAsync();
+
+            _logger.LogInformation(new EventId(9999, "ClearCartSuccess"), "All cart items for cart with Id={cartId} were successfully removed.", cartId);
+            return DataLibraryReturnedCodes.NoError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(new EventId(9999, "ClearCartFailure"), ex, "An error occurred while clearing the cart with Id={cartId}. " +
+                "ExceptionMessage={ExceptionMessage}. StackTrace={StackTrace}.", cartId, ex.Message, ex.StackTrace);
             throw;
         }
     }

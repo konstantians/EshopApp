@@ -10,7 +10,6 @@ namespace EshopApp.AuthLibrary.AuthLogic;
 
 //Logging Messages Start With 2 For Success/Information, 3 For Warning And 4 For Error(Almost like HTTP Status Codes). The range is 0-99, for example 1000. 
 //The range of codes for this class is is 300-399, for example 2300 or 2399.
-//TODO figure a better way to do logging ids
 public class AdminProcedures : IAdminProcedures
 {
     private readonly UserManager<AppUser> _userManager;
@@ -37,7 +36,7 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return new ReturnUsersAndCodeResponseModel(null!, returnCodeAndUserResponseModel.LibraryReturnedCodes);
 
-            var foundUsers = await _userManager.Users.ToListAsync();
+            var foundUsers = await _userManager.Users.Include(user => user.Address).ToListAsync();
 
             IList<string> editorUserRoleNames = await _userManager.GetRolesAsync(returnCodeAndUserResponseModel.AppUser!);
             AppRole? editorUserRole = editorUserRoleNames is null || editorUserRoleNames.Count == 0 ? null : await _roleManager.FindByNameAsync(editorUserRoleNames!.FirstOrDefault()!);
@@ -89,7 +88,7 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return returnCodeAndUserResponseModel; //null and the error status code
 
-            AppUser? foundUser = await _userManager.FindByIdAsync(userId);
+            AppUser? foundUser = await _userManager.Users.Include(user => user.Address).SingleOrDefaultAsync(user => user.Id == userId);
             if (foundUser is null)
                 return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
 
@@ -120,7 +119,7 @@ public class AdminProcedures : IAdminProcedures
             if (returnCodeAndUserResponseModel.LibraryReturnedCodes != LibraryReturnedCodes.NoError)
                 return returnCodeAndUserResponseModel; //null and the error status code
 
-            AppUser? foundUser = await _userManager.FindByEmailAsync(email);
+            AppUser? foundUser = await _userManager.Users.Include(user => user.Address).SingleOrDefaultAsync(user => user.Email == email);
             if (foundUser is null)
                 return new ReturnUserAndCodeResponseModel(null!, LibraryReturnedCodes.NoError);
 
@@ -143,7 +142,7 @@ public class AdminProcedures : IAdminProcedures
         }
     }
 
-    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null, string? firstName = null, string? lastName = null)
+    public async Task<ReturnUserAndCodeResponseModel> CreateUserAccountAsync(string accessToken, List<Claim> expectedClaims, string email, string password, string? phoneNumber = null, string? firstName = null, string? lastName = null, Address? address = null)
     {
 
         var executionStrategy = _identityDbContext.Database.CreateExecutionStrategy();
@@ -184,6 +183,7 @@ public class AdminProcedures : IAdminProcedures
                     appUser.PhoneNumber = phoneNumber;
                     appUser.FirstName = firstName;
                     appUser.LastName = lastName;
+                    appUser.Address = address;
 
                     var result = await _userManager.CreateAsync(appUser, password);
 
@@ -302,6 +302,19 @@ public class AdminProcedures : IAdminProcedures
                         userToBeUpdated.FirstName = updatedUser.FirstName.Trim() == "" ? null : updatedUser.FirstName.Trim();
                     if (updatedUser.LastName is not null)
                         userToBeUpdated.LastName = updatedUser.LastName.Trim() == "" ? null : updatedUser.LastName.Trim();
+                    if (updatedUser.Address is not null && userToBeUpdated.Address is null)
+                    {
+                        updatedUser.Address.Id = Guid.NewGuid().ToString();
+                        userToBeUpdated.Address = updatedUser.Address;
+                    }
+                    else if (updatedUser.Address is not null)
+                    {
+                        updatedUser.Address.Country = updatedUser.Address.Country ?? userToBeUpdated.Address!.Country;
+                        updatedUser.Address.City = updatedUser.Address.City ?? userToBeUpdated.Address!.City;
+                        updatedUser.Address.PostalCode = updatedUser.Address.PostalCode ?? userToBeUpdated.Address!.PostalCode;
+                        updatedUser.Address.AddressName = updatedUser.Address.AddressName ?? userToBeUpdated.Address!.AddressName;
+
+                    }
 
                     userToBeUpdated.Email = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email;
                     userToBeUpdated.UserName = updatedUser.Email is null ? userToBeUpdated.Email : updatedUser.Email; //The email and the username are the same

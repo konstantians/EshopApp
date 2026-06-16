@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css//footerStyles.css" asp-append-version="true">
     <style>
         .icon-container {
             display: inline-flex;
@@ -304,34 +305,6 @@
                                     <span class="custom-badge" id="cartBadge">0</span>
                                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-cart custom-box-shadow-no-top pb-0 border-0" id="dropdownMenuCart" style="border-radius:0 !important;">
                                         <div class="container p-4" id="cartItemsContainer">
-                                            @* <div class="row">
-                                                <div class="col-4">
-                                                    <a href="#">
-                                                        <img src="~/Images/testJacket.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
-                                                    </a>
-                                                </div>
-                                                <div class="col-8 d-flex flex-column justify-content-between">
-                                                    <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN SLIM DENIM JACKET</a>
-                                                    <div class="d-flex justify-content-between">
-                                                        <div class="text-info text-smaller">103.90 &#8364;</div>
-                                                        <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row mt-4">
-                                                <div class="col-4">
-                                                    <a href="#">
-                                                        <img src="~/Images/testDress.jpg" class="img-fluid" style="object-fit: contain; width: 100%; height: 100%; border: 1px solid #ccc;" />
-                                                    </a>
-                                                </div>
-                                                <div class="col-8 d-flex flex-column justify-content-between">
-                                                    <a class="text-secondary text-decoration-none hover-black" href="#">1 x CALVIN KLEIN ELASTIC STRAPPY</a>
-                                                    <div class="d-flex justify-content-between">
-                                                        <div class="text-info text-smaller">92.90 &#8364;</div>
-                                                        <a href="#"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
-                                                    </div>
-                                                </div>
-                                            </div> *@
                                         </div>
                                         <div class="d-grid gap-2 mt-1">
                                             <a class="btn btn-primary border-0 rounded-0 py-3" asp-controller="Home" asp-action="ViewCart">ΜΕΤΑΒΑΣΗ ΣΤΟ ΚΑΛΑΘΙ</a>
@@ -350,7 +323,7 @@
                             </a>
                         </li>
                         <li class="nav-item custom-fontweight text-smaller dropdown navbar-sublink position-relative">
-                            <a class="custom-link text-primary pb-3 mx-2" asp-controller="Home" asp-action="Whatever">ΑΝΔΡΑΣ</a>
+                            <a class="custom-link text-primary pb-3 mx-2" href="#">ΑΝΔΡΑΣ</a>
                             <a class="custom-link text-primary float-end d-lg-none me-2" data-bs-toggle="dropdown" data-bs-auto-close="false"><i class="fa-solid fa-chevron-down"></i></a>
                             <div class="dropdown-menu dropdown-menu-navbar custom-box-shadow-no-top p-lg-3 mb-lg-0 mb-2 border-0 rounded-0">
                                 <div class="container-lg">
@@ -394,6 +367,15 @@
             </div>
         </nav>
     </header>
+
+    <script>
+        window.appConfig = {
+            dynamicImagesUrl: '@Url.Content("~/DynamicImages/")',
+            noProductImageUrl: '@Url.Content("~/Images/noProductImage.jpg")'
+        };
+    </script>
+    <script src="~/js/cartFunctionality.js"></script>
+
     <script>
         //updates the navbar using a basic check
         let isUserAuthenticated = false;
@@ -467,7 +449,13 @@
                 else{
                     document.getElementById('dropdownUserMenuSmall').classList.remove('dropdown-menu', 'dropdown-menu-end', 'dropdown-menu-user');
                     document.getElementById('dropdownUserMenuSmall').classList.add('d-none');
-                    userIconContainerSmall.querySelector('a').setAttribute('href', '/Account/SignInAndSignUp');
+                    let iSignInIcon = userIconContainerSmall.querySelector('i');
+                    let aSignInLink = document.createElement('a');
+                    aSignInLink.href = '/Account/SignInAndSignUp';
+                    aSignInLink.style.all = 'unset';
+                    aSignInLink.style.display = 'inline-block'; // keeps layout stable
+                    iSignInIcon.parentNode.insertBefore(aSignInLink, iSignInIcon);
+                    aSignInLink.appendChild(iSignInIcon);
                 }
             })
             .catch(error => {
@@ -475,217 +463,86 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             checkAuthenticationStatus();
 
-            const shouldSynchronizeCart = @Html.Raw(JsonSerializer.Serialize(ViewData["ShouldSynchronizeCart"] ?? ""));
-            if(shouldSynchronizeCart){
+            const shouldSynchronizeBackEndCart = @Html.Raw(JsonSerializer.Serialize(TempData["ShouldSynchronizeBackEndCart"] ?? false));
+            const shouldSynchronizeCart = @Html.Raw(JsonSerializer.Serialize(ViewData["ShouldSynchronizeCart"] ?? false));
+            if(shouldSynchronizeBackEndCart){
+                //an extra step is required here if the user confirmed signedUp, reseted password or reseted their email
+                let cart = JSON.parse(localStorage.getItem("cart"));
+                if (cart) {
+                    const addItemToCartViewModels = cart.cartItems.map(item => ({
+                        quantity: item.quantity,
+                        variantId: item.variant.id
+                    }));
+
+                    await fetch('@Url.Action("MergeLocalCart", "Cart")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(addItemToCartViewModels)
+                    });
+                }
+
+                localStorage.removeItem("cart");
+            }
+            else if(shouldSynchronizeCart){
                 localStorage.removeItem("cart");
             }
             initiateCart();
         });
-
-        async function initiateCart() {
-            if (!localStorage.getItem('cart')) {
-                try {
-                    const response = await fetch('/cart/initializeUserCart');
-
-                    if (!response.ok) {
-                        // probably send the user to the custom 500 page
-                        throw new Error(`HTTP error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    if (data.authenticated === false && data.hadAccessToken) {
-                        window.location.href = '/account/signInAndSignUp';
-                        return;
-                    }
-                    else if(data.authenticated === false){
-                        return;
-                    }
-
-                    // Save cart if present
-                    if (data.cart) {
-                        localStorage.setItem('cart', JSON.stringify(data.cart));
-                        renderUserCart(data.cart);
-                    }
-                } catch (err) {
-                    console.error('Cart initialization failed:', err);
-                }
-            }
-            else{
-                let cart = localStorage.getItem('cart');
-                cart = JSON.parse(cart);
-                if (cart.cartItems.length === 0) {
-                    document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
-                    document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
-                }
-                else{
-                    renderUserCart(cart);
-                }
-            }
-        }
-
-        function renderUserCart(cart){
-            const dynamicImagesUrl = '@Url.Content("~/DynamicImages/")';
-            let cartItemsContainerSmall = document.getElementById("cartItemsContainerSmall");
-            let cartItemsContainer = document.getElementById("cartItemsContainer");
-
-            document.getElementById("cartBadgeSmall").textContent = cart.cartItems.length;
-            document.getElementById("cartBadge").textContent = cart.cartItems.length;
-            if(cart.cartItems.length === 0){
-                document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
-                document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
-            }
-            
-            let totalCartPrice = 0;
-            cart.cartItems.forEach(item => {
-                const variant = item.variant;
-                if (!variant) return;
-
-                // Choose thumbnail image if exists
-                let imgUrl = '@Url.Content("~/Images/noProductImage.jpg")';
-                const thumbnailVariantImage = variant.variantImages.find(variantImage => variantImage.isThumbNail);
-                if(!thumbnailVariantImage && variant.variantImages[0]){
-                    imgUrl = dynamicImagesUrl + variant.variantImages[0].image.imagePath;
-                }
-                else if (thumbnailVariantImage){
-                    imgUrl = dynamicImagesUrl + variant.variantImages[0].image.imagePath;
-                }
-
-                const row = document.createElement('div');
-                row.className = 'row mb-2';
-
-                // Image column
-                const colImg = document.createElement('div');
-                colImg.className = 'col-4';
-                const aImg = document.createElement('a');
-                aImg.href = '/Home/ViewItem/' + variant.id;
-                const img = document.createElement('img');
-                img.src = imgUrl;
-                img.className = 'img-fluid';
-                img.style.objectFit = 'fill';
-                img.style.width = '100%';
-                img.style.height = '60px';
-                img.style.border = '1px solid #ccc';
-                aImg.appendChild(img);
-                colImg.appendChild(aImg);
-
-                // Details column
-                const colDetails = document.createElement('div');
-                colDetails.className = 'col-8 d-flex flex-column justify-content-between';
-
-                const aName = document.createElement('a');
-                aName.href = '#';
-                aName.className = 'text-secondary text-decoration-none hover-black';
-                aName.textContent = `${item.quantity} x ${variant.product?.name || 'Unknown product'}`;
-
-                const priceRow = document.createElement('div');
-                priceRow.className = 'd-flex justify-content-between align-items-center';
-
-                const priceDiv = document.createElement('div');
-                priceDiv.className = 'text-info text-smaller';
-                priceDiv.innerHTML = `${variant.price?.toFixed(2) || '0.00'} &#8364;`;
-                totalCartPrice += item.quantity * (variant.price != null ? Number(variant.price.toFixed(2)) : 0);
-
-                const removeLink = document.createElement('a');
-                removeLink.href = '#';
-                const removeIcon = document.createElement('i');
-                removeIcon.className = 'fa-regular fa-x text-secondary hover-black';
-                removeIcon.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    removeFromCart(item.id); 
-                });
-
-                removeLink.appendChild(removeIcon);
-                priceRow.appendChild(priceDiv);
-                priceRow.appendChild(removeLink);
-
-                colDetails.appendChild(aName);
-                colDetails.appendChild(priceRow);
-
-                row.appendChild(colImg);
-                row.appendChild(colDetails);
-
-                cartItemsContainer.appendChild(row);
-                cartItemsContainerSmall.appendChild(row.cloneNode(true));
-            });
-
-            document.getElementById("finalPriceLink").textContent = totalCartPrice.toFixed(2) + " €";
-        }
-
-        async function removeFromCart(cartItemId) {
-            if (!cartItemId) return;
-
-            try {
-                const response = await fetch('/cart/removeItemFromCart', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(cartItemId)
-                });
-
-                if(response.status === 200){
-
-                    let cart = localStorage.getItem("cart");
-                    if (!cart) return;
-                        
-                    cart = JSON.parse(cart);
-
-                    if(cart.cartItems && cart.cartItems.length === 1){
-                        localStorage.removeItem("cart");
-                        document.getElementById("cartItemsContainer").innerHTML = "";
-                        document.getElementById("cartItemsContainerSmall").innerHTML = "";
-                        document.getElementById("cartIconContainer").classList.remove('dropdown-hoverable');
-                        document.getElementById("cartIconContainerSmall").classList.remove('dropdown-hoverable');
-                        document.getElementById("cartBadgeSmall").textContent = "0";
-                        document.getElementById("cartBadge").textContent = "0";
-                        document.getElementById("finalPriceLink").textContent =  "0.00 €";
-                        return;
-                    }
-                        
-                    if (cart.cartItems) {
-                        cart.cartItems = cart.cartItems.filter(item => item.id !== cartItemId);
-                    }
-
-                    localStorage.removeItem("cart");
-                    document.getElementById("cartItemsContainer").innerHTML = "";
-                    document.getElementById("cartItemsContainerSmall").innerHTML = "";
-                    localStorage.setItem("cart", JSON.stringify(cart));
-                    initiateCart();
-                    return;
-                }
-                else if (response.status === 204) {
-                    localStorage.removeItem("cart");                    
-                    document.getElementById("cartItemsContainer").innerHTML = "";
-                    document.getElementById("cartItemsContainerSmall").innerHTML = "";
-                    initiateCart();
-                    return;
-                }
-
-                console.error('Error removing item:', data?.errorMessage || response.statusText);
-                const data = await response.json();
-                alert(data?.errorMessage || "Failed to remove item from cart.");
-                initiateCart();
-            } catch (err) {
-                console.error('Request failed:', err);
-                alert("Could not remove item from cart. Try again later.");
-            }
-        }
-
-
     </script>
 
-    <div class="custom-container container" style="margin-top:140px" id="bodySection">
-        <main role="main" class="pb-3">
+    @if (ViewData["RenderFullWidth"] as bool? == true)
+    {
+        <main role="main" style="margin-top:125px;">
             @RenderBody()
         </main>
-    </div>
+    }
+    else
+    {
+        <div class="custom-container container" style="margin-top:140px;" id="bodySection">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    }
 
     <button id="backToTopBtn" class="btn btn-primary rounded-circle shadow" title="Go to top">
         <i class="fa-solid fa-chevron-up"></i>
     </button>
+
+    <footer class="bg-white mt-auto" style="box-shadow: 0 -4px 12px rgba(0,0,0,0.1);" id="siteFooter">
+        <div class="custom-container container py-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+                <a href="/" class="footer-brand fw-bold fs-5 text-decoration-none" style="color:#FF5E00;">
+                    EshopApp<span class="text-dark">.</span>
+                </a>
+
+                <nav>
+                    <ul class="nav gap-1">
+                        <li class="nav-item"><a href="/" class="footer-link nav-link px-2 pb-1">Αρχιχή</a></li>
+                        <li class="nav-item"><a href="/about" class="footer-link nav-link px-2 pb-1 d-none d-lg-block">Για Εμάς</a></li>
+                        <li class="nav-item"><a asp-controller="Home" asp-action="ViewItems" class="footer-link nav-link px-2 pb-1">Shop</a></li>
+                        <li class="nav-item"><a href="/contact" class="footer-link nav-link px-2 pb-1">Επικοινωνία</a></li>
+                    </ul>
+                </nav>
+
+                <div class="d-flex gap-3">
+                    <a href="#" class="footer-icon fs-5"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="footer-icon fs-5"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" class="footer-icon fs-5"><i class="fa-brands fa-facebook"></i></a>
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mt-2">
+                <span class="text-secondary small">&copy; <script>document.write(new Date().getFullYear())</script> EshopApp. All rights reserved.</span>
+                <span class="text-secondary small opacity-50 text-uppercase">Φτιαγμενο Με Αγαπη</span>
+            </div>
+        </div>
+    </footer>
 
     <script>
         let isTouch = false;
@@ -1012,10 +869,12 @@
         const bodySection = document.getElementById("bodySection");
         //makes navbarlinks to work correctly on smaller screens
         function adjustMarginTopForBody() {
-            if (window.innerWidth < 992) {
-                bodySection.style.marginTop = "95px";
-            } else {
-                bodySection.style.marginTop = "140px";
+            if(bodySection){
+                if (window.innerWidth < 992) {
+                    bodySection.style.marginTop = "95px";
+                } else {
+                    bodySection.style.marginTop = "140px";
+                }
             }
         }
 

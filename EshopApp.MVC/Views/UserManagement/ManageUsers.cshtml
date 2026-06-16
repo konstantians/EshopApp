@@ -147,7 +147,11 @@
             </div>
         </div>
         <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
-            <div class="table-responsive w-100 p-0">
+            @{
+                string shouldTableBeSeen = Model.Count == 0 ? "d-none" : "";
+                string shouldBeSeen = Model.Count != 0 ? "d-none" : "";
+            }
+            <div class="table-responsive w-100 p-0 @shouldTableBeSeen">
                 <table class="table table-hover table-striped" id="usersTable">
                     <thead class="table-dark">
                         <tr>
@@ -188,6 +192,29 @@
                     </tbody>
                 </table>
             </div>
+            <div id="emptyStateBanner" class="@shouldBeSeen">
+                <div class="card border-1 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="d-flex justify-content-center mb-3">
+                            <i class="fa-solid fa-user-group fa-4x text-secondary"></i>
+                        </div>
+
+
+                        <h4 id="emptyStateTitle" class="mb-2">
+                            Δεν βρέθηκαν Χρήστες
+                        </h4>
+
+                        <p id="emptyStateDescription" class="text-muted mb-4">
+                            Δεν βρέθηκαν Χρήστες που να ταιριάζουν με τα επιλεγμένα φίλτρα.
+                        </p>
+
+                        <a class="btn btn-primary" asp-controller="UserManagement" asp-action="CreateUser">
+                            Δημιουργία Χρήστη
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -278,6 +305,7 @@
             });
 
             updateTotalItems(count); //this exists in filtersBehaviour.js
+            updateEmptyState(count > 0);
         }
 
         function roleFilterCheckboxCheckedProcedures(liRoleName, li){
@@ -311,6 +339,21 @@
                 `;
                 tbody.appendChild(tr);
         }
+
+        function updateEmptyState(hasItems) {
+            const table = document.getElementById('usersTable').closest('.table-responsive');
+            const banner = document.getElementById('emptyStateBanner');
+
+            if (hasItems) {
+                table.classList.remove('d-none');
+                banner.classList.add('d-none');
+            }
+            else {
+                table.classList.add('d-none');
+                banner.classList.remove('d-none');
+            }
+        }
+
 
         setUpSortingDropdownListeners(users);
         setUpSearchInputMode(users, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);

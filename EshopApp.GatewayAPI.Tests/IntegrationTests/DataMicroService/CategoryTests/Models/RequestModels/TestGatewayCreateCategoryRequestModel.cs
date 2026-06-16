@@ -2,4 +2,5 @@
 internal class TestGatewayCreateCategoryRequestModel
 {
     public string? Name { get; set; }
+    public string? CategoryIconLink { get; set; }
 }

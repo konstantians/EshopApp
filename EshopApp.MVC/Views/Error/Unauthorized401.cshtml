@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Session Expired";
+}
+
+<div class="d-flex justify-content-center align-items-center pt-3 pt-md-5">
+
+    <div class="text-center px-4 border p-4 rounded-4 shadow-sm bg-white" style="transform: translateY(-3vh); max-width: 600px;">
+
+        <div class="mb-4">
+            <img src="~/Images/ErrorImages/401.png"
+                 alt="Generated visual"
+                 class="img-fluid rounded-4"
+                 style="max-height: 400px; object-fit: cover;" />
+        </div>
+
+        <h1 class="fw-bold mb-2 mt-0 pt-0">
+            Η συνεδρία έληξε
+        </h1>
+
+        <p class="text-muted mb-4">
+            Η συνεδρία σας έληξε ή δεν είστε συνδεδεμένοι.<br />
+            Παρακαλώ συνδεθείτε ξανά για να συνεχίσετε στην σελίδα.
+        </p>
+
+        <div class="d-grid gap-2">
+
+            <a asp-controller="Account" asp-action="SignInAndSignUp" class="btn fw-semibold text-white" style="background:var(--accent-orange); border:none;"> Σύνδεση</a>
+            <a asp-controller="Home" asp-action="ViewItems" class="btn btn-outline-secondary border">Συνέχεια αγορών</a>
+
+        </div>
+
+        <div class="mt-4 small text-muted">
+            Συμβουλή: Το καλάθι σας αποθηκεύεται αν συνδεθείτε ξανά.
+        </div>
+
+    </div>
+
+</div>

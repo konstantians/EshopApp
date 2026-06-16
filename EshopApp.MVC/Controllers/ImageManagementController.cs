@@ -24,10 +24,7 @@ public class ImageManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (imageFile == null || imageFile.Length == 0)
             return BadRequest("No file selected");

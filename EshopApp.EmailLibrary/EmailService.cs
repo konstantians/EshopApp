@@ -41,7 +41,7 @@ public class EmailService : IEmailService
 
         message.Subject = title;
         message.Body = body;
-        message.IsBodyHtml = false;
+        message.IsBodyHtml = true;
 
         using var smtpClient = new SmtpClient(smtpSettings!.Host, smtpSettings.Port);
         smtpClient.EnableSsl = smtpSettings.EnableSsl;
@@ -83,7 +83,7 @@ public class EmailService : IEmailService
 
         message.Subject = title;
         message.Body = body;
-        message.IsBodyHtml = false;
+        message.IsBodyHtml = true;
 
         using var smtpClient = new SmtpClient(smtpSettings!.Host, smtpSettings.Port);
         smtpClient.EnableSsl = smtpSettings.EnableSsl;
@@ -121,8 +121,8 @@ public class EmailService : IEmailService
 
         using var message = new MailMessage("kinnaskonstantinos0@gmail.com", "kinnaskonstantinos0@gmail.com");
         message.Subject = title;
-        message.Body = $"From: {emailSender}\n\n{body}";
-        message.IsBodyHtml = false;
+        message.Body = body;
+        message.IsBodyHtml = true;
 
         using var smtpClient = new SmtpClient(smtpSettings!.Host, smtpSettings.Port);
         smtpClient.EnableSsl = smtpSettings.EnableSsl;

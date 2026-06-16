@@ -3,6 +3,7 @@ internal class TestUpdateCategoryRequestModel
 {
     public string? Id { get; set; }
     public string? Name { get; set; }
+    public string? CategoryIconLink { get; set; }
     public List<string>? ProductIds { get; set; }
 
 }

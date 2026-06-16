@@ -1,4 +1,7 @@
-﻿namespace EshopApp.TestUtilitiesLibrary;
+﻿using AngleSharp;
+using System.Text;
+
+namespace EshopApp.TestUtilitiesLibrary;
 public class EmailUtilities
 {
     public static string? ReadLastEmailFile(bool deleteEmailFile)
@@ -21,37 +24,42 @@ public class EmailUtilities
         return emailFileContent;
     }
 
-    public static string? GetLastEmailLink(bool deleteEmailFile)
+    public static async Task<string?> GetLastEmailLink(bool deleteEmailFile)
     {
-        string directoryPath = @"C:\ProgramData\Changemaker Studios\Papercut SMTP\Incoming";
+        var directoryPath = @"C:\ProgramData\Changemaker Studios\Papercut SMTP\Incoming";
 
-        // Get all .eml files in the directory
-        List<string> emlFiles = Directory.GetFiles(directoryPath, "*.eml")
-            .OrderByDescending(f => new FileInfo(f).LastWriteTime)
-            .ToList();
+        var lastEmailFile = Directory.GetFiles(directoryPath, "*.eml")
+            .Select(f => new FileInfo(f))
+            .OrderByDescending(f => f.LastWriteTime)
+            .FirstOrDefault();
 
-        // Get the last one
-        string? lastEmailFile = emlFiles.FirstOrDefault();
-        if (lastEmailFile is null)
-            return null!;
+        if (lastEmailFile == null)
+            return null;
 
-        // Read the email content using 'using' to ensure the file is closed properly
-        string emailContent;
-        using (StreamReader reader = new StreamReader(lastEmailFile))
+        var emlContent = await File.ReadAllTextAsync(lastEmailFile.FullName);
+
+        // Extract HTML body (everything after the first blank line)
+        var htmlPart = emlContent.Split(new[] { "\r\n\r\n" }, 2, StringSplitOptions.None).Last();
+
+        // If base64 encoded, decode it
+        string html;
+        try
         {
-            emailContent = reader.ReadToEnd();
+            var bytes = Convert.FromBase64String(htmlPart);
+            html = Encoding.UTF8.GetString(bytes);
+        }
+        catch
+        {
+            html = htmlPart;
         }
 
-        // Split email content into words
-        string[] wordsOfLastEmail = emailContent.Split(" ");
+        var context = BrowsingContext.New(Configuration.Default);
+        var document = await context.OpenAsync(req => req.Content(html));
 
-        // Get the last word that is the link and remove email formatting
-        string link = wordsOfLastEmail.Last().Replace("=\r\n", "").Replace("\r\n", "");
-        link = link.Replace("=3D", "=");
+        var link = document.QuerySelector("a[href]")?.GetAttribute("href");
 
-        // Delete the file now that we have the link
         if (deleteEmailFile)
-            File.Delete(lastEmailFile);
+            File.Delete(lastEmailFile.FullName);
 
         return link;
     }

@@ -298,7 +298,7 @@ internal class AuthenticationControllerTests
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/authentication/forgotpassword", testForgotPasswordRequestModel);
-        string? passwordResetToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "token"); //TODO maybe use the whole model here
+        string? passwordResetToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "token");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -760,37 +760,14 @@ internal class AuthenticationControllerTests
     }
 
     [Test, Order(41)]
-    public async Task ExternalSignIn_ShouldReturnUnauthorized_IfAPIKeyIsInvalid()
-    {
-        //Arrange
-        httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
-        httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
-        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
-        testExternalSignInRequestModel.IdentityProviderName = "Google";
-        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7255/home";
-
-        //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
-        string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
-
-        //Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        errorMessage.Should().NotBeNull();
-        errorMessage.Should().Contain("Invalid");
-    }
-
-    [Test, Order(42)]
     public async Task ExternalSignIn_ShouldReturnBadRequest_IfRedirectUrlIsNotTrusted()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
-        testExternalSignInRequestModel.IdentityProviderName = "Google";
-        testExternalSignInRequestModel.ReturnUrl = "https://evil.com/home";
 
         //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/externalsignin?identityProviderName=Google&returnUrl=https://evil.com/home");
         string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
@@ -799,18 +776,15 @@ internal class AuthenticationControllerTests
         errorMessage.Should().Be("InvalidReturnUrl");
     }
 
-    [Test, Order(43)]
+    [Test, Order(42)]
     public async Task ExternalSignIn_ShouldSucceedAndReturnRedirect()
     {
         //Arrange
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
-        TestExternalSignInRequestModel testExternalSignInRequestModel = new TestExternalSignInRequestModel();
-        testExternalSignInRequestModel.IdentityProviderName = "Google";
-        testExternalSignInRequestModel.ReturnUrl = "https://localhost:7070/home";
 
         //Act
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync($"api/authentication/externalsignin", testExternalSignInRequestModel);
+        HttpResponseMessage response = await httpClient.GetAsync($"api/authentication/externalsignin?identityProviderName=Google&returnUrl=https://localhost:7070/home");
 
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
@@ -819,7 +793,7 @@ internal class AuthenticationControllerTests
     }
 
     //Rate Limit Test
-    [Test, Order(44)]
+    [Test, Order(43)]
     public async Task SignIn_ShouldFail_IfRateLimitIsExceededAndBypassHeaderNotFilledCorrectly()
     {
         //Arrange

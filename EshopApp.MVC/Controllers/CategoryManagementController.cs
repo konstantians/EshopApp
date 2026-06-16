@@ -24,10 +24,7 @@ public class CategoryManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         HttpResponseMessage response = await httpClient.GetAsync("GatewayAuthentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/Permission/ClaimValue/CanManageProducts");
@@ -37,7 +34,8 @@ public class CategoryManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
         if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
@@ -54,12 +52,6 @@ public class CategoryManagementController : Controller
         else if ((int)responseCategory.StatusCode >= 500 || (int)responseProduct.StatusCode >= 500)
             return View("Error");
 
-        if ((int)responseCategory.StatusCode >= 400 || (int)responseProduct.StatusCode >= 400)
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
-
         var responseBody = await responseCategory.Content.ReadAsStringAsync();
         List<UiCategory> categories = JsonSerializer.Deserialize<List<UiCategory>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
         responseBody = await responseProduct.Content.ReadAsStringAsync();
@@ -67,9 +59,7 @@ public class CategoryManagementController : Controller
 
         List<UpdateCategoryViewModel> updateCategoryViewModels = new List<UpdateCategoryViewModel>();
         foreach (var category in categories)
-        {
-            updateCategoryViewModels.Add(new UpdateCategoryViewModel() { Id = category.Id, Name = category.Name, ProductIds = category.Products?.Select(product => product.Id).ToList()! });
-        }
+            updateCategoryViewModels.Add(new UpdateCategoryViewModel() { Id = category.Id, Name = category.Name, CategoryIconLink = category.CategoryIconLink, ProductIds = category.Products?.Select(product => product.Id).ToList()! });
 
         ManageCategoryViewModel manageCategoryViewModel = new ManageCategoryViewModel()
         {
@@ -87,10 +77,7 @@ public class CategoryManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("ManageCategories");
@@ -112,10 +99,7 @@ public class CategoryManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (createCategoryViewModel.ProductIds is not null && createCategoryViewModel.ProductIds[0] is not null)
             createCategoryViewModel.ProductIds = createCategoryViewModel.ProductIds[0].Split(',').ToList();
@@ -140,10 +124,7 @@ public class CategoryManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (updateCategoryViewModel.ProductIds is not null && updateCategoryViewModel.ProductIds[0] is not null)
             updateCategoryViewModel.ProductIds = updateCategoryViewModel.ProductIds[0].Split(',').ToList();

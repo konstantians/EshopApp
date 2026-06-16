@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
 
-//TODO just add logging codes at some point
 public class ProductDataAccess : IProductDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;

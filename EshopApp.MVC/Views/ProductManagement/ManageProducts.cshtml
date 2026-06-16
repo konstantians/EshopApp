@@ -249,10 +249,10 @@
                         <button class="btn dropdown-toggle rounded-0 text-md-bigger px-1 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color:#F5F5F5;">Προεπιλεγμένη Σειρά</button>
                         <ul class="dropdown-menu py-0 dropdown-menu-custom-width" id="sortingDropdown">
                             <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
-                            <li class="d-none" data-order="price" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Φθίνουσα Σειρά</a></li>
-                            <li class="d-none" data-order="price" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Αύξουσα Σειρά</a></li>
-                            <li class="d-none" data-order="unitsInStock" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Φθίνουσα Σειρά</a></li>
-                            <li class="d-none" data-order="unitsInStock" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Αύξουσα Σειρά</a></li>
+                            <li data-order="price" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Φθίνουσα Σειρά</a></li>
+                            <li data-order="price" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Αύξουσα Σειρά</a></li>
+                            <li data-order="unitsInStock" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Φθίνουσα Σειρά</a></li>
+                            <li data-order="unitsInStock" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Αύξουσα Σειρά</a></li>
                         </ul>
                     </div>
                     <div class="dropdown option-dropdown">
@@ -268,7 +268,11 @@
             </div>
         </div>
         <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
-            <div class="table-responsive w-100 p-0">
+            @{
+                string shouldtableBeSeen = Model.Count == 0 ? "d-none" : "";
+                string shouldBeSeen = Model.Count != 0 ? "d-none" : "";
+            }
+            <div class="table-responsive w-100 p-0 @shouldtableBeSeen">
                 <table class="table table-hover table-striped" id="productsTable">
                     <thead class="table-dark">
                         <tr>
@@ -297,10 +301,33 @@
                                     <a class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#deleteProductConfirmationModal-@product.Id"><i class="fas fa-trash"></i></a>
                                 </td>
                             </tr>
+                            counter++;
                         }
                     </tbody>
                 </table>
             </div>
+            <div id="emptyStateBanner" class="@shouldBeSeen">
+                <div class="card border-1 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fa-solid fa-box-open fa-4x text-secondary mb-3"></i>
+
+                        <h4 id="emptyStateTitle" class="mb-2">
+                            Δεν βρέθηκαν προϊόντα
+                        </h4>
+
+                        <p id="emptyStateDescription" class="text-muted mb-4">
+                            Δεν υπάρχουν προϊόντα που να ταιριάζουν με τα επιλεγμένα φίλτρα.
+                        </p>
+
+                        <a class="btn btn-primary"
+                           asp-controller="ProductManagement"
+                           asp-action="CreateProduct">
+                            Δημιουργία Προϊόντος
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -401,7 +428,7 @@
                 let variantWithProductInformation = {
                     originalIndex: i,
                     productId: products[i].id,
-                    categories: products[i].categories,
+                    categories: products[i].categories && products[i].categories.length > 0 ? products[i].categories : [{ name: "Καμία Κατηγορία" }],
                     name: products[i].name,
                     code: products[i].code,
                     variantId: products[i].variants[j].id,
@@ -451,7 +478,6 @@
                     let filteredByCheckBox = true;
                     if (true) {
                         filteredByCheckBox = false;
-                        //itemsLeftForCheckBoxCounts.push(product);
                         itemsLeftForCheckBoxCounts.push({item: product, blockedBy: "nothing"});
                     }
 
@@ -460,12 +486,18 @@
                         count++;
                     }
                 });
+
+                updateEmptyState(count > 0);
             }
             else{
                 variantsWithProductInformation.forEach(variantWithProductInformation => {
                     let blockedBy = []
                     if (isPriceFilterActive.value !== 0 && variantWithProductInformation.protectedByPriceLis.length === 0) {
                         blockedBy.push("price");
+                    }
+
+                    if(isCategoryFilterActive.value !== 0 && variantWithProductInformation.protectedByCategoryLis.length === 0){
+                        blockedBy.push("category");
                     }
 
                     if (isUnitsInStockFilterActive.value !== 0 && variantWithProductInformation.protectedByUnitsInStockLis.length === 0) {
@@ -485,6 +517,8 @@
                         count++;
                     }
                 });
+
+                updateEmptyState(count > 0);
             }
 
             updateTotalItems(count); //this exists in filtersBehaviour.js
@@ -503,6 +537,20 @@
 
             isPriceFilterActive.value++;
         }
+
+         function categoryFilterCheckboxCheckedProcedures(liCategoryName, li) {
+            variantsWithProductInformation.forEach(variantWithProductInformation => {
+                const categories = variantWithProductInformation.categories || [];
+                const hasCategory = categories.some(category => (category.name || "").toLowerCase().trim() === liCategoryName.toLowerCase().trim());
+
+                if (hasCategory) {
+                    variantWithProductInformation.protectedByCategoryLis.push(liCategoryName);
+                }
+            });
+
+            isCategoryFilterActive.value++;
+        }
+
 
         function unitsInStockFilterCheckboxCheckedProcedures(liUnitsInStockRange, li){
             variantsWithProductInformation.forEach(variantWithProductInformation => {
@@ -633,6 +681,7 @@
         searchInputListener = setUpSearchInput(products, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
         setUpCheckBoxFilterUl('priceFiltersUl', priceFilterCheckboxCheckedProcedures, 'protectedByPriceLis', isPriceFilterActive, variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
         setUpCheckBoxFilterUl('unitsInStockFiltersUl', unitsInStockFilterCheckboxCheckedProcedures, 'protectedByUnitsInStockLis', isUnitsInStockFilterActive, variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+        setUpCheckBoxFilterUl('categoryFiltersUl', categoryFilterCheckboxCheckedProcedures, 'protectedByCategoryLis', isCategoryFilterActive, variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
 
         /* ------------------------------------- */
 
@@ -668,6 +717,7 @@
                 sortingListeners = setUpSortingDropdownListeners(variantsWithProductInformation);
                 searchInputIconListeners = setUpSearchInputMode(variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
                 searchInputListener = setUpSearchInput(variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+                updateEmptyState(variantsWithProductInformation.length > 0);
             }
             else{
                 currentViewMode = "ProductView";
@@ -684,7 +734,9 @@
                 sortingListeners = setUpSortingDropdownListeners(products);
                 searchInputIconListeners = setUpSearchInputMode(products, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
                 searchInputListener = setUpSearchInput(products, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);
+                updateEmptyState(products.length > 0);
             }
+
         }
 
         function resetAllFilters(){
@@ -698,6 +750,32 @@
                 variantWithProductInformation.protectedByPriceLis = [];
                 variantWithProductInformation.protectedByUnitsInStockLis = [];
             })
+        }
+
+        function updateEmptyState(hasItems) {
+            const table = document.getElementById('productsTable')
+                .closest('.table-responsive');
+
+            const banner = document.getElementById('emptyStateBanner');
+
+            if (hasItems) {
+                table.classList.remove('d-none');
+                banner.classList.add('d-none');
+            }
+            else {
+                table.classList.add('d-none');
+                banner.classList.remove('d-none');
+
+                document.getElementById('emptyStateTitle').textContent =
+                    currentViewMode === "ProductView"
+                        ? "Δεν βρέθηκαν προϊόντα"
+                        : "Δεν βρέθηκαν παραλλαγές";
+
+                document.getElementById('emptyStateDescription').textContent =
+                    currentViewMode === "ProductView"
+                        ? "Δεν υπάρχουν προϊόντα που να ταιριάζουν με τα επιλεγμένα φίλτρα ή την αναζήτηση."
+                        : "Δεν υπάρχουν παραλλαγές που να ταιριάζουν με τα επιλεγμένα φίλτρα ή την αναζήτηση.";
+            }
         }
 
         /* ------------------------------------- */

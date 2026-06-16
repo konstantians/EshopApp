@@ -133,8 +133,8 @@ public class CheckOutSessionController : ControllerBase
                     ShouldSendEmail = shouldSendEmail
                 };
 
-                string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionCompletedRedirectLink"] :
-                    _configuration["ApiClientBaseUrl"] + "/" + _configuration["SessionCompletedRedirectLink"];
+                string fullUrl = _configuration["ApiClientBaseUrl"]!.EndsWith('/') ? _configuration["ApiClientBaseUrl"] + _configuration["SessionCompletedRedirectEndpoint"] :
+                    _configuration["ApiClientBaseUrl"] + "/" + _configuration["SessionCompletedRedirectEndpoint"];
                 httpClient!.DefaultRequestHeaders.Add("X-API-KEY", _configuration["ApiClientApiKey"]);
                 httpClient.DefaultRequestHeaders.Add("X-Bypass-Rate-Limiting", _configuration["ApiClientRateLimitingBypassCode"]);
                 await httpClient!.PostAsJsonAsync(fullUrl, responseModel);

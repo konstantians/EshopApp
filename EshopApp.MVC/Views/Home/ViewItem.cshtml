@@ -24,49 +24,67 @@
     .shake-cart {
         animation: shake 0.3s ease;
     }
+
+    .disabled-look {
+        pointer-events: auto !important;
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
 </style>
 
 
-<div class="row d-flex align-items-stretch">
+<div class="row d-flex align-items-stretch" style="min-height:70dvh">
     <div class="col-12 col-xl-5 d-flex flex-column">
         <div id="itemCarousel" class="carousel slide" data-bs-interval="false">
-            <div class="carousel-inner">
+            <div class="carousel-inner" style="height:70vh;">
                 @foreach (UiVariantImage variantImage in Model.Variants[0].VariantImages)
                 {
-                    <div class="carousel-item @activeClass">
-                        <img src="~/DynamicImages/@variantImage.Image!.ImagePath" class="d-block w-100 img-fluid" style="height: auto; max-height: 70vh;">
+                    <div class="carousel-item @activeClass w-100 h-100">
+                        <img src="~/DynamicImages/@variantImage.Image!.ImagePath" class="d-block w-100 h-100" style="object-fit:fill;">
                     </div>
                     activeClass = "";
                 }
+
+                @if(Model.Variants[0].VariantImages?.Count == 0)
+                {
+                    <img id="singleImageItem" src="@Url.Content($"~/Images/noProductImage.jpg")" class="d-block w-100 h-100" style="object-fit:fill;">
+                }
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-        <div class="d-flex justify-content-start mt-2 gap-2">
-            @{
-                var variantImages = Model.Variants?.FirstOrDefault()?.VariantImages ?? new List<UiVariantImage>();
-            }
-            @for (int i = 0; i < variantImages.Count; i++)
+            @if(Model.Variants[0].VariantImages?.Count > 1)
             {
-                <img src="~/DynamicImages/@variantImages[i].Image!.ImagePath"
-                     class="img-thumbnail"
-                     style="width:102px; height:102px; object-fit:cover; cursor:pointer;"
-                     data-bs-target="#itemCarousel"
-                     data-bs-slide-to="@i"
-                     aria-label="Slide @(i+1)" />
+                
+                <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             }
         </div>
+        @if(Model.Variants[0].VariantImages?.Count != 0)
+        {
+            <div class="d-flex justify-content-start mt-2 gap-2">
+                @{
+                    var variantImages = Model.Variants?.FirstOrDefault()?.VariantImages ?? new List<UiVariantImage>();
+                }
+                @for (int i = 0; i < variantImages.Count; i++)
+                {
+                    <img src="@Url.Content($"~/DynamicImages/{variantImages[i].Image!.ImagePath}")"
+                         class="img-thumbnail"
+                         style="width:102px; height:102px; object-fit:cover; cursor:pointer;"
+                         data-bs-target="#itemCarousel"
+                         data-bs-slide-to="@i"
+                         aria-label="Slide @(i+1)" />
+                }
+            </div>
+        }
     </div>
 
     <div class="col-12 col-xl-7 d-flex flex-column">
         <div class="mt-2">
-            <h1>@Model.Name</h1>
+            <h1 style="word-break:break-word;">@Model.Name</h1>
             <span>@Model.Code</span>
             <hr>
             @if (string.IsNullOrEmpty(Model.Description))
@@ -79,9 +97,27 @@
             }
         </div>
         <div class="row mt-auto">
-            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center text-lg-start">
-                <span style="color:#999999" class="mb-2 text-smaller">ΤΙΜΗ</span>
-                <div id="variantPriceDiv" data-price="@Model.Variants![0].Price" style="font-size:30px;" class="text-info">@Model.Variants![0].Price&#8364;</div>
+            <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center text-lg-start position-relative overflow-hidden">
+                @if (Model.Variants![0].Discount is not null)
+                {
+                    decimal? discountedPrice = Model.Variants![0].Price - (Model.Variants![0].Price * Model.Variants![0].Discount!.Percentage / 100);
+                    <div style="position:absolute;top:0;right:0;width:0;height:0;border-top:54px solid var(--accent-orange);border-left:54px solid transparent;z-index:2;">
+
+                        <span style="position:absolute;top:-46px;left:-34px;color:white; transform:rotate(45deg);" class="text-smaller">
+                            -@Model.Variants[0].Discount!.Percentage%
+                        </span>
+                    </div>
+                    
+                    <span style="color:#999999" class="mb-2 text-smaller">ΤΙΜΗ
+                            <span class="text-decoration-line-through" style="font-size:16px;">@Model.Variants![0].Price&#8364;</span>
+                    </span>
+                    <div id="variantPriceDiv" data-price="@discountedPrice" style="font-size:30px;" class="text-info">@discountedPrice&#8364;</div>
+                }
+                else
+                {
+                    <span style="color:#999999" class="mb-2 text-smaller">ΤΙΜΗ</span>
+                    <div id="variantPriceDiv" data-price="@Model.Variants![0].Price" style="font-size:30px;" class="text-info">@Model.Variants![0].Price&#8364;</div>
+                }
             </div>
             <div class="col-12 col-sm-4 col-xl-3 border-1 border py-2 text-center">
                 <span style="color:#999999" class="text-smaller">ΠΟΣΟΤΗΤΗΤΑ</span>
@@ -92,14 +128,52 @@
                 </div>
             </div>
             <div class="col-12 col-sm-4 col-xl-6 border-1 border py-2 text-center text-lg-end">
-                <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-check me-1"></i> ΔΙΑΘΕΣΙΜΟ</div>
-                <a data-variantId="@Model.Variants[0].Id" class="btn btn-primary px-3 text-center" id="addItemToCartButton" style="padding-top:0.7rem; padding-bottom:0.7rem;">ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ<i class="fa-solid fa-cart-plus ms-2"></i></a>
+                @if (Model.Variants[0].UnitsInStock > 5)
+                {
+                    <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-check me-1"></i> ΔΙΑΘΕΣΙΜΟ</div>
+                }
+                else if (Model.Variants[0].UnitsInStock == 1)
+                {
+                    <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-triangle-exclamation me-1"></i> ΤΕΛΕΥΤΑΙΟ</div>
+                }
+                else if (Model.Variants[0].UnitsInStock == 0)
+                {
+                    <div class="text-danger mb-2 text-smaller"><i class="fa-solid fa-xmark me-1"></i> ΕΞΑΝΤΛΗΘΗΚΕ</div>
+                }
+                else
+                {
+                    <div class="text-info mb-2 text-smaller"><i class="fa-solid fa-triangle-exclamation me-1"></i> ΤΕΛΕΥΤΑΙΑ @Model.Variants[0].UnitsInStock</div>
+                }
+
+                <a data-variant-id="@Model.Variants[0].Id" data-product-id="@Model.Id" data-sku="@Model.Variants[0].SKU" 
+                    class="btn btn-primary px-3 text-center @(Model.Variants[0].UnitsInStock > 0 ? "" : "disabled-look")" id="addItemToCartButton" 
+                    style="padding-top:0.7rem; padding-bottom:0.7rem;">ΠΡΟΣΘΗΚΗ ΣΤΟ ΚΑΛΑΘΙ<i class="fa-solid fa-cart-plus ms-2"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script type="text/javascript" src="~/js/customModals.js"></script>
     <script>
         let variantPriceDiv = document.getElementById("variantPriceDiv");
         let addItemToCartButton = document.getElementById("addItemToCartButton");
@@ -125,91 +199,60 @@
 
         addItemToCartButton.addEventListener('click', async (e) => {
             e.preventDefault();
-
-            try {
-                const response = await fetch('/cart/addItemToCart', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        variantId: addItemToCartButton.dataset.variantid,
-                        quantity: quantityInput.value,
-                        shouldUpdate: false
-                    })
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    alert(data.errorMessage);
-                    return;
-                }
-
-                const data = await response.json();
-                if(data.authenticated === false)
-                {
-                    addToCartLocal();
-                    animateToCart();
-                    return;
-                }
-
-                animateToCart();
-                localStorage.removeItem('cart');
-                document.getElementById("cartItemsContainer").innerHTML = "";
-                document.getElementById("cartItemsContainerSmall").innerHTML = "";
-
-                initiateCart();
-
-
-            } catch (err) {
-                alert(err)
-                console.error('Request failed:', err);
+            if(addItemToCartButton.classList.contains('disabled-look')){
+                return;
             }
+
+            const cart = JSON.parse(localStorage.getItem("cart")) || { cartItems: [] };
+
+            const cartItem = cart?.cartItems?.find(
+                item => item.variant?.id === addItemToCartButton.dataset.variantId
+            );
+
+            const checkAvailabilityUrl = '@Url.Action("CheckVariantAvailability", "Home")';
+            const requestedQty = Number(quantityInput.value) + Number(cartItem?.quantity ?? 0);
+
+            addItemToCartButton.disabled = true;
+            const response = await fetch(`${checkAvailabilityUrl}?productId=${addItemToCartButton.dataset.productId}` + `&variantId=${addItemToCartButton.dataset.variantId}` + `&requestedUnitsInStock=${requestedQty}`,
+                { 
+                    method: 'GET' 
+                }
+            );
+
+            addItemToCartButton.disabled = false;
+
+            if (response.status >= 500) {
+                const data = await response.json().catch(() => null);
+                if (data?.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    window.location.href = "/Error/Error500";
+                }
+                return;
+            }
+            //can happen if the item gets exhausted while user is here
+            else if (response.status === 404) {
+                const data = await response.json().catch(() => null);
+                if (data?.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                }
+                return;
+            }
+            else if (response.status === 400) {
+                const error = await response.json().catch(() => null);
+                if (error?.errorMessage === "NotEnoughStock") {
+                    showPopUpModal('resultModal', "Μη Διαθέσιμο Απόθεμα", "Η ποσότητα που προσπαθείτε να προσθέσετε δεν είναι διαθέσιμη στο απόθεμα. Παρακαλούμε μειώστε την ποσότητα ή ελέγξτε ξανά αργότερα.", 
+                        "Μη Διαθέσιμο", "Η ποσότητα δεν είναι διαθέσιμη. Δοκιμάστε μικρότερη ποσότητα.");
+                }
+                return;
+            }
+
+            const img = document.querySelector(".carousel-item.active img");
+            const filename = img?.src?.split("/").pop();
+
+            addItemToCart(addItemToCartButton.dataset.variantId, addItemToCartButton.dataset.sku, quantityInput.value,
+                addItemToCartButton.dataset.productId, document.querySelector("h1").textContent, Number(variantPriceDiv.dataset.price), filename, true);
         });
-
-        function addToCartLocal() {
-            //TODO here probably we should do a get variant instead of this crap... To also check for quantity.
-            let cart = JSON.parse(localStorage.getItem("cart")) || { cartItems: [] };
-
-            // Check if this variant is already in the cart
-            const existingItem = cart.cartItems.find(item => item.variant.id === addItemToCartButton.dataset.variantid);
-
-            if (existingItem) {
-                document.getElementById("cartItemsContainer").innerHTML = "";
-                document.getElementById("cartItemsContainerSmall").innerHTML = "";
-                existingItem.quantity += Number(quantityInput.value);
-            } else {
-                // Add new item
-                cart.cartItems.push({
-                    variant: {
-                        product : {
-                            name: document.querySelector("h1").textContent
-                        },
-                        id : addItemToCartButton.dataset.variantid,
-                        price : Number(variantPriceDiv.dataset.price),
-                        variantImages: [
-                            {
-                                isThumbNail : true,
-                                image:{
-                                    imagePath: document.querySelector(".carousel-item.active img").src.split('/').pop()
-                                }
-                            }
-                        ]
-                    },
-                    quantity: Number(quantityInput.value),
-                    id: crypto.randomUUID(),
-                });
-            }
-
-            // Save back to localStorage
-
-            localStorage.setItem("cart", JSON.stringify(cart));
-            document.getElementById("cartItemsContainer").innerHTML = "";
-            document.getElementById("cartItemsContainerSmall").innerHTML = "";
-
-            // Render cart
-            renderUserCart(cart);
-        }
 
         const minusBtn = document.getElementById('quantityMinusButton');
         const plusBtn = document.getElementById('quantityPlusButton');
@@ -233,7 +276,7 @@
         });
 
         function animateToCart() {
-            const img = document.querySelector(".carousel-item.active");
+            const img = document.querySelector(".carousel-item.active") || document.getElementById("singleImageItem");
             const cart = document.getElementById("cartSection");
             
             if (window.innerWidth < 1200) {
@@ -249,11 +292,13 @@
             const cartRect = cart.getBoundingClientRect();
 
             // Initial size: keep same as original (or small if you want)
-            const initialWidth = imgRect.width * 0.5;   // starting size
-            const initialHeight = imgRect.height * 0.5;
+            const initialWidth = imgRect.width;   // starting size
+            const initialHeight = imgRect.height;
 
             // Create a clone
             const flyImg = img.cloneNode(true);
+            flyImg.removeAttribute('class');
+            flyImg.style.display = 'block';
             flyImg.style.position = 'fixed';
             flyImg.style.left = imgRect.left + imgRect.width / 2 - initialWidth / 2 + 'px';
             flyImg.style.top = imgRect.top + imgRect.height / 2 - initialHeight / 2 + 'px';
@@ -269,8 +314,8 @@
             flyImg.getBoundingClientRect();
 
             // Move to cart **and shrink**
-            const targetWidth = initialWidth * 0.2;   // shrink while moving
-            const targetHeight = initialHeight * 0.2;
+            const targetWidth = initialWidth * 0.1;   // shrink while moving
+            const targetHeight = initialHeight * 0.1;
             flyImg.style.left = cartRect.left + cartRect.width / 2 - targetWidth / 2 + 'px';
             flyImg.style.top = cartRect.top + cartRect.height / 2 - targetHeight / 2 + 'px';
             flyImg.style.width = targetWidth + 'px';

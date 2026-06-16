@@ -215,7 +215,7 @@
                             <a data-bs-toggle="modal" data-bs-target="#deleteVariantConfirmationModal-@Model.EditVariantViewModels[i].Id" class="btn btn-secondary w-100 mb-2">Διαγραφή</a>
                             <button type="submit" class="btn btn-primary w-100">Αποθήκευση</button>
                         </div>
-                        <input asp-for="@editVariantViewModel.ImagesIds" value="" id="editVariantViewModel_ImagesIds-@editVariantViewModel.Id" hidden />
+                        <input asp-for="@editVariantViewModel.ImagesIds" value="null" id="editVariantViewModel_ImagesIds-@editVariantViewModel.Id" hidden />
                         <input asp-for="@editVariantViewModel.Id" id="editVariantViewModel_Id-@editVariantViewModel.Id" hidden />
                         <input asp-for="@editVariantViewModel.ProductId" id="editVariantViewModel_ProductId-@editVariantViewModel.Id" value="@Model.EditProductViewModel.Id" hidden />
                     </div>

@@ -101,6 +101,26 @@
         left: 50%;
         transform: translate(-50%) !important;
     }
+
+    #externalProvidersContainer {
+        display: flex;
+        justify-content: space-between;
+    }
+
+        #externalProvidersContainer a {
+            width: 48%;
+        }
+
+    @@media (max-width: 1199px) {
+        #externalProvidersContainer{
+        display: block !important;
+    }
+
+        #externalProvidersContainer a {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    }
 </style>
 
 <div id="signInSignUpContainer" class="@((TempData["ShowSignUpForm"]?.ToString() == "True") ? "right-panel-active" : "")">
@@ -120,34 +140,15 @@
                     <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)" data-testid="signInAlertCloseButton">OK</button>
                 </div>
                 <h3 class="text-center mb-3 mb-lg-4" data-testid="signInHeader">Είσοδος</h3>
-                @* <form asp-controller="account" asp-action="ExternalLogin">
-                    <div id="external-service-providers" class="d-grid gap-2">
-                        @foreach (AuthenticationScheme identityProvider in Model.ExternalIdentityProviders)
-                        {
-                            string icon = identityProvider.Name switch
-                            {
-                                "Google" => "fa-google",
-                                "Microsoft" => "fa-microsoft",
-                                "Twitter" => "fa-square-x-twitter",
-                                _ => ""
-                            };
-                            <button class="btn text-start py-2 px-3" style="background-color:transparent;border: 1px solid #ced4da;" type="submit"
-                                    name="identityProviderName" value="@identityProvider.Name">
-                                <i class="fa-brands @icon me-2"></i>Continue with @identityProvider.DisplayName
-                            </button>
-                        }
-                    </div>
-                    <input name="returnUrl" value="@Model.ReturnUrl" hidden />
-                </form> *@
                 <div class="d-flex justify-content-between" id="externalProvidersContainer">
-                    <button class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da; width:48%;" type="submit"
-                            name="identityProviderName" value="Google">
+                    <a class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da;"
+                       asp-controller="Account" asp-action="ExternalSignIn" asp-route-identityProviderName="Google">
                         <i class="fa-brands fa-google me-2"></i>Συνέχεια Με Google
-                    </button>
-                    <button class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da; width:48%;" type="submit"
-                            name="identityProviderName" value="Twitter">
+                    </a>
+                    <a class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da;"
+                       asp-controller="Account" asp-action="ExternalSignIn" asp-route-identityProviderName="Twitter">
                         <i class="fa-brands fa-square-x-twitter me-2"></i>Συνέχεια Με Twitter
-                    </button>
+                    </a>
                 </div>
                 <div class="d-flex justify-content-center align-items-center my-2">
                     <div class="flex-grow-1">
@@ -173,6 +174,7 @@
                 <div class="d-flex justify-content-between mb-4" role="group">
                     <a href="#" class="text-decoration-none text-info" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-testid="forgotPasswordLink">Ξεχάσατε Τον Κωδικό Σας;</a>
                 </div>
+                <input type="hidden" asp-for="SignInViewModel.UserCartJson" />
                 <div class="d-flex justify-content-center">
                     <button type="submit" class="btn btn-primary w-50 py-2 border-3" style="border-color:black !important;" id="signInButton" data-testid="signInButton">Είσοδος</button>
                 </div>
@@ -254,32 +256,17 @@
 <script type="text/javascript" src="~/js/customValidation.js"></script>
 <script type="text/javascript" src="~/js/customAlerts.js"></script>
 
-@* TODO add an atribute on the modal/alert and when a server event happens load the value of event to the attribute then playwrigh can get it? *@
-
 <script type="text/javascript">
-    function adjustExternalProvidersButtonLayout() {
-        const externalProvidersContainer = document.getElementById("externalProvidersContainer");
-        const externalProvidersButtons = externalProvidersContainer.querySelectorAll("button");
 
-        if (window.innerWidth < 1200) { // Below Bootstrap xl breakpoint
-            externalProvidersContainer.classList.remove("d-flex", "justify-content-between");
-            externalProvidersContainer.classList.add("d-block");
-            externalProvidersButtons.forEach(button => {
-                button.style.width = "100%";
-                button.style.marginBottom = "10px";
-            });
-        } else {
-            externalProvidersContainer.classList.add("d-flex", "justify-content-between");
-            externalProvidersContainer.classList.remove("d-block");
-            externalProvidersButtons.forEach(button => {
-                button.style.width = "48%";
-                button.style.marginBottom = "0";
-            });
-        }
-    }
+     document.querySelectorAll("#signInForm, #signUpForm").forEach(form => form.addEventListener("submit", () => {
+         const cart = JSON.parse(localStorage.getItem("cart"));
+         const bulkCartItems = cart?.cartItems?.map(item => ({
+             variantId: item.variant.id,
+             quantity: item.quantity
+         })) ?? [];
 
-    window.addEventListener("resize", adjustExternalProvidersButtonLayout);
-    document.addEventListener("DOMContentLoaded", adjustExternalProvidersButtonLayout);
+        document.getElementById("SignInViewModel_UserCartJson").value = JSON.stringify(bulkCartItems);
+    }));
 
     function adjustModals(){
         let forgotPasswordModalDialog = document.getElementById('forgotPasswordModal').firstElementChild;

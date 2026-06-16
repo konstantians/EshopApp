@@ -29,6 +29,43 @@ public class GatewayCartController : ControllerBase
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CreateUserCart(List<GatewayCreateCartItemRequestModel> gatewayCreateCartItemRequestModels)
+    {
+        try
+        {
+            // Validate token
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
+            // Get user
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            string? responseBody = await response.Content.ReadAsStringAsync();
+            GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            //create cart for user
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Cart",
+                new { UserId = appUser!.Id, CreateCartItemRequestModels = gatewayCreateCartItemRequestModels }));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+
     [HttpPost("CartItem")]
     public async Task<IActionResult> CreateCartItem(GatewayCreateCartItemRequestModel gatewayCreateCartItemRequestModel)
     {
@@ -78,6 +115,59 @@ public class GatewayCartController : ControllerBase
             return Created("", cartItem);
         }
         catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpPost("CartItems/Bulk")]
+    public async Task<IActionResult> CreateCartItems(List<GatewayCreateCartItemRequestModel> gatewayCreateCartItemRequestModels)
+    {
+        try
+        {
+            if (gatewayCreateCartItemRequestModels == null || gatewayCreateCartItemRequestModels.Count == 0)
+                return BadRequest(new { ErrorMessage = "NoItemsProvided" });
+
+            // Validate token
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
+            // Get user
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            GatewayAppUser appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+            // Get cart
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Cart/UserId/{appUser.Id}"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            GatewayCart userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+            // Ensure all gatewayCreateCartItemRequestModels belong to user's cart
+            if (gatewayCreateCartItemRequestModels.Any(x => x.CartId != userCart.Id))
+                return StatusCode(403, new { ErrorMessage = "InvalidCartIdProvided" });
+
+            var createdItems = new List<GatewayCartItem>();
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.PostAsJsonAsync("Cart/CartItems/Bulk", gatewayCreateCartItemRequestModels));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            return NoContent();
+        }
+        catch
         {
             return StatusCode(500);
         }
@@ -166,6 +256,53 @@ public class GatewayCartController : ControllerBase
 
             //delete the cartItem
             response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Cart/CartItem/{id}"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpDelete("CartItems/{cartId}")]
+    public async Task<IActionResult> ClearUserCart(string cartId)
+    {
+        try
+        {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+
+            //request to get the user
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync("Authentication/GetUserByAccessToken"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            string? responseBody = await response.Content.ReadAsStringAsync();
+            GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            //get the cart of the user
+            _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.GetAsync($"Cart/UserId/{appUser!.Id}"));
+
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+
+            responseBody = await response.Content.ReadAsStringAsync();
+            GatewayCart? userCart = JsonSerializer.Deserialize<GatewayCart>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (userCart!.Id != cartId)
+                return StatusCode(403, new { ErrorMessage = "CartDoesNotBelongToTheUser" });
+
+            //delete the cartItem
+            response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => dataHttpClient.DeleteAsync($"Cart/CartItems/{cartId}"));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
