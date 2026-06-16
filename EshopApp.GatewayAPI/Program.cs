@@ -1,4 +1,5 @@
 using EshopApp.GatewayAPI.HelperMethods;
+using EshopApp.GatewayAPI.HtmlTemplates;
 using EshopApp.GatewayAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -44,6 +45,7 @@ public class Program()
         });
 
         builder.Services.AddSingleton<IUtilityMethods, UtilityMethods>();
+        builder.Services.AddSingleton<IHtmlBuilder, HtmlBuilder>();
 
         List<string> apiKeys = new List<string>();
         if (configuration["ApiKeys"] is not null)

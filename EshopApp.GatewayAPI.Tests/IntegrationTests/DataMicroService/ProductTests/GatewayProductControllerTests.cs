@@ -68,18 +68,21 @@ internal class GatewayProductControllerTests
         /*************** Category 1 ***************/
         TestGatewayCreateCategoryRequestModel testCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testCreateCategoryRequestModel.Name = "Category1";
+        testCreateCategoryRequestModel.CategoryIconLink = "CategoryIconLink1";
         response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testCreateCategoryRequestModel);
         string? responseBody = await response.Content.ReadAsStringAsync();
         _firstCategoryId = JsonSerializer.Deserialize<TestGatewayCategory>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
 
         /*************** Category 2 ***************/
         testCreateCategoryRequestModel.Name = "Category2";
+        testCreateCategoryRequestModel.CategoryIconLink = "CategoryIconLink2";
         response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testCreateCategoryRequestModel);
         responseBody = await response.Content.ReadAsStringAsync();
         _secondCategoryId = JsonSerializer.Deserialize<TestGatewayCategory>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
 
         /*************** Category 3 ***************/
         testCreateCategoryRequestModel.Name = "Category3";
+        testCreateCategoryRequestModel.CategoryIconLink = "CategoryIconLink3";
         response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testCreateCategoryRequestModel);
         responseBody = await response.Content.ReadAsStringAsync();
         _thirdCategoryId = JsonSerializer.Deserialize<TestGatewayCategory>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;

@@ -130,7 +130,7 @@ public class GatewayCategoryController : ControllerBase
             //update the category
             _utilityMethods.SetDefaultHeadersForClient(false, dataHttpClient, _configuration["DataApiKey"]!, _configuration["DataRateLimitingBypassCode"]!);
             response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
-                dataHttpClient.PutAsJsonAsync("Category", new { Id = gatewayUpdateCategoryRequestModel.Id, Name = gatewayUpdateCategoryRequestModel.Name, ProductIds = gatewayUpdateCategoryRequestModel.ProductIds }));
+                dataHttpClient.PutAsJsonAsync("Category", gatewayUpdateCategoryRequestModel));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);

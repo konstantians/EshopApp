@@ -58,6 +58,7 @@ public class CategoryController : ControllerBase
         {
             Category category = new Category();
             category.Name = createCategoryRequestModel.Name;
+            category.CategoryIconLink = createCategoryRequestModel.CategoryIconLink;
             category.Products = createCategoryRequestModel.ProductIds?.Select(productId => new Product { Id = productId }).ToList()!;
             ReturnCategoryAndCodeResponseModel response = await _categoryDataAccess.CreateCategoryAsync(category);
             if (response.ReturnedCode == DataLibraryReturnedCodes.DuplicateEntityName)
@@ -79,6 +80,7 @@ public class CategoryController : ControllerBase
             Category category = new Category();
             category.Id = updateCategoryRequestModel.Id;
             category.Name = updateCategoryRequestModel.Name;
+            category.CategoryIconLink = updateCategoryRequestModel.CategoryIconLink;
             category.Products = updateCategoryRequestModel.ProductIds?.Select(productId => new Product { Id = productId }).ToList()!;
 
             DataLibraryReturnedCodes returnedCode = await _categoryDataAccess.UpdateCategoryAsync(category);

@@ -1,10 +1,12 @@
 ﻿using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAdminTests.Models.RequestModels;
+using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayAuthenticationTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayRoleTests.Models.RequestModels;
 using EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.SharedModels;
 using EshopApp.GatewayAPI.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -16,7 +18,6 @@ namespace EshopApp.GatewayAPI.Tests.IntegrationTests.AuthMicroService.GatewayRol
 internal class GatewayRoleControllerTests
 {
     private HttpClient httpClient;
-    private int waitTimeInMillisecond = 5000;
     private string? _chosenApiKey;
     private string? _userAccessToken;
     private string? _userId;
@@ -58,43 +59,13 @@ internal class GatewayRoleControllerTests
         await TestUtilitiesLibrary.DatabaseUtilities.ResetNoSqlDatabaseAsync(new string[] { "EshopApp_Emails" }, "All documents deleted from Email NoSql database");
         TestUtilitiesLibrary.EmailUtilities.DeleteAllEmailFiles();
 
-        //sign up simple user
-        TestGatewayApiSignUpRequestModel signUpModel = new TestGatewayApiSignUpRequestModel();
-        signUpModel.Email = "kinnaskonstantinos0@gmail.com";
-        signUpModel.PhoneNumber = "6943655624";
-        signUpModel.Password = "Kinas2016!";
-        signUpModel.ClientUrl = "https://localhost:7070/controller/clientAction";
-        await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signup", signUpModel);
-        await Task.Delay(waitTimeInMillisecond);
-        string? confirmationEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(deleteEmailFile: true);
-        try
-        {
-            using HttpClient tempHttpClient = new HttpClient();
-            await tempHttpClient.GetAsync(confirmationEmailLink);
-        }
-        catch { }
-
-        //get user access token and userId
+        //get manager access token
         TestGatewayApiSignInRequestModel testGatewayApiSignInRequestModel = new TestGatewayApiSignInRequestModel();
-        testGatewayApiSignInRequestModel.Email = "kinnaskonstantinos0@gmail.com";
-        testGatewayApiSignInRequestModel.Password = "Kinas2016!";
-        testGatewayApiSignInRequestModel.RememberMe = true;
-
-        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signin", testGatewayApiSignInRequestModel);
-        _userAccessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
-
-        TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken);
-        response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
-        string? responseBody = await response.Content.ReadAsStringAsync();
-        _userId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
-
-        //get manager access token and userId
-        testGatewayApiSignInRequestModel = new TestGatewayApiSignInRequestModel();
         testGatewayApiSignInRequestModel.Email = "manager@hotmail.com";
         testGatewayApiSignInRequestModel.Password = "CIiyyBRXjTGac7j!";
         testGatewayApiSignInRequestModel.RememberMe = true;
 
-        response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signin", testGatewayApiSignInRequestModel);
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signin", testGatewayApiSignInRequestModel);
         _managerAccessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
 
         //get admin access token and adminId
@@ -108,8 +79,25 @@ internal class GatewayRoleControllerTests
 
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         response = await httpClient.GetAsync("api/GatewayAuthentication/GetUserByAccessToken");
-        responseBody = await response.Content.ReadAsStringAsync();
+        string responseBody = await response.Content.ReadAsStringAsync();
         _adminId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
+
+        //create user and get user Id
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _adminAccessToken);
+        var testCreateUserRequestModel = new TestGatewayApiCreateUserRequestModel("kinnaskonstantinos0@gmail.com", "Kinas2016!", "6943655624", false);
+        response = await httpClient.PostAsJsonAsync("api/gatewayAdmin", testCreateUserRequestModel);
+
+        responseBody = await response.Content.ReadAsStringAsync();
+        _userId = JsonSerializer.Deserialize<TestGatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!.Id;
+
+        //get user access token
+        testGatewayApiSignInRequestModel = new TestGatewayApiSignInRequestModel();
+        testGatewayApiSignInRequestModel.Email = "kinnaskonstantinos0@gmail.com";
+        testGatewayApiSignInRequestModel.Password = "Kinas2016!";
+        testGatewayApiSignInRequestModel.RememberMe = true;
+
+        response = await httpClient.PostAsJsonAsync("api/gatewayAuthentication/signin", testGatewayApiSignInRequestModel);
+        _userAccessToken = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "accessToken");
     }
 
     [Test, Order(10)]

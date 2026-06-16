@@ -1,4 +1,4 @@
-﻿using EshopApp.MVC.Models;
+﻿using EshopApp.MVC.Models.AuthModels;
 using System.ComponentModel.DataAnnotations;
 
 namespace EshopApp.MVC.ViewModels;

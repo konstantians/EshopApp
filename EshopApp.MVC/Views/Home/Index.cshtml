@@ -1,4 +1,564 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using EshopApp.MVC.Models.EmailModels
+@model ContactEmailModel
+
+@{
+    ViewData["Title"] = "Αρχική Σελίδα";
+    List<UiCategory> categories = ViewData["Categories"] as List<UiCategory> ?? new List<UiCategory>();
+    List<UiProduct> chosenProducts = ViewData["ChosenProducts"] as List<UiProduct> ?? new List<UiProduct>();
+    string activeClass = "active";
+    int carouselCount = 1;
 }
 
+
+<style>
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 0-.708 0L4.5 8l6.146 6.354a.5.5 0 0 0 .708-.708L5.707 8l5.647-5.646a.5.5 0 0 0 0-.708z'/%3E%3C/svg%3E");
+    }
+
+    .carousel-control-next-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0L11.5 8l-6.146 6.354a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    }
+</style>
+
+<style>
+    .fade-up {
+        opacity: 0;
+        transform: translateY(24px);
+        transition: opacity .55s ease, transform .55s ease;
+    }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    .d1 {
+        transition-delay: .1s !important;
+    }
+
+    .d2 {
+        transition-delay: .2s !important;
+    }
+
+    .d3 {
+        transition-delay: .3s !important;
+    }
+
+    .feat-card {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity .5s ease, transform .5s ease, border-color .2s, box-shadow .2s;
+    }
+
+        .feat-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feat-card:hover {
+            border-color: var(--accent-orange) !important;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 20px rgba(255,94,0,.12);
+        }
+
+    .item-card:hover {
+        border-color: var(--accent-orange) !important;
+        transform: translateY(-3px);
+        transition: border-color .2s, transform .2s;
+    }
+
+    .category-pill:hover, .category-pill.active {
+        background: rgba(255,94,0,.08) !important;
+        border-color: var(--accent-orange) !important;
+        color: var(--accent-orange) !important;
+    }
+
+    .btn-orange {
+        background: var(--accent-orange);
+        color: #fff;
+        border: none;
+        transition: opacity .2s, transform .15s;
+    }
+
+        .btn-orange:hover {
+            opacity: .85;
+            transform: translateY(-2px);
+            color: #fff;
+        }
+</style>
+
+
+<!-- ── HERO ── -->
+<section class="overflow-hidden" style="background: url('@Url.Content("~/Images/test.png")') no-repeat;background-size:cover;width:100%;min-height:90vh;display:flex;align-items:center;">
+    <div class="container">
+        <div class="row align-items-center gy-2">
+            <div class="col-lg-6">
+                <span class="badge rounded-0 mb-3 px-3 py-2" style="background:var(--accent-orange); letter-spacing:.12em; font-size:.7rem;">ΝΕΑ ΣΕΖΟΝ</span>
+                <h1 class="fw-black lh-1 mb-3" style="font-size:clamp(2.8rem,7vw,5rem); letter-spacing:-.02em;">
+                    Ποιότητα που μπορείς<br><span style="color:var(--accent-orange)">να νιώσεις πραγματικά.</span>
+                </h1>
+                <p class="text-secondary mb-4" style="max-width:440px;">Premium προϊόντα, δίκαιες τιμές, χωρίς συμβιβασμούς. Ανακάλυψε χιλιάδες προϊόντα φτιαγμένα να αντέχουν — κατευθείαν στην πόρτα σας.</p>
+                <div class="d-flex flex-wrap gap-3 mb-5">
+                    <a href="#shop" class="btn btn-orange rounded-1 px-4 py-2 fw-bold">Περιήγηση στο Κατάστημα <i class="fa fa-arrow-right ms-1"></i></a>
+                    <a href="#features" class="btn btn-outline-dark rounded-1 px-4 py-2 border">Μάθετε Περισσότερα</a>
+                </div>
+                <div class="d-flex gap-4">
+                    <div class="border-start border-2 ps-3" style="border-color:var(--accent-orange) !important;">
+                        <div class="fw-black fs-4">100+</div>
+                        <div class="text-secondary" style="font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;">Προϊόντα</div>
+                    </div>
+                    <div class="border-start border-2 ps-3" style="border-color:var(--accent-orange) !important;">
+                        <div class="fw-black fs-4">98%</div>
+                        <div class="text-secondary" style="font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;">Ικανοποίηση</div>
+                    </div>
+                    <div class="border-start border-2 ps-3" style="border-color:var(--accent-orange) !important;">
+                        <div class="fw-black fs-4">3 Ημέρες</div>
+                        <div class="text-secondary" style="font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;">Παράδοση</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5 fade-up">
+            <span class="d-block mb-1 fw-bold" style="color:var(--accent-orange); font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;">Γιατι Εμας</span>
+            <h2 class="fw-black">Φτιαγμένο διαφορετικά. <span style="color:var(--accent-orange)">Αληθινά.</span></h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feat-card bg-white border rounded-3 p-4 h-100">
+                    <div class="rounded-2 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;background:rgba(255,94,0,.08);">
+                        <i class="fa fa-truck-fast" style="color:var(--accent-orange);"></i>
+                    </div>
+                    <h5 class="fw-bold">Αστραπιαία Αποστολή</h5>
+                    <p class="text-secondary mb-0" style="font-size:.9rem;">Διαθέτουμε τοπικές αποθήκες ώστε η παραγγελία σας να φτάνει στην πόρτα σας σε 3 ημέρες ή λιγότερο. Δωρεάν για παραγγελίες άνω των €50.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feat-card bg-white border rounded-3 p-4 h-100">
+                    <div class="rounded-2 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;background:rgba(255,94,0,.08);">
+                        <i class="fa fa-star" style="color:var(--accent-orange);"></i>
+                    </div>
+                    <h5 class="fw-bold">Μόνο Επιλεγμένη Ποιότητα</h5>
+                    <p class="text-secondary mb-0" style="font-size:.9rem;">Κάθε προϊόν περνά από έλεγχο 12 σημείων πριν φτάσει στα ράφια μας. Διαθέτουμε λιγότερα προϊόντα και στηρίζουμε το καθένα από αυτά.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feat-card bg-white border rounded-3 p-4 h-100">
+                    <div class="rounded-2 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;background:rgba(255,94,0,.08);">
+                        <i class="fa fa-rotate-left" style="color:var(--accent-orange);"></i>
+                    </div>
+                    <h5 class="fw-bold">Εύκολες Επιστροφές 30 Ημερών</h5>
+                    <p class="text-secondary mb-0" style="font-size:.9rem;">Δεν μείνατε ικανοποιημένοι; Επιστροφή με ένα κλικ, παράδοση σε οποιοδήποτε σημείο courier και επιστροφή χρημάτων μέσα σε 48 ώρες.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Mini SHOP ── -->
+<section id="shop" class="py-5" style="background-color:#dddddd;">
+    <div class="container">
+        <div class="border rounded-3 p-4 p-lg-5 bg-light">
+            <div class="row align-items-center gy-3 mb-4">
+                <div class="col-lg-7 fade-up">
+                    <span class="d-block mb-1 fw-semibold" style="color:var(--accent-orange); font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;">Το Κατάστημα</span>
+                    <h2 class="fw-black mb-1">Ανακάλυψε τον <span style="color:var(--accent-orange)">πλήρη κατάλογό μας.</span></h2>
+                    <p class="text-secondary mb-0">Από καθημερινά απαραίτητα μέχρι ξεχωριστά κομμάτια. Φίλτραρετε, περιηγήθείτε, ανακάλυψτε.</p>
+                </div>
+                @if(chosenProducts.Count > 0)
+                {
+                    <div class="col-lg-5 text-lg-end fade-up d1">
+                        <a asp-controller="Home" asp-action="ViewItems" class="btn btn-orange rounded-1 px-4 fw-bold">
+                            Δείτε Όλα τα Προϊόντα <i class="fa fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-lg-5 text-lg-end fade-up d1">
+                        <span class="badge rounded-pill px-3 py-2" style="background:rgba(255,94,0,.08); color:var(--accent-orange); font-size:.78rem; letter-spacing:.08em;">
+                            <i class="fa fa-clock me-1"></i>Νέα προϊόντα έρχονται σύντομα
+                        </span>
+                    </div>
+                }
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 mb-4 fade-up d2">
+                @if(chosenProducts.Count > 0)
+                {
+                    <a class="category-pill btn border border-1 rounded-pill px-3 py-1 active" style="font-size:.82rem;" id="newProductsShopLink"><i class="fa fa-fire me-1" style="color:var(--accent-orange);"></i>Νέες Αφίξεις</a>
+                }
+                //there are not products for sure if this fails
+                else{
+                    <div class="w-100 text-center py-4 px-3 border rounded-3 bg-white" style="border-style:dashed !important; border-color:#ddd !important;">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:115px;height:115px;background:rgba(255,94,0,.08);">
+                            <i class="fa fa-box-open" style="color:var(--accent-orange); font-size:3rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Δεν υπάρχουν προϊόντα αυτή τη στιγμή</h5>
+                        <p class="text-secondary mb-0" style="font-size:.9rem;">Δουλεύουμε για να προσθέσουμε νέα προϊόντα στο κατάστημά μας — ελάτε ξανά σύντομα!</p>
+                    </div>
+                }
+
+                <!-- other categories if they exist-->
+                @foreach(UiCategory category in categories)
+                {
+                    <a class="category-pill btn rounded-pill border border-1 px-3 py-1" style="font-size:.82rem;" id="categoryShopLink-@category.Id">
+                        <i class="fa @(@category.CategoryIconLink ?? "fa-tag") me-1" style="color:var(--accent-orange);"></i>@category.Name
+                    </a>
+                }
+            </div>
+
+            <div class="row g-3 fade-up d3" id="categoryShopContainer-0">
+                @for (int i = 0; i < chosenProducts.Count && i < 4; i++)
+                {
+                    var chosenProduct = chosenProducts[i];
+                    <div class="col-6 col-md-3">
+                        <div class="item-card border rounded-3 overflow-hidden">
+                            <div class="px-0">
+                                <div id="cardCarousel-@carouselCount" class="carousel slide" data-bs-interval="false">
+                                    <div class="carousel-inner">
+                                        @foreach (UiVariantImage variantImage in chosenProduct.Variants[0].VariantImages)
+                                        {
+                                            <a class="carousel-item @activeClass" asp-controller="Home" asp-action="ViewItem" asp-route-id="@chosenProduct.Id">
+                                                <img src="@Url.Content($"~/DynamicImages/{variantImage.Image!.ImagePath}")" class="d-block w-100 img-fluid" style="min-height: 200px; max-height: 380px;">
+                                            </a>
+                                            activeClass = "";
+                                        }
+
+                                        @if(chosenProduct.Variants[0].VariantImages?.Count == 0)
+                                        {
+                                            <a class="carousel-item @activeClass" asp-controller="Home" asp-action="ViewItem" asp-route-id="@chosenProduct.Id">
+                                                <img src="@Url.Content("~/Images/noProductImage.jpg")" class="d-block w-100 img-fluid" style="min-height: 200px; max-height: 380px;">
+                                            </a>
+                                        }
+                                    </div>
+
+                                    @if(chosenProduct.Variants[0].VariantImages?.Count > 1)
+                                    {
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                                            <span class="visually-hidden">Previous</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                                            <span class="visually-hidden">Next</span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <div class="fw-semibold" style="font-size:.85rem;">@chosenProduct.Name</div>
+                                <div class="fw-bold" style="color:var(--accent-orange); font-size:.9rem;">@chosenProduct.Variants[0].Price €</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    activeClass = "active";
+                    carouselCount++;
+                }
+            </div>
+
+            @foreach (UiCategory uiCategory in categories)
+            {
+                <div class="row g-3 d3 fade-up d-none" id="categoryShopContainer-@uiCategory.Id">
+
+                    @if (uiCategory.Products != null)
+                    {
+                        @for (int i = 0; i < uiCategory.Products.Count && i < 4; i++)
+                        {
+                            var product = uiCategory.Products[i];
+                            <div class="col-6 col-md-3">
+                                <div class="item-card border rounded-3 overflow-hidden">
+                                    <div class="px-0">
+                                        <div id="cardCarousel-@carouselCount" class="carousel slide" data-bs-interval="false">
+                                            <div class="carousel-inner">
+                                                @foreach (UiVariantImage variantImage in product.Variants[0].VariantImages)
+                                                {
+                                                    <a class="carousel-item @activeClass" asp-controller="Home" asp-action="ViewItem" asp-route-id="@product.Id">
+                                                        <img src="~/DynamicImages/@variantImage.Image!.ImagePath" class="d-block w-100 img-fluid" style="min-height: 200px; max-height: 380px;">
+                                                    </a>
+                                                    activeClass = "";
+                                                }
+
+                                                @if (product.Variants[0].VariantImages?.Count == 0)
+                                                {
+                                                    <a class="carousel-item @activeClass" asp-controller="Home" asp-action="ViewItem" asp-route-id="@product.Id">
+                                                        <img src="@Url.Content("~/Images/noProductImage.jpg")" class="d-block w-100 img-fluid" style="min-height: 200px; max-height: 380px;">
+                                                    </a>
+                                                }
+                                            </div>
+                                            @if (product.Variants[0].VariantImages?.Count > 1)
+                                            {
+                                                <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="prev">
+                                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                                                    <span class="visually-hidden">Previous</span>
+                                                </button>
+                                                <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="next">
+                                                    <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                                                    <span class="visually-hidden">Next</span>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="p-2">
+                                        <div class="fw-semibold" style="font-size:.85rem;">@product.Name</div>
+                                        <div class="fw-bold" style="color:var(--accent-orange); font-size:.9rem;">@product.Variants[0].Price €</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            activeClass = "active";
+                            carouselCount++;
+                        }
+                    }
+
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ── CONTACT ── -->
+<section id="contact" class="py-5 bg-light">
+    <div class="container position-relative">
+        <div class="text-center mb-5 fade-up">
+            <span class="d-block mb-1 fw-semibold" style="color:var(--accent-orange); font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;">Επικοινωνία</span>
+            <h2 class="fw-black">Είμαστε εδώ για <span style="color:var(--accent-orange)">να βοηθήσουμε.</span></h2>
+        </div>
+        <div class="border rounded-3 overflow-hidden fade-up" id="emailContactFormContainer">
+            <div class="row g-0">
+                <div class="col-lg-4 p-4 pb-lg-3 pt-lg-4 px-lg-4 text-white" style="background:var(--accent-orange);">
+                    <h3 class="fw-black">Επικοινωνήστε μαζί μας.</h3>
+                    <p style="opacity:.85; font-size:.9rem;">Έχετε κάποια ερώτηση ή απλώς θέλετε να μάθετε κάτι για εμάς; Απαντάμε μέσα σε μία εργάσιμη ημέρα.</p>
+                    <div class="d-flex align-items-center gap-2 mt-3" style="font-size:.85rem;"><i class="fa fa-envelope"></i>kinnaskonstantinos0@gmail.com</div>
+                    <div class="d-flex align-items-center gap-2 mt-2" style="font-size:.85rem;"><i class="fa fa-phone"></i> +30 6943655624</div>
+                    <div class="d-flex align-items-center gap-2 mt-2" style="font-size:.85rem;"><i class="fa fa-location-dot"></i> Αθήνα, Ελλάδα</div>
+                    <div class="d-flex gap-3 mt-4">
+                        <a href="#" class="text-white"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-tiktok fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-facebook fa-lg"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-8 p-4 pb-lg-3 pt-lg-4 px-lg-4 bg-white">
+                    <form id="contactForm">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label asp-for="FirstName" class="form-label text-secondary" style="font-size:.82rem;">Όνομα</label>
+                                <input asp-for="FirstName" type="text" class="form-control" placeholder="Γράψτε το όνομα σας" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="LastName" class="form-label text-secondary" style="font-size:.82rem;">Επώνυμο</label>
+                                <input asp-for="LastName" type="text" class="form-control" placeholder="Γράψτε το επίθετο σας" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Email" class="form-label text-secondary" style="font-size:.82rem;">Email</label>
+                                <input asp-for="Email" type="email" class="form-control" placeholder="Γράψτε το email σας" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-secondary" id="subjectLabel" style="font-size:.82rem;">Θέμα</label>
+                                <div class="dropdown">
+                                    <button class="form-select text-start custom-outline" type="button" id="subjectDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">Επιλέξτε Θέμα...</button>
+                                    <ul class="dropdown-menu w-100 py-0" aria-labelledby="subjectDropdownButton" id="subjectDropdown">
+                                        <li><a class="dropdown-item" href="#" data-value="orderProblem">Πρόβλημα παραγγελίας</a></li>
+                                        <li><a class="dropdown-item" href="#" data-value="productQuestion">Ερώτηση προϊόντος</a></li>
+                                        <li><a class="dropdown-item" href="#" data-value="orderRefund">Επιστροφές & επιστροφές χρημάτων</a></li>
+                                        <li><a class="dropdown-item" href="#" data-value="other">Άλλο</a></li>
+                                    </ul>
+                                </div>
+                                <span asp-validation-for="Subject" class="text-danger" id="chooseSubjectValidationSpan"></span>
+                                <input type="hidden" asp-for="Subject" value="chooseSubject">
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Message" class="form-label text-secondary" style="font-size:.82rem;">Μήνυμα</label>
+                                <textarea asp-for="Message" class="form-control" rows="4" placeholder="Γράψτε το μήνυμά σας…"></textarea>
+                                <span asp-validation-for="Message" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-orange rounded-1 w-100 fw-bold">
+                                    Αποστολή Μηνύματος <i class="fa fa-paper-plane ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div id="formLoadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center d-none bg-light" style="z-index: 10;">
+            <div class="text-center">
+                <div class="spinner-border text-info" role="status" style="width:82px; height:82px;"></div>
+                <div class="mt-3 text-muted">Αποστολή Μηνύματος...</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.querySelector('#contact .container').style.minHeight = document.querySelector('#contact .container').offsetHeight + 'px'; //trick to fix issues with spinner
+</script>
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="~/js/customSelect.js"></script>
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customModals.js"></script>
+
+<script>
+    function showCategoryContainer(container) {
+        container.classList.remove('d-none');
+        container.classList.remove('visible');
+        void container.offsetWidth; // force reflow so the browser registers the start state
+        requestAnimationFrame(() => {
+            container.classList.add('visible');
+        });
+    }
+
+    function hideCategoryContainer(container) {
+        container.classList.add('d-none');
+        container.classList.remove('visible');
+    }
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-up, .feat-card').forEach(el => observer.observe(el));
+    document.querySelectorAll('.feat-card').forEach((c, i) => { c.style.transitionDelay = `${i * 0.12}s`; });
+
+    document.querySelectorAll('[id^="categoryShopLink-"]').forEach(categoryLink => {
+        categoryLink.addEventListener("click", () => {
+
+            document.getElementById("newProductsShopLink").classList.remove('active');
+            document.querySelectorAll('[id^="categoryShopLink-"]').forEach(catLink => {
+                catLink.classList.remove('active');
+            });
+            categoryLink.classList.add('active');
+
+            document.querySelectorAll('[id^="categoryShopContainer-"]').forEach(categoryContainer => {
+                if(categoryContainer.id === "categoryShopContainer-" +  categoryLink.id.substring(categoryLink.id.indexOf("-") + 1)){
+                    showCategoryContainer(categoryContainer);
+                }
+                else{
+                    hideCategoryContainer(categoryContainer);
+                }
+            })
+        });
+    });
+
+    document.getElementById("newProductsShopLink").addEventListener("click", function () {
+        this.classList.add('active');
+
+        document.querySelectorAll('[id^="categoryShopLink-"]').forEach(catLink => {
+            catLink.classList.remove('active');
+        });
+
+        document.querySelectorAll('[id^="categoryShopContainer-"]').forEach(categoryContainer => {
+            if(categoryContainer.id === "categoryShopContainer-0"){
+                showCategoryContainer(categoryContainer);
+            }
+            else{
+                hideCategoryContainer(categoryContainer);
+            }
+        })
+    });
+
+    setUpCustomSelect('subjectDropdownButton', 'subjectLabel', 'Subject'); //exists in customSelect.js
+
+    setUpValidationListeners();
+    setUpFormSubmissionValidationListener("contactForm");
+
+    document.getElementById("contactForm").addEventListener("submit", e => {
+
+        if (e.defaultPrevented) {
+            return;
+        }
+
+        e.preventDefault(); // stops submit
+
+        if(document.getElementById("Subject").value === "chooseSubject"){
+            document.getElementById("chooseSubjectValidationSpan").textContent = "Παρακαλώ επιλέξτε ένα θέμα";
+            return;
+        }
+
+        document.getElementById("emailContactFormContainer").classList.add('d-none');
+        document.getElementById("formLoadingOverlay").classList.remove('d-none');
+
+        const contactEmailModel = {
+            firstName: document.getElementById("FirstName").value,
+            lastName: document.getElementById("LastName").value,
+            email: document.getElementById("Email").value,
+            subject: document.getElementById("Subject").value,
+            message: document.getElementById("Message").value
+        }
+
+            fetch('@Url.Action("SendContactEmail", "EmailDelivery")', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(contactEmailModel)
+            })
+            .then(async response => {
+                if (response.status === 503) {
+                    window.location.href = '@Url.Action("Error", "Error", new { id = 503 })';
+                    return;
+                }
+                else if(response.status >= 500){
+                    window.location.href = '@Url.Action("Error", "Error", new { id = 500 })';
+                    return;
+                }
+
+                const data = await response.json();
+                switch (data.result) {
+                    case "noError":
+                        document.getElementById("contactForm").reset();
+                        document.getElementById("Subject").value = "chooseSubject";
+                        resultModal.setAttribute("popUpValue", "productDeletionSuccess");
+                        showPopUpModal("resultModal", "Επιτυχία Αποστολής Μηνύματος", "Το μήνυμα σας στάλθηκε επιτυχώς! Θα λάβετε την απάντηση μας όσο το δυνατόν πιο γρήγορα.", "Επιτυχία",
+                            "Το μήνυμα σας στάλθηκε επιτυχώς! Θα λάβετε την απάντηση μας όσο το δυνατόν πιο γρήγορα.", "success");
+                        break;
+                    case "contactEmailNotSend":
+                        resultModal.setAttribute("popUpValue", "unknownError");
+                        showPopUpModal('resultModal', "Αποτυχία", "Κάποιο πρόβλημα συνέβη από την μεριά του συστήματος. Παρακαλώ δοκιμάστε αργότερα.",
+                        "Αποτυχία", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε αργότερα.");
+                        break;
+                }
+            })
+            .catch(err => {
+                console.error("Request failed:", err);
+            })
+            .finally(() => {
+                document.getElementById("emailContactFormContainer").classList.remove('d-none');
+                document.getElementById("formLoadingOverlay").classList.add('d-none');
+            });
+    });
+
+    document.querySelectorAll("#subjectDropdown .dropdown-item").forEach(link => {
+        link.addEventListener("click", function (e) {
+            document.getElementById("chooseSubjectValidationSpan").textContent = "";
+        });
+    });
+</script>

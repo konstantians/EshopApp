@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EshopApp.DataLibrary.DataAccess;
 
-//TODO just add logging codes at some point
 public class CategoryDataAccess : ICategoryDataAccess
 {
     private readonly AppDataDbContext _appDataDbContext;
@@ -27,6 +26,7 @@ public class CategoryDataAccess : ICategoryDataAccess
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.VariantImages)
+                            .ThenInclude(vi => vi.Image)
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.Discount)
@@ -54,6 +54,7 @@ public class CategoryDataAccess : ICategoryDataAccess
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.VariantImages)
+                            .ThenInclude(vi => vi.Image)
                 .Include(c => c.Products)
                     .ThenInclude(p => p.Variants)
                         .ThenInclude(v => v.Discount)
@@ -149,6 +150,7 @@ public class CategoryDataAccess : ICategoryDataAccess
                 foundCategory.Products.AddRange(filteredProducts);
             }
 
+            foundCategory.CategoryIconLink = updatedCategory.CategoryIconLink ?? foundCategory.CategoryIconLink;
             foundCategory.ModifiedAt = DateTime.Now;
             await _appDataDbContext.SaveChangesAsync();
 

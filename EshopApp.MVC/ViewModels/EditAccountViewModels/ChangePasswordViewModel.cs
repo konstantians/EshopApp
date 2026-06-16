@@ -5,7 +5,8 @@ namespace EshopApp.MVC.ViewModels.EditAccountViewModels;
 
 public class ChangePasswordViewModel
 {
-    [Required(ErrorMessage = "This field is required")]
+    public bool UserHasPassword { get; set; } = true;
+    [Required]
     [MinLength(8, ErrorMessage = "Password must be at least 8 characters long")]
     [MaxLength(128, ErrorMessage = "Password can not exceed 128 characters")]
     [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).*$",

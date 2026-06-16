@@ -1,0 +1,603 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Order Confirmed – YourBrand</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        table, td {
+            border-collapse: collapse;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            display: block;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        body {
+            background-color: #f2f2f2;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+            padding: 32px 16px;
+        }
+
+        .email-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            background: #ffffff;
+            text-align: center;
+            padding: 36px 32px 0;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .brand-name {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #1a1a1a;
+        }
+
+            .brand-name span {
+                color: #ff5e00;
+            }
+
+        .checkmark-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #ff5e00;
+            margin-bottom: 24px;
+        }
+
+            .checkmark-wrap svg {
+                width: 36px;
+                height: 36px;
+            }
+
+        .confirmed-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            line-height: 1.1;
+        }
+
+        .confirmed-sub {
+            font-size: 15px;
+            color: #777;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .body {
+            padding: 0 28px 32px;
+        }
+
+        .card {
+            border: 1.5px solid #ebebeb;
+            border-radius: 14px;
+            padding: 20px 22px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ff5e00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .card-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .detail-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+            .detail-left svg {
+                width: 18px;
+                height: 18px;
+                color: #aaa;
+                flex-shrink: 0;
+            }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+            .detail-value.orange {
+                color: #ff5e00;
+                font-weight: 700;
+            }
+
+        .divider {
+            height: 1px;
+            background: #f0f0f0;
+            margin: 4px 0;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .items-table th {
+                text-align: left;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.7px;
+                color: #aaa;
+                padding: 0 0 12px;
+            }
+
+                .items-table th.center {
+                    text-align: center;
+                }
+
+                .items-table th.right {
+                    text-align: right;
+                }
+
+        .item-row td {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-img {
+            width: 52px;
+            height: 52px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #f5f5f5;
+        }
+
+        .item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        .item-sku {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 3px;
+            letter-spacing: 0.2px;
+        }
+
+        .item-qty {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .item-price {
+            text-align: right;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+        }
+
+        .totals {
+            margin-top: 4px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+            .total-row.subtotal {
+                font-size: 13px;
+                color: #777;
+            }
+
+            .total-row.shipping {
+                font-size: 13px;
+                color: #777;
+            }
+
+            .total-row.grand {
+                font-size: 16px;
+                font-weight: 800;
+                color: #1a1a1a;
+                border-top: 2px solid #1a1a1a;
+                margin-top: 4px;
+                padding-top: 12px;
+            }
+
+                .total-row.grand .total-amount {
+                    color: #ff5e00;
+                }
+
+        .notify-banner {
+            background: #fff8f4;
+            border: 1.5px solid #ffdcca;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .notify-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #fff2eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .notify-icon svg {
+                width: 22px;
+                height: 22px;
+            }
+
+        .notify-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .cta {
+            display: block;
+            background: #ff5e00;
+            color: #fff !important;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+        }
+
+            .cta:hover {
+                background: #e05300;
+            }
+
+        .footer {
+            background: #f7f7f7;
+            padding: 24px 28px;
+            border-top: 1px solid #ebebeb;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-align: center;
+        }
+
+            .footer-item svg {
+                width: 22px;
+                height: 22px;
+                color: #999;
+                margin-bottom: 4px;
+            }
+
+        .footer-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #444;
+        }
+
+        .footer-sub {
+            font-size: 11px;
+            color: #999;
+        }
+
+        @media only screen and (max-width: 480px) {
+            body {
+                padding: 16px 8px;
+            }
+
+            .header {
+                padding: 28px 20px 0;
+            }
+
+            .body {
+                padding: 0 16px 24px;
+            }
+
+            .confirmed-title {
+                font-size: 26px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .footer {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="email-wrapper">
+
+        <div class="header">
+
+            <div class="checkmark-wrap">
+                <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="7,19 15,27 29,11" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+
+            <h1 class="confirmed-title">Παραγγελία Επιβεβαιώθηκε!</h1>
+            <p class="confirmed-sub">Ευχαριστούμε για την παραγγελία σας. Την έχουμε λάβει<br>και βρίσκεται ήδη σε επεξεργασία.</p>
+
+        </div>
+
+        <div class="body">
+
+            <div class="card">
+
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <path d="M16 10a4 4 0 01-8 0" />
+                        </svg>
+                    </div>
+                    <span class="card-title">Στοιχεία Παραγγελίας</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                            <line x1="9" y1="7" x2="15" y2="7" />
+                            <line x1="9" y1="11" x2="15" y2="11" />
+                            <line x1="9" y1="15" x2="13" y2="15" />
+                        </svg>
+                        Αριθμός Παραγγελίας
+                    </div>
+                    <span class="detail-value orange">#{{OrderId}}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Ημερομηνία Παραγγελίας
+                    </div>
+                    <span class="detail-value">{{OrderDate}}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                            <line x1="1" y1="10" x2="23" y2="10" />
+                        </svg>
+                        Τρόπος Πληρωμής
+                    </div>
+                    <span class="detail-value">{{PaymentMethod}}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="15" height="13" rx="1" />
+                            <path d="M16 8h4l3 3v5h-7V8z" />
+                            <circle cx="5.5" cy="18.5" r="2.5" />
+                            <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                        Τρόπος Αποστολής
+                    </div>
+                    <span class="detail-value">{{ShippingMethod}}</span>
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                    </div>
+                    <span class="card-title">Προϊόντα Παραγγελίας</span>
+                </div>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Προϊόν</th>
+                            <th class="center">Ποσ.</th>
+                            <th class="right">Τιμή</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{OrderItems}}
+                    </tbody>
+                </table>
+
+                <div class="totals">
+                    <div class="total-row subtotal">
+                        <span>Υποσύνολο</span>
+                        <span>{{SubTotal}}</span>
+                    </div>
+
+                    <div class="total-row shipping">
+                        <span>Αποστολή</span>
+                        <span>{{ShippingCost}}</span>
+                    </div>
+
+                    <div class="total-row shipping" style="{{ShouldBeShown}}">
+                        <span>COD</span>
+                        <span>{{CODCost}}</span>
+                    </div>
+
+                    <div class="total-row grand">
+                        <span>Σύνολο</span>
+                        <span class="total-amount">{{Total}}</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="notify-banner">
+                <div class="notify-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ff5e00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </div>
+                <span class="notify-text">Θα σας ειδοποιήσουμε όταν αποσταλεί η παραγγελία σας.</span>
+            </div>
+
+            <a href="{{ViewOrderLink}}" class="cta">Δείτε την Παραγγελία σας</a>
+
+        </div>
+
+        <div class="footer">
+            <div class="footer-links">
+
+                <div class="footer-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span class="footer-label">Χρειάζεστε Βοήθεια;</span>
+                    <span class="footer-sub">Είμαστε εδώ για εσάς.</span>
+                </div>
+
+                <div class="footer-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    <span class="footer-label">Επικοινωνήστε μαζί μας</span>
+                    <span class="footer-sub">kinnaskonstantinos@gmail.com</span>
+                </div>
+
+                <div class="footer-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                    </svg>
+                    <span class="footer-label">Visit Our Store</span>
+                    <span class="footer-sub">www.eshopapp.com</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

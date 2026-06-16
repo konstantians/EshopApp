@@ -1,5 +1,5 @@
 ﻿using EshopApp.MVC.ControllerUtilities;
-using EshopApp.MVC.Models;
+using EshopApp.MVC.Models.AuthModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Headers;
@@ -23,10 +23,7 @@ public class RoleManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await httpClient.GetAsync("GatewayRole");
@@ -38,7 +35,8 @@ public class RoleManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
         if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
@@ -57,7 +55,8 @@ public class RoleManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
         if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
@@ -75,10 +74,7 @@ public class RoleManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("ManageRoles");
@@ -100,10 +96,7 @@ public class RoleManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         List<UiClaim> selectedUiClaims = new List<UiClaim>();
         foreach (string selectedClaim in selectedClaims)
@@ -129,10 +122,7 @@ public class RoleManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         List<UiClaim> newUiClaims = new List<UiClaim>();
         foreach (string selectedClaim in newClaims)

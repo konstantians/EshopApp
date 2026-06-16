@@ -58,7 +58,9 @@ public static class HelperMethods
 
         //this deals with 4xx errors with empty response bodies
         responseBody = responseBodyWasPassedIn ? responseBody : await response.Content.ReadAsStringAsync();
-        if ((int)response.StatusCode >= 400 && string.IsNullOrEmpty(responseBody))
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+            return shouldRedirect ? controller.RedirectToAction("Forbidden403", "Error") : controller.StatusCode((int)response.StatusCode);
+        else if ((int)response.StatusCode >= 400 && string.IsNullOrEmpty(responseBody))
         {
             controller.TempData["UnknownError"] = true;
             return shouldRedirect ? controller.RedirectToAction(redirectToAction, redirectToController, routeValues: routeValues) : controller.StatusCode((int)response.StatusCode, new { ErrorMessage = "UnknownError" });

@@ -1,19 +1,476 @@
-﻿@{
+﻿@using System.Globalization
+@model UiUser?
+
+@{
     ViewData["Title"] = "Customer Information";
+
+    var euCountryCodes = new HashSet<string>
+    {
+        "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE",
+        "FI", "FR", "DE", "HU", "IE", "IT", "LV",
+        "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
+        "SI", "ES", "SE"
+    };
+
+    List<RegionInfo> euCountries = CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+        .Select(c => new RegionInfo(c.Name))
+        .DistinctBy(r => r.TwoLetterISORegionName)
+        .Where(r => euCountryCodes.Contains(r.TwoLetterISORegionName))
+        .OrderBy(r => r.DisplayName)
+        .ToList();
 }
+
+<script>
+    const delay = Number('@(TempData["ShouldSynchronizeBackEndCart"] as bool? == true ? 3500 : 0)');
+
+    setTimeout(() => {
+        const cart = JSON.parse(localStorage.getItem("cart"));
+        if (!cart?.cartItems?.length) {
+            window.location.href = '@Url.Action("ViewCart", "Home")';
+        }
+    }, delay);
+</script>
 
 <link rel="stylesheet" href="~/css/timelineStyles.css" />
 
 <div class="mt-5">
     <div class="d-flex justify-content-between timeline-step mx-auto px-4">
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <a asp-controller="Home" asp-action="ViewCart" class="dot step-1 active text-extra-smallest text-sm-smaller"></a>
+        <div class="line active"></div>
+        <a asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelection" class="dot step-2 active text-extra-smallest text-sm-smaller"></a>
+        <div class="line active"></div>
+        <a asp-controller="OrderPlacement" asp-action="CustomerInformation" class="dot step-3 active text-extra-smallest text-sm-smaller"></a>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-4 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot active text-extra-smallest text-sm-smaller"></div>
-        <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
-        <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-5 text-extra-smallest text-sm-smaller"></div>
     </div>
 </div>
+
+<div class="mt-5 pt-4">
+    <div class="row mb-3" style="margin-left:0 !important;margin-right:0 !important;">
+        <form class="col-12 col-lg-6 col-xl-7 pe-lg-2 p-0" id="customerInformationForm" method="post">
+            <div id="contactInformationSection">
+                <h4 class="text-center mb-3">Στοιχεία Επικοινωνίας</h4>
+                <div class="mb-4">
+                    <label for="email"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail <span class="text-danger text-bigger">*</span></label>
+                    <input class="form-control" name="email" id="email" placeholder="Εισάγετε email" value="@Model?.Email"
+                        data-val="true" data-val-required="Το email είναι υποχρεωτικό" data-val-regex="Μη έγκυρο email" data-val-regex-pattern="^[^@@\s]+@@[^@@\s]+\.[^@@\s]+$">
+                    <span class="text-danger" data-valmsg-for="email"></span>
+                </div>
+            </div>
+            <div id="BillingInformationSection">
+                <h4 class="text-center mb-3">Πληροφορίες Χρέωσης</h4>
+                <div class="mb-4">
+                    <label class="form-label" id="countryLabel"><i class="fa-solid fa-earth-europe me-2"></i>Χώρα <span class="text-danger text-bigger">*</span></label>
+                    <div class="dropdown">
+                        <button class="form-select text-start custom-outline" type="button" id="countryDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">Ελλάδα</button>
+                        <ul class="dropdown-menu w-100 py-0" aria-labelledby="countryDropdownButton" id="countriesDropdown" style="max-height:250px;overflow-y:auto">
+                            <li><a class="dropdown-item" href="#" data-value="Ελλάδα">Ελλάδα</a></li>
+                            @foreach (RegionInfo regionInfo in euCountries)
+                            {
+                                <li><a class="dropdown-item" href="#" data-value="@regionInfo.NativeName">@regionInfo.NativeName</a></li>
+                            }
+                        </ul>
+                    </div>
+                    <input hidden name="country" id="countryHiddenInput" value="Ελλάδα" />
+
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12 col-lg-6">
+                        <label for="firstName"><i class="fa-solid fa-user me-2"></i>Όνομα <span class="text-danger text-bigger">*</span></label>
+                        <input class="form-control" name="firstName" id="firstName" placeholder="Εισάγετε όνομα" data-val="true" data-val-required="Το όνομα είναι υποχρεωτικό" value="@Model?.FirstName">
+                        <span class="text-danger" data-valmsg-for="firstName"></span>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <label for="lastName"><i class="fa-solid fa-user me-2"></i>Επίθετο <span class="text-danger text-bigger">*</span></label>
+                        <input class="form-control" name="lastName" id="lastName" placeholder="Εισάγετε επίθετο" data-val="true" data-val-required="Το επώνυμο είναι υποχρεωτικό" value="@Model?.LastName">
+                        <span class="text-danger" data-valmsg-for="lastName"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-7 col-lg-8">
+                        <label for="address"><i class="fa-solid fa-location-dot me-2"></i>Διεύθυνση <span class="text-danger text-bigger">*</span></label>
+                        <input class="form-control" name="address" id="address" placeholder="Εισάγετε διεύθυνση" data-val="true" data-val-required="Η διεύθυνση είναι υποχρεωτική" value="@Model?.Address?.AddressName">
+                        <span class="text-danger" data-valmsg-for="address"></span>
+                    </div>
+                    <div class="col-5 col-lg-4">
+                        <label for="postalCode"><i class="fa-solid fa-envelopes-bulk me-2"></i>T.K <span class="text-danger text-bigger">*</span></label>
+                        <input class="form-control" name="postalCode" id="postalCode" placeholder="Εισάγετε Τ.Κ" data-val="true" data-val-required="Ο Τ.Κ είναι υποχρεωτικός" value="@Model?.Address?.PostalCode"
+                            data-val-regex="Μη έγκυρος Τ.Κ" data-val-regex-pattern="^[0-9]{4,10}$">
+                        <span class="text-danger" data-valmsg-for="postalCode"></span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="city"><i class="fa-solid fa-city me-2"></i>Πόλη <span class="text-danger text-bigger">*</span></label>
+                    <input class="form-control" name="city" id="city" placeholder="Εισάγετε Πόλη" data-val="true" data-val-required="Η Πόλη είναι υποχρεωτική" value="@Model?.Address?.City">
+                    <span class="text-danger" data-valmsg-for="city"></span>
+                </div>
+                <div class="mb-4">
+                    <label for="phoneNumber"><i class="fa-solid fa-phone me-2"></i>Τηλέφωνο</label>
+                    <input class="form-control" name="phoneNumber" id="phoneNumber" placeholder="Εισάγετε Τηλέφωνο" value="@Model?.PhoneNumber" data-val="true" data-val-regex="Μη έγκυρο τηλέφωνο" data-val-regex-pattern="^[0-9+\s()-]{7,20}$">
+                    <span class="text-danger" data-valmsg-for="phoneNumber"></span>
+                </div>
+            </div>
+            <div id="DeliveryInformationSection">
+                <div style="margin-bottom: 1.75rem;" class="d-flex align-items-center">
+                    <input class="form-check-input rounded-0 me-2" name="isBillingAndDeliveryInformationTheSame" type="checkbox" id="sameBillingAndDeliveryInformationInput" data-bs-toggle="collapse" data-bs-target="#DeliveryInformationSectionOptional" checked />
+                    <label class="form-check-label text-small" for="sameBillingAndDeliveryInformationInput">Η διεύθυνση αποστολής είναι ίδια με τη διεύθυνση χρέωσης.</label>
+                </div>
+                <div class="collapse" id="DeliveryInformationSectionOptional">
+                    <h4 class="text-center mb-3">Πληροφορίες Αποστολής</h4>
+                    <div class="mb-4">
+                        <label class="form-label" id="altCountryLabel"><i class="fa-solid fa-location-dot me-2"></i>Χώρα <span class="text-danger text-bigger">*</span></label>
+                        <div class="dropdown">
+                            <button class="form-select text-start custom-outline" type="button" id="altCountryDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">Ελλάδα</button>
+                            <ul class="dropdown-menu w-100 py-0" aria-labelledby="altCountryDropdownButton" id="altCountriesDropdown" style="max-height:250px;overflow-y:auto">
+                                <li><a class="dropdown-item" href="#" data-value="Ελλάδα">Ελλάδα</a></li>
+                                @foreach (RegionInfo regionInfo in euCountries)
+                                {
+                                    <li><a class="dropdown-item" href="#" data-value="@regionInfo.NativeName">@regionInfo.NativeName</a></li>
+                                }
+                            </ul>
+                        </div>
+                        <input hidden name="altCountry" id="altCountryHiddenInput" value="Ελλάδα" />
+
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12 col-lg-6">
+                            <label for="altFirstName"><i class="fa-solid fa-user me-2"></i>Όνομα <span class="text-danger text-bigger">*</span></label>
+                            <input class="form-control" name="altFirstName" id="altFirstName" placeholder="Εισάγετε όνομα" data-required-if="#sameBillingAndDeliveryInformationInput:false" data-val="true">
+                            <span class="text-danger" data-valmsg-for="altFirstName"></span>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <label for="altLastName"><i class="fa-solid fa-user me-2"></i>Επίθετο <span class="text-danger text-bigger">*</span></label>
+                            <input class="form-control" name="altLastName" id="altLastName" placeholder="Εισάγετε επίθετο" data-required-if="#sameBillingAndDeliveryInformationInput:false" data-val="true">
+                            <span class="text-danger" data-valmsg-for="altLastName"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-7 col-lg-8">
+                            <label for="altAddress"><i class="fa-solid fa-house me-2"></i>Διεύθυνση <span class="text-danger text-bigger">*</span></label>
+                            <input class="form-control" name="altAddress" id="altAddress" placeholder="Εισάγετε διεύθυνση" data-required-if="#sameBillingAndDeliveryInformationInput:false" data-val="true">
+                            <span class="text-danger" data-valmsg-for="altAddress"></span>
+                        </div>
+                        <div class="col-5 col-lg-4">
+                            <label for="altPostalCode"><i class="fa-solid fa-tag me-2"></i>T.K <span class="text-danger text-bigger">*</span></label>
+                            <input class="form-control" name="altPostalCode" id="altPostalCode" placeholder="Εισάγετε Τ.Κ" data-required-if="#sameBillingAndDeliveryInformationInput:false" data-val="true"
+                                   data-val-regex="Μη έγκυρος Τ.Κ" data-val-regex-pattern="^[0-9]{4,10}$">
+                            <span class="text-danger" data-valmsg-for="altPostalCode"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="altCity"><i class="fa-solid fa-city me-2"></i>Πόλη <span class="text-danger text-bigger">*</span></label>
+                        <input class="form-control" name="altCity" id="altCity" placeholder="Εισάγετε Πόλη" data-required-if="#sameBillingAndDeliveryInformationInput:false" data-val="true">
+                        <span class="text-danger" data-valmsg-for="altCity"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label for="altPhoneNumber"><i class="fa-solid fa-phone me-2"></i>Τηλέφωνο</label>
+                        <input class="form-control" name="altPhoneNumber" id="altPhoneNumber" placeholder="Εισάγετε Τηλέφωνο" data-val-regex="Μη έγκυρο τηλέφωνο" data-val-regex-pattern="^[0-9+\s()-]{7,20}$">
+                        <span class="text-danger" data-valmsg-for="altPhoneNumber"></span>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="col-12 col-lg-6 col-xl-5 p-lg-2 p-0">
+            <div class="card">
+                @if (TempData["ShouldSynchronizeBackEndCart"] is not null && (bool?)TempData["ShouldSynchronizeBackEndCart"] == true)
+                {
+                    <div id="summaryLoadingOverlay"
+                         class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.7); z-index: 10;">
+                        <div class="text-center">
+                            <div class="spinner-border text-info" role="status" style="width:70px; height:70px;"></div>
+                            <div class="mt-3 text-muted">Φόρτωση καλαθιού...</div>
+                        </div>
+                    </div>
+                }
+                <div class="card-body">
+                    <h5 class="fw-semibold mb-3">Σύνοψη Παραγγελίας</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-semibold">Τιμή Άνα Προϊόν</span>
+                    </div>
+
+                    <div id="cartItemsContainerSpecific">
+                        @{
+                            decimal? finalPrice = 0;
+                        }
+                        @if (Model is not null)
+                        {
+                            @foreach (UiCartItem cartItem in Model.Cart!.CartItems)
+                            {
+                                var imageFile = cartItem.Variant!.VariantImages.FirstOrDefault()?.Image?.ImagePath;
+                                string imagePath = Url.Content(string.IsNullOrEmpty(imageFile) ? "~/Images/noProductImage.jpg" : $"~/DynamicImages/{imageFile}");
+                                decimal? cartItemFullPrice = @cartItem.Quantity * @cartItem.Variant!.Price;
+                                @if (cartItem.Variant.Discount is not null)
+                                {
+                                    cartItemFullPrice = cartItem.Quantity * (cartItem.Variant!.Price - (cartItem.Variant!.Price * cartItem.Variant.Discount.Percentage / 100));
+                                }
+                                <div class="card mb-2" id="cardId_@cartItem.Id">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-8">
+                                                <div class="d-flex align-items-vertical me-3">
+                                                    <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@cartItem.Variant!.Product!.Id" class="me-3">
+                                                        <div class="position-relative d-inline-block">
+                                                            <img src="@imagePath" height="80" width="80">
+                                                            <span class="position-absolute top-0 start-100 translate-middle bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                                  style="width:20px;height:20px;font-size:12.5px;padding-bottom:3px;">
+                                                                @cartItem.Quantity
+                                                            </span>
+                                                        </div>
+                                                    </a>
+
+                                                    <div>
+                                                        <a asp-controller="Home" asp-action="ViewItem"
+                                                           asp-route-id="@cartItem.Variant!.Product!.Id"
+                                                           class="fw-medium text-dark text-decoration-none d-block hover-primary">
+                                                            @cartItem.Variant!.Product!.Name
+                                                        </a>
+
+                                                        <small class="text-muted">
+                                                            SKU: @cartItem.Variant!.SKU
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <div class="fw-medium mb-1">
+                                                    @cartItemFullPrice &#8364;
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                finalPrice += cartItemFullPrice;
+                            }
+                        }
+                    </div>
+
+                    <hr id="finalPriceSeparator">
+
+                    <div class="d-flex justify-content-between fw-semibold mb-2">
+                        <span>Σύνολο Παραγγελίας:</span>
+                        <span id="finalPriceSpan" data-final-Price="@finalPrice">@finalPrice &#8364;</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl-7">
+            <div class="row">
+                @if(Model is not null)
+                {
+                    <div class="col-6 col-xl-4">
+                        <a asp-action="ViewCart" asp-controller="Home" class="btn btn-outline-dark py-3 px-4 border border-1 w-100"><i class="fa-solid fa-chevron-left me-2"></i>Επιστροφή</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-6 col-xl-4">
+                        <a asp-action="CustomerAccountTypeSelection" asp-controller="OrderPlacement" class="btn btn-outline-dark py-3 px-4 border border-1 w-100"><i class="fa-solid fa-chevron-left me-2"></i>Επιστροφή</a>
+                    </div>
+                }
+                <div class="col-6 col-xl-4 offset-xl-4">
+                    <button type="submit" class="btn btn-primary py-3 px-4 w-100" onclick="document.getElementById('customerInformationForm').requestSubmit();">Συνέχεια<i class="fa-solid fa-chevron-right ms-2"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="~/js/customSelect.js"></script>
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+
+<script>
+    let finalPrice = 0;
+
+    function getLocalCart() {
+        try {
+            return JSON.parse(localStorage.getItem("cart")) || null;
+        } catch (e) {
+            console.error("Invalid cart in localStorage", e);
+            return null;
+        }
+    }
+
+    function buildCartFromLocalStorage() {
+        const cart = getLocalCart();
+
+        cart.cartItems.forEach(item => {
+            const cartItemFullPrice = item.quantity * item.variant.price;
+            let imagePath = window.appConfig.noProductImageUrl;
+            if(item.variant.variantImages?.[0]?.image?.imagePath){
+                imagePath = window.appConfig.dynamicImagesUrl + item.variant.variantImages?.[0]?.image?.imagePath;
+            }
+
+            const summaryHtml = `
+                <div class="card mb-2" id="cardId_${item.id}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-8">
+                                <div class="d-flex align-items-vertical me-3">
+                                    <a href="/Home/ViewItem/${item.variant.product.id}" class="me-3">
+                                        <div class="position-relative d-inline-block">
+                                            <img src="${imagePath}" height="80" width="80">
+                                            <span class="position-absolute top-0 start-100 translate-middle bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                  style="width:20px;height:20px;font-size:12.5px;padding-bottom:3px;">
+                                                ${item.quantity}
+                                            </span>
+                                        </div>
+                                    </a>
+                                    <div>
+                                        <a href="/Home/ViewItem/${item.variant.product.id}" class="fw-medium text-dark text-decoration-none d-block hover-primary">
+                                            ${item.variant.product.name}
+                                        </a>
+
+                                        <small class="text-muted">
+                                            SKU: ${item.variant.sku}
+                                        </small>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="col-4 text-end">
+                                <div class="fw-medium mb-1">
+                                    ${cartItemFullPrice.toFixed(2)} €
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            finalPrice += cartItemFullPrice;
+            document.getElementById("cartItemsContainerSpecific").insertAdjacentHTML("beforeend", summaryHtml);
+        });
+
+        // updateFinal price
+        finalPriceSpan.dataset.finalPrice = finalPrice;
+        finalPriceSpan.textContent = finalPrice.toFixed(2) + " €";
+    }
+
+    function getCustomerAddress(){
+        try {
+            const orderData = JSON.parse(localStorage.getItem("orderData")) || null;
+            return orderData?.orderAddress;
+        } catch (e) {
+            console.error("Invalid order data in localStorage", e);
+            return null;
+        }
+    }
+
+    function buildCustomerAddressFromLocalStorage(){
+        const orderAddress =  getCustomerAddress();
+        if(!orderAddress){
+            return;
+        }
+
+        document.getElementById("email").value = orderAddress.email;
+        document.getElementById("firstName").value = orderAddress.firstName;
+        document.getElementById("lastName").value = orderAddress.lastName;
+        document.getElementById("countryHiddenInput").value =  orderAddress.country;
+        document.getElementById("countryDropdownButton").textContent = orderAddress.country;
+        document.getElementById("city").value = orderAddress.city;
+        document.getElementById("postalCode").value = orderAddress.postalCode;
+        document.getElementById("address").value = orderAddress.address;
+        document.getElementById("phoneNumber").value = orderAddress.phoneNumber;
+
+        document.getElementById("sameBillingAndDeliveryInformationInput").checked = !orderAddress.isShippingAddressDifferent;
+        if(orderAddress.isShippingAddressDifferent){
+            document.getElementById("DeliveryInformationSectionOptional").classList.add("show");
+            document.getElementById("altFirstName").value = orderAddress.altFirstName;
+            document.getElementById("altLastName").value = orderAddress.altLastName;
+            document.getElementById("altCountryHiddenInput").value =  orderAddress.altCountry;
+            document.getElementById("altCountryDropdownButton").textContent = orderAddress.altCountry;
+            document.getElementById("altCity").value = orderAddress.altCity;
+            document.getElementById("altPostalCode").value = orderAddress.altPostalCode;
+            document.getElementById("altAddress").value = orderAddress.altAddress;
+            document.getElementById("altPhoneNumber").value = orderAddress.altPhoneNumber;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", buildCustomerAddressFromLocalStorage);
+</script>
+
+<script>
+    setUpCustomSelect('countryDropdownButton', 'countryLabel', 'countryHiddenInput'); //exists in customSelect.js
+    setUpCustomSelect('altCountryDropdownButton', 'altCountryLabel', 'altCountryHiddenInput');
+
+    setUpValidationListeners();
+    setUpFormSubmissionValidationListener("customerInformationForm");
+
+    document.getElementById("customerInformationForm").addEventListener("submit", function (e) {
+
+        if (e.defaultPrevented) {
+            return;
+        }
+
+        const orderData = {
+            orderAddress: {
+                email: document.getElementById("email").value,
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                country: document.getElementById("countryHiddenInput").value,
+                city: document.getElementById("city").value,
+                postalCode: document.getElementById("postalCode").value,
+                address: document.getElementById("address").value,
+                phoneNumber: document.getElementById("phoneNumber").value,
+
+                isShippingAddressDifferent: document.getElementById("sameBillingAndDeliveryInformationInput").checked === false,
+
+                altFirstName: document.getElementById("altFirstName")?.value || null,
+                altLastName: document.getElementById("altLastName")?.value || null,
+                altCountry: document.getElementById("altCountryHiddenInput")?.value || null,
+                altCity: document.getElementById("altCity")?.value || null,
+                altPostalCode: document.getElementById("altPostalCode")?.value || null,
+                altAddress: document.getElementById("altAddress")?.value || null,
+                altPhoneNumber: document.getElementById("altPhoneNumber")?.value || null
+            }
+        };
+
+        localStorage.setItem("orderData", JSON.stringify(orderData));
+        e.preventDefault();
+        window.location.href = '@Url.Action("OrderInformation", "OrderPlacement")';
+    });
+
+    document.getElementById("sameBillingAndDeliveryInformationInput")
+      .addEventListener("change", function () {
+
+        const section = document.getElementById("DeliveryInformationSectionOptional");
+        const inputs = section.querySelectorAll("input, select, textarea");
+
+        if (this.checked) {
+            inputs.forEach(field => {
+                field.value = "";
+                clearError(field);
+            });
+        }
+    });
+</script>
+
+@if (Model is null)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", buildCartFromLocalStorage);
+    </script>
+}
+else if (TempData["ShouldSynchronizeBackEndCart"] is not null && (bool?)TempData["ShouldSynchronizeBackEndCart"] == true)
+{
+    <script>
+        setTimeout(() => {
+            document.getElementById("cartItemsContainerSpecific").innerHTML = "";
+            buildCartFromLocalStorage();
+            document.getElementById("summaryLoadingOverlay").classList.add('d-none');
+        }, 4000);
+    </script>
+}

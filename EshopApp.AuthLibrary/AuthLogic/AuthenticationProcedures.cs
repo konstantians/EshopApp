@@ -281,7 +281,7 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 return new ReturnTokenAndCodeResponseModel(accessToken, LibraryReturnedCodes.NoError);
             }
 
-            //if the updatedAppUser has a local a local account
+            //if the updatedAppUser has a local account
             //check to see if the local account is activated
             if (!_helperMethods.IsEmailConfirmed(user, new EventId(3217, "ExternalSignInFailureDueToUnconfirmedEmail"), "The external sign in process could not continue, because the user account is not activated. Email={Email}"))
                 return new ReturnTokenAndCodeResponseModel(null!, LibraryReturnedCodes.UserAccountNotActivated);
@@ -308,7 +308,8 @@ public class AuthenticationProcedures : IAuthenticationProcedures
                 _logger.LogInformation(new EventId(2205, "SuccessfulExternalUserSignIn"), "Successfully signed in user with external login provider.");
                 accessToken = await GenerateTokenAsync(user!, false, userRoles);
                 return new ReturnTokenAndCodeResponseModel(accessToken, LibraryReturnedCodes.NoError);
-            };
+            }
+            ;
 
             //Finally if the updatedAppUser has already a local account and not an external login, try to connect the incoming external login with it
             var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
@@ -642,6 +643,18 @@ public class AuthenticationProcedures : IAuthenticationProcedures
             existingUser.FirstName = updatedAppUser.FirstName?.Trim() ?? existingUser.FirstName;
             existingUser.LastName = updatedAppUser.LastName?.Trim() ?? existingUser.LastName;
             existingUser.PhoneNumber = updatedAppUser.PhoneNumber?.Trim() ?? existingUser.PhoneNumber;
+            if (updatedAppUser.Address != null && existingUser.Address is null)
+            {
+                updatedAppUser.Address.Id = Guid.NewGuid().ToString();
+                existingUser.Address = updatedAppUser.Address;
+            }
+            else if (updatedAppUser.Address != null)
+            {
+                existingUser.Address!.Country = updatedAppUser.Address.Country ?? existingUser.Address.Country;
+                existingUser.Address!.City = updatedAppUser.Address.City ?? existingUser.Address.City;
+                existingUser.Address!.PostalCode = updatedAppUser.Address.PostalCode ?? existingUser.Address.PostalCode;
+                existingUser.Address!.AddressName = updatedAppUser.Address.AddressName ?? existingUser.Address.AddressName;
+            }
 
             var result = await _userManager.UpdateAsync(existingUser);
             if (!result.Succeeded)

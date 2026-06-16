@@ -17,4 +17,6 @@ public class ApiCreateUserRequestModel
 
     [Required]
     public string? Password { get; set; }
+
+    public ApiAddress? Address { get; set; }
 }

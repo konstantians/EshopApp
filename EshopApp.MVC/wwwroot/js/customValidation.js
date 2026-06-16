@@ -44,12 +44,12 @@ function setUpFormSubmissionValidationListener(formId) {
 
 function validateField(field) {
     //required validation
-    if (field.hasAttribute('data-val-required') && field.value.trim() === "") {
-        showValidationErrror(field, field.getAttribute("data-val-required"));
+    if ((field.hasAttribute('data-val-required') || isConditionallyRequired(field)) && field.value.trim() === "") {
+        showValidationErrror(field, field.getAttribute("data-val-required") || "This field is required");
         return false;
     }
     //if it is empty but not required then it passed validation
-    else if (!field.hasAttribute('data-val-required') && field.value.trim() === "") {
+    else if (!field.hasAttribute('data-val-required') && !isConditionallyRequired(field) && field.value.trim() === "") {
         return true;
     }
 
@@ -149,6 +149,22 @@ function checkPasswordMatch(field) {
     clearError(repeatPasswordField);
     clearError(passwordField);
     return true;
+}
+
+function isConditionallyRequired(field) {
+    const attribute = field.getAttribute("data-required-if");
+    if (!attribute) {
+        return false;
+    }
+
+    const [selector, expectedValue] = attribute.split(":");
+    const target = document.querySelector(selector);
+
+    if (!target) {
+        return false;
+    } 
+
+    return String(target.checked) === expectedValue;
 }
 
 function showValidationErrror(field, message) {

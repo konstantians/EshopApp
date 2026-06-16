@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Views\Email\" />
     <Folder Include="wwwroot\DynamicImages\" />
   </ItemGroup>
 

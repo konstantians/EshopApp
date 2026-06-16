@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using EshopApp.GatewayAPI.AuthMicroService.SharedModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace EshopApp.GatewayAPI.AuthMicroService.GatewayAuthentication.Models.RequestModels;
 
@@ -10,4 +11,6 @@ public class GatewayUpdateAccountRequestModel
     public string? LastName { get; set; }
     [RegularExpression(@"^\+?\d{1,4}[\s\-]?\(?\d{1,3}\)?[\s\-]?\d{1,4}[\s\-]?\d{1,4}[\s\-]?\d{1,4}$", ErrorMessage = "Invalid phone number")]
     public string? PhoneNumber { get; set; }
+
+    public GatewayAddress? Address { get; set; }
 }

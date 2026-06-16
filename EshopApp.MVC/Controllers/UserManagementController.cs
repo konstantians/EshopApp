@@ -1,5 +1,5 @@
 ﻿using EshopApp.MVC.ControllerUtilities;
-using EshopApp.MVC.Models;
+using EshopApp.MVC.Models.AuthModels;
 using EshopApp.MVC.ViewModels;
 using EshopApp.MVC.ViewModels.EditUserViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -25,10 +25,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await httpClient.GetAsync("GatewayAdmin");
@@ -40,8 +37,9 @@ public class UserManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
-        if ((int)response.StatusCode >= 400)
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
+        else if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
             return RedirectToAction("SignInAndSignUp", "Account");
@@ -58,10 +56,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("ManageUsers");
@@ -83,10 +78,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await httpClient.GetAsync("GatewayAuthentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/Permission/ClaimValue/CanManageUsers");
@@ -98,12 +90,8 @@ public class UserManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
-        if ((int)response.StatusCode >= 400)
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+        else if ((int)response.StatusCode >= 403)
+            return RedirectToAction("Forbidden403", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         response = await httpClient.GetAsync("GatewayRole");
@@ -132,10 +120,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("CreateUser");
@@ -181,10 +166,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await httpClient.GetAsync($"GatewayAdmin/GetUserById/{userId}");
@@ -196,7 +178,8 @@ public class UserManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
         if ((int)response.StatusCode == 404)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
@@ -279,10 +262,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("EditUser", "UserManagement");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
         {
@@ -314,10 +294,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
         {
@@ -341,10 +318,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
         {
@@ -369,10 +343,7 @@ public class UserManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
         {

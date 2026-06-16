@@ -164,6 +164,9 @@ namespace EshopApp.DataLibrary.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("CategoryIconLink")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -555,6 +558,44 @@ namespace EshopApp.DataLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("PaymentOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "payment_cod",
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3368),
+                            Description = "Πληρώστε με μετρητά κατά την παράδοση της παραγγελίας σας",
+                            ExistsInOrder = false,
+                            ExtraCost = 2.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3373),
+                            Name = "Αντικαταβολή",
+                            NameAlias = "cod"
+                        },
+                        new
+                        {
+                            Id = "payment_card",
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3377),
+                            Description = "Ασφαλής πληρωμή με κάρτα Visa, Mastercard ή Maestro",
+                            ExistsInOrder = false,
+                            ExtraCost = 0.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3378),
+                            Name = "Πιστωτική/Χρεωστική Κάρτα",
+                            NameAlias = "card"
+                        },
+                        new
+                        {
+                            Id = "payment_paypal",
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3381),
+                            Description = "Πληρωμή μέσω του ασφαλούς συστήματος PayPal",
+                            ExistsInOrder = false,
+                            ExtraCost = 0.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3383),
+                            Name = "PayPal",
+                            NameAlias = "paypal"
+                        });
                 });
 
             modelBuilder.Entity("EshopApp.DataLibrary.Models.Product", b =>
@@ -637,6 +678,44 @@ namespace EshopApp.DataLibrary.Migrations
                         .IsUnique();
 
                     b.ToTable("ShippingOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "ship_standard",
+                            ContainsDelivery = true,
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3156),
+                            Description = "Παράδοση σε 3–5 εργάσιμες μέρες",
+                            ExistsInOrder = false,
+                            ExtraCost = 3.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3201),
+                            Name = "Κανονική Αποστολή"
+                        },
+                        new
+                        {
+                            Id = "ship_express",
+                            ContainsDelivery = true,
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3205),
+                            Description = "Παράδοση σε 1–2 εργάσιμες μέρες",
+                            ExistsInOrder = false,
+                            ExtraCost = 5.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3207),
+                            Name = "Ταχεία Αποστολή"
+                        },
+                        new
+                        {
+                            Id = "ship_pickup",
+                            ContainsDelivery = false,
+                            CreatedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3210),
+                            Description = "Παραλάβετε την παραγγελία σας από το κατάστημα μας",
+                            ExistsInOrder = false,
+                            ExtraCost = 0.00m,
+                            IsDeactivated = false,
+                            ModifiedAt = new DateTime(2026, 6, 16, 1, 30, 56, 464, DateTimeKind.Local).AddTicks(3211),
+                            Name = "Παραλαβή Από Το Κατάστημα"
+                        });
                 });
 
             modelBuilder.Entity("EshopApp.DataLibrary.Models.UserCoupon", b =>

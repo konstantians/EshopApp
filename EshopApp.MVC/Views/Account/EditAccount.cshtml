@@ -1,10 +1,39 @@
-﻿@model EditAccountViewModel
+﻿@using System.Globalization
+@model EditAccountViewModel
 
 @{
     ViewData["Title"] = "Edit Account";
+
+    var euCountryCodes = new HashSet<string>
+    {
+        "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE",
+        "FI", "FR", "DE", "HU", "IE", "IT", "LV",
+        "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
+        "SI", "ES", "SE"
+    };
+
+    List<RegionInfo> euCountries = CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+        .Select(c => new RegionInfo(c.Name))
+        .DistinctBy(r => r.TwoLetterISORegionName)
+        .Where(r => euCountryCodes.Contains(r.TwoLetterISORegionName))
+        .OrderBy(r => r.DisplayName)
+        .ToList();
 }
 
 <style>
+    @@media (max-width: 575.98px) {
+        .no-border-xs {
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .no-absolute-xs {
+            position: static !important;
+        }
+    }
+
     .button-switcher {
         display: flex;
         border: none;
@@ -29,92 +58,146 @@
     }
 </style>
 
-<div class="row">
-    <div class="d-flex justify-content-center d-lg-none mx-auto" style="max-width:500px;">
+<div class="row shadow border mt-sm-4 border no-border-xs">
+    <div class="d-flex justify-content-center d-lg-none mx-auto pt-3" style="max-width:500px;">
         <div class="button-switcher mb-4" style="width:66%;">
             <button id="btnBasicSettings" class="active" onclick="toggleAuthenticationForm('basicSettingsSection')" style="border-right:0;"><i class="fas fa-unlock me-2 d-lg-none"></i>Στοιχεία</button>
             <button id="btnSensitiveSettings" class="inactive" onclick="toggleAuthenticationForm('sensitiveSettingsSection')" style="border-left:0;"><i class="fas fa-lock me-2 d-lg-none"></i>Στοιχεία</button>
         </div>
     </div>
-    <form class="col-lg-4 d-lg-block col-12 flex-column align-items-center d-flex mx-auto" method="post" asp-controller="Account" asp-action="ChangeBasicAccountSettings" id="basicSettingsSection">
-        <div style="width:66%;">
-            <h4 class="text-center mb-3 mb-lg-4" data-testid="basicSettingsHeader">Βασικά Στοιχεία Λογαριασμού</h4>
-            <div class="mb-4">
-                <label class="form-label" asp-for="ChangeAccountBasicSettings.FirstName">
-                    <i class="fa-solid fa-user me-2"></i>Όνομα
-                </label>
-                <div class="input-group">
-                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.FirstName" value="@Model.ChangeAccountBasicSettings.FirstName" data-testid="firstNameInput" readOnly>
-                    <a class="btn btn-primary" id="firstNameEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_FirstName', 'firstNameEditButton')" data-testid="firstNameEditButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
+    <form class="col-12 col-lg-6 col-xl-8 d-flex flex-column mx-auto border shadow border-top-0 no-border-xs p-lg-4" style="min-height:75vh;" method="post" asp-controller="Account" asp-action="ChangeBasicAccountSettings" id="basicSettingsSection">
+
+        <h4 class="text-center mb-3 mb-lg-4">Βασικά Στοιχεία Λογαριασμού</h4>
+        <div class="row flex-grow-1">
+            <div class="col-xl-6 col-12">
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.FirstName">
+                        <i class="fa-solid fa-user me-2"></i>Όνομα
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.FirstName" value="@Model.ChangeAccountBasicSettings.FirstName" readOnly>
+                        <a class="btn btn-primary" id="firstNameEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_FirstName','firstNameEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.FirstName" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="ChangeAccountBasicSettings.FirstName" class="text-danger"></span>
-            </div>
-            <div class="mb-4">
-                <label class="form-label" asp-for="ChangeAccountBasicSettings.LastName">
-                    <i class="fa-solid fa-user me-2"></i>Επώνυμο
-                </label>
-                <div class="input-group">
-                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.LastName" value="@Model.ChangeAccountBasicSettings.LastName" data-testid="lastNameInput" readOnly>
-                    <a class="btn btn-primary" id="lastNameEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_LastName', 'lastNameEditButton')" data-testid="lastNameEditButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.LastName"><i class="fa-solid fa-user me-2"></i>Επώνυμο</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.LastName" value="@Model.ChangeAccountBasicSettings.LastName" readOnly>
+                        <a class="btn btn-primary" id="lastNameEditButton"
+                           onclick="toggleInputField('ChangeAccountBasicSettings_LastName','lastNameEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.LastName" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="ChangeAccountBasicSettings.LastName" class="text-danger"></span>
-            </div>
-            <div style="margin-bottom: 1.75rem;">
-                <label class="form-label" asp-for="ChangeAccountBasicSettings.PhoneNumber">
-                    <i class="fa-solid fa-phone me-2"></i>Τηλέφωνο
-                </label>
-                <div class="input-group">
-                    <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.PhoneNumber" value="@Model.ChangeAccountBasicSettings.PhoneNumber" data-testid="phoneNumberInput" readOnly>
-                    <a class="btn btn-primary" id="phoneNumberEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_PhoneNumber', 'phoneNumberEditButton')" data-testid="phoneNumberEditButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.PhoneNumber">
+                        <i class="fa-solid fa-phone me-2"></i>Τηλέφωνο
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.PhoneNumber" value="@Model.ChangeAccountBasicSettings.PhoneNumber" readOnly>
+                        <a class="btn btn-primary" id="phoneNumberEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_PhoneNumber','phoneNumberEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.PhoneNumber" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="ChangeAccountBasicSettings.PhoneNumber" class="text-danger"></span>
             </div>
-            <div class="d-flex justify-content-center">
-                <button type="submit" class="btn btn-primary py-2 border-3" style="border-color:black !important; width: 70%;" id="changeBasicAccountSettingsButton" data-testid="changeBasicAccountSettingsButton">Επιβεβαίωση Αλλαγών</button>
+
+            <div class="col-xl-6 col-12">
+                <div class="mb-4">
+                    <label class="form-label" id="countryLabel" style="margin-bottom:7.2px;"><i class="fa-solid fa-earth-europe me-2"></i>Χώρα</label>
+                    <div class="dropdown">
+                        <button class="form-select text-start custom-outline" type="button" id="countryDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            @(@Model.ChangeAccountBasicSettings.Country ?? "Επιλέξτε Χώρα")
+                        </button>
+
+                        <ul class="dropdown-menu w-100 py-0" aria-labelledby="countryDropdownButton" id="countriesDropdown" style="max-height:250px;overflow-y:auto">
+                            <li><a class="dropdown-item" href="#" data-value="Ελλάδα">Ελλάδα</a></li>
+                            @foreach (RegionInfo regionInfo in euCountries)
+                            {
+                                <li><a class="dropdown-item" href="#" data-value="@regionInfo.NativeName">@regionInfo.NativeName</a></li>
+                            }
+                        </ul>
+                    </div>
+
+                    <input hidden asp-for="@Model.ChangeAccountBasicSettings.Country" value='@(@Model.ChangeAccountBasicSettings.Country ?? "NoValue")' />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.City"><i class="fa-solid fa-city me-2"></i>Πόλη</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.City" value="@Model.ChangeAccountBasicSettings.City" readOnly>
+                        <a class="btn btn-primary" id="cityEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_City','cityEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.City" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.PostalCode"><i class="fa-solid fa-envelopes-bulk me-2"></i>Τ.Κ.</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.PostalCode" value="@Model.ChangeAccountBasicSettings.PostalCode" readOnly>
+                        <a class="btn btn-primary" id="postalCodeEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_PostalCode','postalCodeEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.PostalCode" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" asp-for="ChangeAccountBasicSettings.AddressName"><i class="fa-solid fa-location-dot me-2"></i>Διεύθυνση</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="ChangeAccountBasicSettings.AddressName" value="@Model.ChangeAccountBasicSettings.AddressName" readOnly>
+                        <a class="btn btn-primary" id="addressNameEditButton" onclick="toggleInputField('ChangeAccountBasicSettings_AddressName','addressNameEditButton')">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                    </div>
+                    <span asp-validation-for="ChangeAccountBasicSettings.AddressName" class="text-danger"></span>
+                </div>
+
             </div>
         </div>
+        <div class="d-flex justify-content-center gap-3 mt-4 mb-3 mb-lg-0">
+            <a asp-action="Index" asp-controller="Home" class="btn btn-secondary py-2 w-100" style="max-width:300px;" id="returnHomeButton"> Ακύρωση Αλλαγών</a>
+            <button type="submit" class="btn btn-primary py-2 w-100" style="max-width:300px;" id="changeBasicAccountSettingsButton"> Επιβεβαίωση Αλλαγών</button>
+        </div>
     </form>
-    <div class="col-lg-4 d-lg-block d-none mx-auto" id="addressesSection">
-        <h4 class="text-center mb-3 mb-lg-4">Διευθύνσεις Παράδοσης</h4>
-        <p class="text-center">Work In Progress</p>
-    </div>
-    <div class="col-lg-4 d-lg-block col-12 flex-column align-items-center d-none mx-auto" id="sensitiveSettingsSection">
-        <div style="width:66%;">
-            <h4 class="text-center mb-3 mb-lg-4" data-testid="sensitiveSettingsHeader">Ευαίσθητα Στοιχεία Λογαριασμού</h4>
-            <div class="mb-4">
-                <label class="form-label" for="passwordInput">
-                    <i class="fa-solid fa-lock me-2"></i>Συνθηματικό
-                </label>
-                <div class="input-group">
-                    <input class="form-control" id="passwordInput" type="password" readOnly>
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal" data-testid="changePasswordModalTriggerButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
-                </div>
+    <div class="col-12 col-lg-6 col-xl-4 d-lg-block flex-column align-items-center d-none mx-auto p-lg-4" id="sensitiveSettingsSection" style="min-height:75vh;">
+        <h4 class="text-center mb-3 mb-lg-4" data-testid="sensitiveSettingsHeader">Ευαίσθητα Στοιχεία Λογαριασμού</h4>
+        <div class="mb-4">
+            <label class="form-label" for="passwordInput">
+                <i class="fa-solid fa-lock me-2"></i>Συνθηματικό
+            </label>
+            <div class="input-group">
+                <input class="form-control" id="passwordInput" type="password" readOnly>
+                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal" data-testid="changePasswordModalTriggerButton">
+                    <i class="fa-solid fa-pencil"></i>
+                </a>
             </div>
-            <div class="mb-4">
-                <label class="form-label" for="emailInput">
-                    <i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail
-                </label>
-                <div class="input-group">
-                    <input class="form-control" id="emailInput" type="email" value="@Model.ChangeEmailViewModel.OldEmail" readOnly>
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changeEmailModal" data-testid="changeEmailModalTriggerButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
-                </div>
+        </div>
+        <div class="mb-5">
+            <label class="form-label" for="emailInput">
+                <i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail
+            </label>
+            <div class="input-group">
+                <input class="form-control" id="emailInput" type="email" value="@Model.ChangeEmailViewModel.OldEmail" readOnly>
+                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changeEmailModal" data-testid="changeEmailModalTriggerButton">
+                    <i class="fa-solid fa-pencil"></i>
+                </a>
             </div>
-            <div id="accountDeletionSubsection">
-                <h5 class="text-center">Διαγραφή Λογαριασμού</h5>
-                <p class="text-start" style="font-size:15px;">Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί. Προσοχή η παρακάτω ενέργεια είναι μη αναστρέψιμη!<p/>
-                <a class="d-block mx-auto btn btn-primary py-2 border-3" id="deleteAccountButton" style="border-color:black !important; width: 70%;" 
-                    data-bs-toggle="modal" data-bs-target="#deleteAccountModal" data-testid="deleteAccountModalTriggerButton">Διαγραφή</a>
-            </div>
+        </div>
+        <div id="accountDeletionSubsection">
+            <h5 class="text-center">Διαγραφή Λογαριασμού</h5>
+            <p class="text-start" style="font-size:15px;">Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί. Προσοχή η παρακάτω ενέργεια είναι μη αναστρέψιμη!<p/>
+            <a class="d-block mx-auto btn btn-primary py-2 border-3" id="deleteAccountButton" style="border-color:black !important; width: 70%;max-width: 300px;"
+               data-bs-toggle="modal" data-bs-target="#deleteAccountModal" data-testid="deleteAccountModalTriggerButton">Διαγραφή Λογαριασμού</a>
         </div>
     </div>
 </div>
@@ -126,11 +209,18 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-4">
-                    <label asp-for="ChangePasswordViewModel.OldPassword" class="form-label"><i class="fa-solid fa-lock me-2"></i>Παλιό Συνθηματικό</label>
-                    <input class="form-control" asp-for="ChangePasswordViewModel.OldPassword" placeholder="Enter old password" type="password" data-testid="oldPasswordInput">
-                    <span asp-validation-for="ChangePasswordViewModel.OldPassword" class="text-danger"></span>
-                </div>
+                @if(Model.ChangePasswordViewModel.UserHasPassword)
+                {
+                    <div class="mb-4">
+                        <label asp-for="ChangePasswordViewModel.OldPassword" class="form-label"><i class="fa-solid fa-lock me-2"></i>Παλιό Συνθηματικό</label>
+                        <input class="form-control" asp-for="ChangePasswordViewModel.OldPassword" placeholder="Enter old password" type="password" data-testid="oldPasswordInput">
+                        <span asp-validation-for="ChangePasswordViewModel.OldPassword" class="text-danger"></span>
+                    </div>
+                }
+                else
+                {
+                    <input class="form-control" asp-for="ChangePasswordViewModel.OldPassword" value="NoPassword123!" hidden>
+                }
                 <div class="mb-4">
                     <label asp-for="ChangePasswordViewModel.NewPassword" class="form-label"><i class="fa-solid fa-lock me-2"></i>Νέο Συνθηματικό</label>
                     <input class="form-control" asp-for="ChangePasswordViewModel.NewPassword" placeholder="Enter new password" type="password" data-testid="newPasswordInput">
@@ -211,50 +301,29 @@
 
 <script type="text/javascript" src="~/js/customValidation.js"></script>
 <script type="text/javascript" src="~/js/customModals.js"></script>
+<script type="text/javascript" src="~/js/customSelect.js"></script>
 
 <script>
+    setUpCustomSelect('countryDropdownButton', 'countryLabel', 'ChangeAccountBasicSettings_Country'); //exists in customSelect.js
+
     function updateFormSizeClasses() {
-        const basicSettingsSection = document.getElementById("basicSettingsSection");
-        const addressesSection = document.getElementById("addressesSection");
-        const sensitiveSettingsSection = document.getElementById("sensitiveSettingsSection");
         const changeBasicAccountSettingsButton = document.getElementById("changeBasicAccountSettingsButton");
         const deleteAccountButton = document.getElementById("deleteAccountButton");
+        const returnHomeButton = document.getElementById("returnHomeButton");
         const accountDeletionSubsectionText = document.getElementById("accountDeletionSubsection").querySelector("p");
-
-        if (window.innerWidth >= 992) {
-            basicSettingsSection.firstElementChild.style.width = "";
-            addressesSection.firstElementChild.style.width = "";
-            sensitiveSettingsSection.firstElementChild.style.width = "";
-        }
-        else {
-            basicSettingsSection.firstElementChild.style.width = "66%";
-            addressesSection.firstElementChild.style.width = "66%";
-            sensitiveSettingsSection.firstElementChild.style.width = "66%";
-        }
 
         //992 is bootstrap endpoint
         if ((window.innerWidth < 576) || (window.innerWidth >= 992 && window.innerWidth < 1220)) {
             changeBasicAccountSettingsButton.textContent = "Επιβεβαίωση";
             deleteAccountButton.textContent = "Διαγραφή";
+            returnHomeButton.textContent = "Ακύρωση";
             accountDeletionSubsectionText.textContent = "Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί."
         }
         else{
             changeBasicAccountSettingsButton.textContent = "Επιβεβαίωση Αλλαγών";
+            returnHomeButton.textContent = "Ακύρωση Αλλαγών";
             deleteAccountButton.textContent = "Διαγραφή Λογαριασμού";
             accountDeletionSubsectionText.textContent = "Μπορείτε να διαγράψατε τον λογαριασμό σας πατώντας το παρακάτω κουμπί. Προσοχή η παρακάτω ενέργεια είναι μη αναστρέψιμη!"
-        }
-
-        if (window.innerWidth >= 576 && window.innerWidth < 992) {
-            basicSettingsSection.style.maxWidth = "500px";
-            sensitiveSettingsSection.style.maxWidth = "500px";
-        }
-        else if(window.innerWidth >= 992){
-            sensitiveSettingsSection.style.maxWidth = "450px";
-            basicSettingsSection.style.maxWidth = "450px";
-        }
-        else{
-            sensitiveSettingsSection.style.maxWidth = "";
-            basicSettingsSection.style.maxWidth = "";
         }
     }
 
@@ -297,21 +366,17 @@
     setUpFormSubmissionValidationListener("requestChangeEmailForm");
 
     function toggleAuthenticationForm(section) {
-        //if section that is now active is signInForm
         if (section === 'basicSettingsSection') {
             document.getElementById('btnBasicSettings').classList.replace('inactive', 'active');
             document.getElementById('btnSensitiveSettings').classList.replace('active', 'inactive');
-
-            document.getElementById("basicSettingsSection").classList.replace('d-none', 'd-flex');
-            document.getElementById("sensitiveSettingsSection").classList.replace('d-flex', 'd-none');
+            document.getElementById("basicSettingsSection").classList.remove('d-none');
+            document.getElementById("sensitiveSettingsSection").classList.add('d-none');
         }
-        //if section that is now active is signUpForm
-        else if(section === 'sensitiveSettingsSection'){
+        else if (section === 'sensitiveSettingsSection') {
             document.getElementById('btnSensitiveSettings').classList.replace('inactive', 'active');
             document.getElementById('btnBasicSettings').classList.replace('active', 'inactive');
-
-            document.getElementById("sensitiveSettingsSection").classList.replace('d-none', 'd-flex');
-            document.getElementById("basicSettingsSection").classList.replace('d-flex', 'd-none');
+            document.getElementById("sensitiveSettingsSection").classList.remove('d-none');
+            document.getElementById("basicSettingsSection").classList.add('d-none');
         }
     }
 
@@ -346,6 +411,11 @@
         }
     });
 
+    document.getElementById("requestChangeEmailForm").addEventListener('submit', function (e) {
+        localStorage.removeItem("cart");
+        localStorage.removeItem("orderData");
+    });
+
     document.getElementById("deleteAccountForm").addEventListener('submit', function (e) {
         if (modalDeleteAccountInput.getAttribute('data-custom-validation') !== 'true' || modalDeleteAccountInputValidation.textContent !== '') {
             if (modalDeleteAccountInput.value === "") {
@@ -353,6 +423,10 @@
             }
 
             e.preventDefault();
+        }
+        else{
+            localStorage.removeItem("cart");
+            localStorage.removeItem("orderData");
         }
     });
 </script>

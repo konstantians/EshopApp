@@ -14,4 +14,5 @@ public class SignInViewModel
         ErrorMessage = "Password must include at least an uppercase letter, a lowercase letter, a digit, and a special character")]
     public string? Password { get; set; }
     public bool RememberMe { get; set; }
+    public string? UserCartJson { get; set; }
 }

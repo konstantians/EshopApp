@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Page Not Found";
+}
+
+<div class="d-flex justify-content-center align-items-center pt-3 pt-md-5">
+
+    <div class="text-center px-4 border p-4 rounded-4 shadow-sm bg-white" style="transform: translateY(-3vh); max-width: 600px;">
+
+        <div class="mb-4">
+            <img src="~/Images/ErrorImages/404PageNotFound.png"
+                 alt="Product not found"
+                 class="img-fluid rounded-4"
+                 style="max-height: 400px; object-fit: cover;" />
+        </div>
+
+        <h1 class="fw-bold mb-2 mt-0 pt-0">
+            Η σελίδα δεν βρέθηκε
+        </h1>
+
+        <p class="text-muted mb-4">
+            Η σελίδα που αναζητάτε δεν υπάρχει ή έχει αφαιρεθεί από το κατάστημα.<br />
+            Δοκιμάστε ξανά με διαφορετιή διεύθυνση
+        </p>
+
+        <div class="d-grid gap-2">
+
+            <a asp-controller="Home" asp-action="Index" class="btn fw-semibold text-white" style="background:var(--accent-orange); border:none;">Επιστροφή Στην Αρχική</a>
+            <a asp-controller="Home" asp-action="ViewItems" class="btn btn-outline-secondary border">Συνέχεια αγορών</a>
+
+        </div>
+
+        <div class="mt-4 small text-muted">
+            Συμβουλή: Δοκιμάστε να την αναζητήσετε μέσω των συνδέσμων της ιστοσελίδας.
+        </div>
+
+    </div>
+
+</div>

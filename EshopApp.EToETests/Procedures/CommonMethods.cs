@@ -5,7 +5,7 @@ internal static class CommonMethods
     {
         for (int i = 0; i < retries + 1; i++)
         {
-            string? lastEmailLink = TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(true)!;
+            string? lastEmailLink = await TestUtilitiesLibrary.EmailUtilities.GetLastEmailLink(true)!;
             if (lastEmailLink != null)
                 return lastEmailLink;
             await Task.Delay(1000);

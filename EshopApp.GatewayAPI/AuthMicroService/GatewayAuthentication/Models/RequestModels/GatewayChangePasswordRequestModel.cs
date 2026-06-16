@@ -4,7 +4,6 @@ namespace EshopApp.GatewayAPI.AuthMicroService.GatewayAuthentication.Models.Requ
 
 public class GatewayChangePasswordRequestModel
 {
-    [Required]
     public string? CurrentPassword { get; set; }
     [Required]
     public string? NewPassword { get; set; }

@@ -108,22 +108,21 @@ public class CheckOutSessionService : ICheckOutSessionService
                 });
             }
 
+            List<SessionDiscountOptions> sessionDiscountOptions = new List<SessionDiscountOptions>();
             if (checkOutSession.CouponPercentage is not null && checkOutSession.CouponPercentage.Value <= 0)
                 return new ReturnSessionIdSessionUrlAndCodeResponseModel(null!, null!, TransactionLibraryReturnedCodes.InvalidCouponDiscountPercentage);
-
-            CouponCreateOptions? couponCreateOptions = checkOutSession is not null ? new CouponCreateOptions { PercentOff = checkOutSession.CouponPercentage, Duration = "once" } : null;
-            List<SessionDiscountOptions> sessionDiscountOptions = new List<SessionDiscountOptions>();
-            if (couponCreateOptions is not null)
+            else if (checkOutSession.CouponPercentage.HasValue && checkOutSession.CouponPercentage.Value > 0)
             {
-                CouponService couponService = new CouponService();
-                Coupon coupon = await couponService.CreateAsync(couponCreateOptions);
-                sessionDiscountOptions.Add(new SessionDiscountOptions() { Coupon = coupon.Id });
+                var couponService = new CouponService();
+                var coupon = await couponService.CreateAsync(new CouponCreateOptions { PercentOff = checkOutSession.CouponPercentage.Value, Duration = "once" });
+
+                sessionDiscountOptions.Add(new SessionDiscountOptions { Coupon = coupon.Id });
             }
 
             SessionCreateOptions options = new SessionCreateOptions
             {
                 ExpiresAt = checkOutSession!.ExpiresAt,
-                Discounts = sessionDiscountOptions,
+                Discounts = sessionDiscountOptions.Any() ? sessionDiscountOptions : null,
                 CustomerEmail = checkOutSession.CustomerEmail,
                 SuccessUrl = checkOutSession.SuccessUrl,
                 CancelUrl = checkOutSession.CancelUrl,

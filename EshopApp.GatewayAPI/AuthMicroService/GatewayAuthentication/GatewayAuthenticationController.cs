@@ -92,6 +92,7 @@ public class GatewayAuthenticationController : ControllerBase
             appUser!.Orders = userOrders!;
         }
 
+        appUser!.HasPassword = appUser.PasswordHash is not null; //can happen if user signed in with external sign in provider
         return Ok(appUser);
     }
 
@@ -103,7 +104,6 @@ public class GatewayAuthenticationController : ControllerBase
     [HttpPost("SignUp")]
     public async Task<IActionResult> SignUp([FromBody] GatewaySignUpRequestModel signUpModel)
     {
-        //TODO if the validation fails then maybe do a rollback for the signup???
         try
         {
             //check the redirect URL
@@ -137,15 +137,81 @@ public class GatewayAuthenticationController : ControllerBase
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //send confirmation email
-            string message = "Click on the following link to confirm your email:";
-            string link = $"{_configuration["AuthApiBaseUrl"]}Authentication/ConfirmEmail?" +
+            string confirmLink = $"{_configuration["AuthApiBaseUrl"]}Authentication/ConfirmEmail?" +
                 $"userId={signupResponseModel!.UserId}&confirmEmailToken={WebUtility.UrlEncode(signupResponseModel.ConfirmationToken)}&redirectUrl={WebUtility.UrlEncode(signUpModel.ClientUrl)}";
-            string? confirmationLink = $"{message} {link}";
+
+            var emailHtml = @"
+                <!doctype html>
+                <html lang=""el"">
+                <head>
+                <meta charset=""UTF-8"" />
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+                <title>Επιβεβαίωση Email</title>
+                </head>
+                <body style=""margin:0;padding:32px 16px;background:#f2f2f2;font-family:Arial,sans-serif;color:#1a1a1a;"">
+
+                <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);"">
+
+                  <div style=""background:#ffffff;padding:36px 28px 28px;text-align:center;border-bottom:1px solid #f0f0f0;"">
+                    <div style=""width:56px;height:56px;background:#fff5ef;border:1px solid #ffd8c2;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"">
+                      <svg width=""26"" height=""26"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                        <path d=""M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z""/>
+                        <polyline points=""22,6 12,13 2,6""/>
+                      </svg>
+                    </div>
+                    <div style=""display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:5px 12px;border-radius:999px;background:#fff0e8;color:#ff5e00;margin-bottom:14px;text-transform:uppercase;"">
+                      Επιβεβαίωση Λογαριασμού
+                    </div>
+                    <h1 style=""margin:0 0 8px;font-size:24px;font-weight:800;color:#1a1a1a;letter-spacing:-0.5px;"">Καλωσήρθατε στο Eshopapp!</h1>
+                    <p style=""margin:0;font-size:13px;color:#888;line-height:1.6;"">Επιβεβαιώστε το email σας για να ολοκληρώσετε την εγγραφή σας</p>
+                  </div>
+
+                  <div style=""padding:28px 24px;background:#eeeeee;"">
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:20px;margin-bottom:16px;"">
+                      <div style=""display:flex;align-items:center;gap:10px;margin-bottom:16px;"">
+                        <svg width=""16"" height=""16"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"" style=""flex-shrink:0;"">
+                          <circle cx=""12"" cy=""12"" r=""10""/><path d=""M12 8v4M12 16h.01""/>
+                        </svg>
+                        <span style=""font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;"">Στοιχεία Λογαριασμού</span>
+                      </div>
+                      <div style=""display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Email</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">" + signUpModel.Email + @"</span>
+                      </div>
+                      <div style=""display:flex;justify-content:space-between;padding:10px 0;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Ισχύς συνδέσμου</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">24 ώρες</span>
+                      </div>
+                    </div>
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;"">
+                      <p style=""margin:0 0 6px;font-size:13px;color:#555;line-height:1.6;"">Πατήστε το κουμπί για να επιβεβαιώσετε τη διεύθυνση email σας</p>
+                      <p style=""margin:0 0 20px;font-size:12px;color:#aaa;"">Ο σύνδεσμος λήγει μετά από 24 ώρες</p>
+                      <a href=""" + confirmLink + @""" style=""display:inline-block;background:#ff5e00;color:#fff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;"">Επιβεβαίωση Email</a>
+                    </div>
+
+                    <div style=""background:#fff;border-left:4px solid #ff5e00;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;color:#555;line-height:1.65;"">
+                      <strong style=""color:#1a1a1a;display:block;margin-bottom:4px;"">Δεν δημιουργήσατε λογαριασμό;</strong>
+                      Μπορείτε να αγνοήσετε αυτό το email με ασφάλεια. Δεν θα γίνει καμία αλλαγή στον λογαριασμό σας.
+                    </div>
+
+                  </div>
+
+                  <div style=""text-align:center;padding:16px;font-size:11px;color:#cc4a00;background:rgba(255,94,0,0.08);border-top:1px solid rgba(255,94,0,0.15);"">
+                    © " + DateTime.UtcNow.Year + @" Eshopapp — Αυτόματη ειδοποίηση εγγραφής
+                  </div>
+
+                </div>
+
+                </body>
+            </html>";
+
             var apiSendEmailModel = new Dictionary<string, string>
             {
                 { "receiver", signUpModel.Email! },
                 { "title", "Email Confirmation" },
-                { "message", confirmationLink }
+                { "message", emailHtml }
             };
             _ = Task.Run(async () =>
             {
@@ -213,14 +279,80 @@ public class GatewayAuthenticationController : ControllerBase
             string? responseBody = await response.Content.ReadAsStringAsync();
             GatewayForgotPasswordServiceResponseModel? forgotPasswordResponseModel = JsonSerializer.Deserialize<GatewayForgotPasswordServiceResponseModel>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            string message = "Click on the following link to change your account's password:";
-            string link = $"{forgotPasswordModel.ClientUrl}?userId={forgotPasswordResponseModel!.UserId}&token={WebUtility.UrlEncode(forgotPasswordResponseModel.Token)}";
-            string? confirmationLink = $"{message} {link}";
+            string resetLink = $"{forgotPasswordModel.ClientUrl}?userId={forgotPasswordResponseModel!.UserId}&token={WebUtility.UrlEncode(forgotPasswordResponseModel.Token)}";
+
+            var emailHtml = @"
+                <!doctype html>
+                <html lang=""el"">
+                <head>
+                <meta charset=""UTF-8"" />
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+                <title>Επαναφορά Κωδικού</title>
+                </head>
+                <body style=""margin:0;padding:32px 16px;background:#f2f2f2;font-family:Arial,sans-serif;color:#1a1a1a;"">
+
+                <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);"">
+
+                  <div style=""background:#ffffff;padding:36px 28px 28px;text-align:center;border-bottom:1px solid #f0f0f0;"">
+                    <div style=""width:56px;height:56px;background:#fff5ef;border:1px solid #ffd8c2;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"">
+                      <svg width=""26"" height=""26"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                        <rect x=""3"" y=""11"" width=""18"" height=""11"" rx=""2"" ry=""2""/>
+                        <path d=""M7 11V7a5 5 0 0 1 10 0v4""/>
+                      </svg>
+                    </div>
+                    <div style=""display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:5px 12px;border-radius:999px;background:#fff0e8;color:#ff5e00;margin-bottom:14px;text-transform:uppercase;"">
+                      Επαναφορά Κωδικού
+                    </div>
+                    <h1 style=""margin:0 0 8px;font-size:24px;font-weight:800;color:#1a1a1a;letter-spacing:-0.5px;"">Αίτημα αλλαγής κωδικού</h1>
+                    <p style=""margin:0;font-size:13px;color:#888;line-height:1.6;"">Λάβαμε ένα αίτημα επαναφοράς κωδικού για τον λογαριασμό σας</p>
+                  </div>
+
+                  <div style=""padding:28px 24px;background:#eeeeee;"">
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:20px;margin-bottom:16px;"">
+                      <div style=""display:flex;align-items:center;gap:10px;margin-bottom:16px;"">
+                        <svg width=""16"" height=""16"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"" style=""flex-shrink:0;"">
+                          <circle cx=""12"" cy=""12"" r=""10""/><path d=""M12 8v4M12 16h.01""/>
+                        </svg>
+                        <span style=""font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;"">Σημαντικές πληροφορίες</span>
+                      </div>
+                      <div style=""display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Λογαριασμός</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">" + forgotPasswordModel.Email + @"</span>
+                      </div>
+                      <div style=""display:flex;justify-content:space-between;padding:10px 0;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Ισχύς συνδέσμου</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">24 ώρες</span>
+                      </div>
+                    </div>
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;"">
+                      <p style=""margin:0 0 6px;font-size:13px;color:#555;line-height:1.6;"">Πατήστε το κουμπί για να ορίσετε νέο κωδικό πρόσβασης</p>
+                      <p style=""margin:0 0 20px;font-size:12px;color:#aaa;"">Ο σύνδεσμος λήγει μετά από 24 ώρες</p>
+                      <a href=""" + resetLink + @""" style=""display:inline-block;background:#ff5e00;color:#fff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;"">Επαναφορά Κωδικού</a>
+                    </div>
+
+                    <div style=""background:#fff;border-left:4px solid #ff5e00;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;color:#555;line-height:1.65;"">
+                      <strong style=""color:#1a1a1a;display:block;margin-bottom:4px;"">Δεν ζητήσατε αλλαγή κωδικού;</strong>
+                      Μπορείτε να αγνοήσετε αυτό το email με ασφάλεια. Ο λογαριασμός σας παραμένει προστατευμένος.
+                    </div>
+
+                  </div>
+
+                  <div style=""text-align:center;padding:16px;font-size:11px;color:#cc4a00;background:rgba(255,94,0,0.08);border-top:1px solid rgba(255,94,0,0.15);"">
+                    © " + DateTime.UtcNow.Year + @" Eshopapp — Αυτόματη ειδοποίηση ασφαλείας
+                  </div>
+
+                </div>
+
+                </body>
+            </html>";
+
             var apiSendEmailModel = new Dictionary<string, string>
             {
                 { "receiver", forgotPasswordModel.Email! },
                 { "title", "Reset Password Confirmation" },
-                { "message", confirmationLink }
+                { "message", emailHtml }
             };
             _ = Task.Run(async () =>
             {
@@ -326,15 +458,83 @@ public class GatewayAuthenticationController : ControllerBase
             var jwtToken = handler.ReadJwtToken(accessToken);
             string userId = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value!;
 
-            string message = "Click on the following link to confirm your account's new email:";
-            string link = $"{_configuration["AuthApiBaseUrl"]}Authentication/ConfirmChangeEmail" +
+            string confirmLink = $"{_configuration["AuthApiBaseUrl"]}Authentication/ConfirmChangeEmail" +
                 $"?userId={userId}&newEmail={changeEmailModel.NewEmail}&changeEmailToken={WebUtility.UrlEncode(changeEmailToken)}&redirectUrl={WebUtility.UrlEncode(changeEmailModel.ClientUrl)}";
-            string? confirmationLink = $"{message} {link}";
+
+            var emailHtml = @"
+            <!doctype html>
+                <html lang=""el"">
+                <head>
+                <meta charset=""UTF-8"" />
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+                <title>Αλλαγή Email</title>
+                </head>
+                <body style=""margin:0;padding:32px 16px;background:#f2f2f2;font-family:Arial,sans-serif;color:#1a1a1a;"">
+
+                <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);"">
+
+                    <div style=""background:#ffffff;padding:36px 28px 28px;text-align:center;border-bottom:1px solid #f0f0f0;"">
+                    <div style=""width:56px;height:56px;background:#fff5ef;border:1px solid #ffd8c2;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"">
+                        <svg width=""26"" height=""26"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                        <path d=""M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z""/>
+                        <polyline points=""22,6 12,13 2,6""/>
+                        <line x1=""5"" y1=""12"" x2=""9"" y2=""12""/>
+                        <line x1=""7"" y1=""10"" x2=""7"" y2=""14""/>
+                        </svg>
+                    </div>
+                    <div style=""display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:5px 12px;border-radius:999px;background:#fff0e8;color:#ff5e00;margin-bottom:14px;text-transform:uppercase;"">
+                        Αλλαγή Email
+                    </div>
+                    <h1 style=""margin:0 0 8px;font-size:24px;font-weight:800;color:#1a1a1a;letter-spacing:-0.5px;"">Επιβεβαίωση νέου email</h1>
+                    <p style=""margin:0;font-size:13px;color:#888;line-height:1.6;"">Λάβαμε ένα αίτημα αλλαγής της διεύθυνσης email του λογαριασμού σας</p>
+                    </div>
+
+                    <div style=""padding:28px 24px;background:#eeeeee;"">
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:20px;margin-bottom:16px;"">
+                        <div style=""display:flex;align-items:center;gap:10px;margin-bottom:16px;"">
+                        <svg width=""16"" height=""16"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"" style=""flex-shrink:0;"">
+                            <circle cx=""12"" cy=""12"" r=""10""/><path d=""M12 8v4M12 16h.01""/>
+                        </svg>
+                        <span style=""font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;"">Στοιχεία Αλλαγής</span>
+                        </div>
+                        <div style=""display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Νέο Email</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">" + changeEmailModel.NewEmail + @"</span>
+                        </div>
+                        <div style=""display:flex;justify-content:space-between;padding:10px 0;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Ισχύς συνδέσμου</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">24 ώρες</span>
+                        </div>
+                    </div>
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;"">
+                        <p style=""margin:0 0 6px;font-size:13px;color:#555;line-height:1.6;"">Πατήστε το κουμπί για να επιβεβαιώσετε τη νέα διεύθυνση email σας</p>
+                        <p style=""margin:0 0 20px;font-size:12px;color:#aaa;"">Ο σύνδεσμος λήγει μετά από 24 ώρες</p>
+                        <a href=""" + confirmLink + @""" style=""display:inline-block;background:#ff5e00;color:#fff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;"">Επιβεβαίωση Αλλαγής</a>
+                    </div>
+
+                    <div style=""background:#fff;border-left:4px solid #ff5e00;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;color:#555;line-height:1.65;"">
+                        <strong style=""color:#1a1a1a;display:block;margin-bottom:4px;"">Δεν ζητήσατε αλλαγή email;</strong>
+                        Μπορείτε να αγνοήσετε αυτό το email με ασφάλεια. Η διεύθυνση email σας δεν θα αλλάξει.
+                    </div>
+
+                    </div>
+
+                    <div style=""text-align:center;padding:16px;font-size:11px;color:#cc4a00;background:rgba(255,94,0,0.08);border-top:1px solid rgba(255,94,0,0.15);"">
+                    © " + DateTime.UtcNow.Year + @" Eshopapp — Αυτόματη ειδοποίηση ασφαλείας
+                    </div>
+
+                </div>
+
+                </body>
+            </html>";
+
             var apiSendEmailModel = new Dictionary<string, string>
             {
                 { "receiver", changeEmailModel.NewEmail! },
                 { "title", "Email Change Confirmation" },
-                { "message", confirmationLink }
+                { "message", emailHtml }
             };
             _ = Task.Run(async () =>
             {
@@ -391,11 +591,76 @@ public class GatewayAuthenticationController : ControllerBase
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
             //send an email to the user to notify them that their account has been deleted
+            var emailHtml = @"
+            <!doctype html>
+            <html lang=""el"">
+                <head>
+                <meta charset=""UTF-8"" />
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+                <title>Διαγραφή Λογαριασμού</title>
+                </head>
+                <body style=""margin:0;padding:32px 16px;background:#f2f2f2;font-family:Arial,sans-serif;color:#1a1a1a;"">
+
+                <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);"">
+
+                    <div style=""background:#ffffff;padding:36px 28px 28px;text-align:center;border-bottom:1px solid #f0f0f0;"">
+                    <div style=""width:56px;height:56px;background:#fff5ef;border:1px solid #ffd8c2;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"">
+                        <svg width=""26"" height=""26"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""1.8"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                        <polyline points=""3 6 5 6 21 6""/><path d=""M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6""/><path d=""M10 11v6M14 11v6""/><path d=""M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2""/>
+                        </svg>
+                    </div>
+                    <div style=""display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:5px 12px;border-radius:999px;background:#fff0e8;color:#ff5e00;margin-bottom:14px;text-transform:uppercase;"">
+                        Διαγραφή Λογαριασμού
+                    </div>
+                    <h1 style=""margin:0 0 8px;font-size:24px;font-weight:800;color:#1a1a1a;letter-spacing:-0.5px;"">Ο λογαριασμός σας διαγράφηκε</h1>
+                    <p style=""margin:0;font-size:13px;color:#888;line-height:1.6;"">Σας ενημερώνουμε ότι ο λογαριασμός σας στο Eshopapp έχει διαγραφεί οριστικά</p>
+                    </div>
+
+                    <div style=""padding:28px 24px;background:#eeeeee;"">
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:20px;margin-bottom:16px;"">
+                        <div style=""display:flex;align-items:center;gap:10px;margin-bottom:16px;"">
+                        <svg width=""16"" height=""16"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#ff5e00"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"" style=""flex-shrink:0;"">
+                            <circle cx=""12"" cy=""12"" r=""10""/><path d=""M12 8v4M12 16h.01""/>
+                        </svg>
+                        <span style=""font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;"">Στοιχεία Διαγραφής</span>
+                        </div>
+                        <div style=""display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Λογαριασμός</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">" + email + @"</span>
+                        </div>
+                        <div style=""display:flex;justify-content:space-between;padding:10px 0;font-size:14px;"">
+                        <span style=""color:#888;font-weight:600;"">Ημερομηνία διαγραφής</span>
+                        <span style=""font-weight:700;color:#1a1a1a;"">" + DateTime.UtcNow.ToString("dd/MM/yyyy") + @"</span>
+                        </div>
+                    </div>
+
+                    <div style=""background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:20px;margin-bottom:16px;text-align:center;"">
+                        <p style=""margin:0 0 4px;font-size:13px;color:#555;line-height:1.7;"">Εάν έχετε απορίες ή χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας:</p>
+                        <a href=""mailto:kinnaskonstantinos0@gmail.com"" style=""font-size:14px;font-weight:800;color:#ff5e00;text-decoration:none;"">kinnaskonstantinos0@gmail.com</a>
+                    </div>
+
+                    <div style=""background:#fff;border-left:4px solid #ff5e00;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13px;color:#555;line-height:1.65;"">
+                        <strong style=""color:#1a1a1a;display:block;margin-bottom:4px;"">Δεν ζητήσατε τη διαγραφή του λογαριασμού σας;</strong>
+                        Επικοινωνήστε μαζί μας άμεσα στο παραπάνω email ώστε να διερευνήσουμε το θέμα.
+                    </div>
+
+                    </div>
+
+                    <div style=""text-align:center;padding:16px;font-size:11px;color:#cc4a00;background:rgba(255,94,0,0.08);border-top:1px solid rgba(255,94,0,0.15);"">
+                    © " + DateTime.UtcNow.Year + @" Eshopapp — Αυτόματη ειδοποίηση λογαριασμού
+                    </div>
+
+                </div>
+
+                </body>
+            </html>";
+
             var apiSendEmailModel = new Dictionary<string, string>
             {
                 { "receiver", email },
                 { "title", "Account Deletion" },
-                { "message", "Your account has been deleted. If you have any questions you can contact us at kinnaskonstantinos0@gmail.com ." }
+                { "message", emailHtml }
             };
             _ = Task.Run(async () =>
             {
@@ -447,6 +712,7 @@ public class GatewayAuthenticationController : ControllerBase
             gatewayAppUser.FirstName = updateUserRequestModel.FirstName;
             gatewayAppUser.LastName = updateUserRequestModel.LastName;
             gatewayAppUser.PhoneNumber = updateUserRequestModel.PhoneNumber;
+            gatewayAppUser.Address = updateUserRequestModel.Address;
 
             //check that an access token has been supplied, this check is made to avoid unnecessary requests
             if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
@@ -456,7 +722,7 @@ public class GatewayAuthenticationController : ControllerBase
             //request the reset of the password of the user
             _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
             HttpResponseMessage? response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
-            authHttpClient.PutAsJsonAsync("Authentication/UpdateAccount", gatewayAppUser));
+                authHttpClient.PutAsJsonAsync("Authentication/UpdateAccount", gatewayAppUser));
 
             if ((int)response.StatusCode >= 400)
                 return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
@@ -474,27 +740,35 @@ public class GatewayAuthenticationController : ControllerBase
     [HttpGet("GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}")]
     public async Task<IActionResult> GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken(string claimType, string claimValue, string? secondClaimType, string? secondClaimValue)
     {
-        //check that an access token has been supplied, this check is made to avoid unnecessary requests
-        if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
-            !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
+        try
+        {
+            //check that an access token has been supplied, this check is made to avoid unnecessary requests
+            if (HttpContext?.Request == null || !HttpContext.Request.Headers.ContainsKey("Authorization") || string.IsNullOrEmpty(HttpContext.Request.Headers["Authorization"]) ||
+                !HttpContext.Request.Headers["Authorization"].ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { ErrorMessage = "NoValidAccessTokenWasProvided" });
 
-        string? endpoint;
-        if (string.IsNullOrEmpty(secondClaimType) || string.IsNullOrEmpty(secondClaimValue))
-            endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}";
-        else
-            endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}";
+            string? endpoint;
+            if (string.IsNullOrEmpty(secondClaimType) || string.IsNullOrEmpty(secondClaimValue))
+                endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}";
+            else
+                endpoint = $"ClaimType/{claimType}/ClaimValue/{claimValue}/SecondClaimType/{secondClaimType}/SecondClaimValue/{secondClaimValue}";
 
-        //request to get the user
-        _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
-        HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync($"Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/{endpoint}"));
+            //request to get the user
+            _utilityMethods.SetDefaultHeadersForClient(true, authHttpClient, _configuration["AuthApiKey"]!, _configuration["AuthRateLimitingBypassCode"]!, HttpContext.Request);
+            HttpResponseMessage response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() => authHttpClient.GetAsync($"Authentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/{endpoint}"));
 
-        if ((int)response.StatusCode >= 400)
-            return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
+            if ((int)response.StatusCode >= 400)
+                return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
-        string? responseBody = await response.Content.ReadAsStringAsync();
-        GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            string? responseBody = await response.Content.ReadAsStringAsync();
+            GatewayAppUser? appUser = JsonSerializer.Deserialize<GatewayAppUser>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            appUser!.HasPassword = appUser.PasswordHash is not null; //can happen if user signed in with external sign in provider
 
-        return Ok(appUser);
+            return Ok(appUser);
+        }
+        catch
+        {
+            return StatusCode(500, "Internal Server Error");
+        }
     }
 }

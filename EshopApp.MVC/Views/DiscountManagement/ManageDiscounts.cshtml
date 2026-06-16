@@ -132,7 +132,11 @@
             </div>
         </div>
         <div class="row px-2 px-sm-0 px-md-0 px-lg-2" id="itemsContainer">
-            <div class="table-responsive w-100 p-0">
+            @{
+                string shouldTableBeSeen = Model.Discounts.Count == 0 ? "d-none" : "";
+                string shouldBeSeen = Model.Discounts.Count != 0 ? "d-none" : "";
+            }
+            <div class="table-responsive w-100 p-0 @shouldTableBeSeen">
                 <table class="table table-hover table-striped" id="discountsTable">
                     <thead class="table-dark">
                         <tr>
@@ -168,6 +172,26 @@
                     </tbody>
                 </table>
             </div>
+            <div id="emptyStateBanner" class="@shouldBeSeen">
+                <div class="card border-1 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fa-solid fa-file-circle-xmark fa-4x text-secondary mb-3"></i>
+
+                        <h4 id="emptyStateTitle" class="mb-2">
+                            Δεν βρέθηκαν εκπτώσεις
+                        </h4>
+
+                        <p id="emptyStateDescription" class="text-muted mb-4">
+                            Δεν βρέθηκαν εκπτώσεις που να ταιριάζουν με τα επιλεγμένα φίλτρα.
+                        </p>
+
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDiscountModal">
+                            Δημιουργία Έκπτωσης
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -508,6 +532,7 @@
             });
 
             updateTotalItems(count);
+            updateEmptyState(count > 0);
         }
 
         function addTrToTableBody(discount){
@@ -525,6 +550,21 @@
             `;
             tbody.appendChild(tr);
         }
+
+        function updateEmptyState(hasItems) {
+            const table = document.getElementById('discountsTable').closest('.table-responsive');
+            const banner = document.getElementById('emptyStateBanner');
+
+            if (hasItems) {
+                table.classList.remove('d-none');
+                banner.classList.add('d-none');
+            }
+            else {
+                table.classList.add('d-none');
+                banner.classList.remove('d-none');
+            }
+        }
+
 
         setUpSortingDropdownListeners(discounts);
         setUpSearchInputMode(discounts, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination);

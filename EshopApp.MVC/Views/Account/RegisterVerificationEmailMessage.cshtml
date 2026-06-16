@@ -35,23 +35,34 @@
     setInterval(checkIfAuthenticated, POLL_INTERVAL_MS);
 </script>
 
-<div class="row justify-content-center mt-4">
-    <div class="col-sm-12 col-md-10 col-lg-8 col-xl-6">
-        <div class="card p-3 border border-0">
-            <div class="text-center">
-                <img class="card-img-top img-fluid" style="max-width:100px; max-height:100px;" src="~/images/emailSentSuccessfully.jpg" alt="success image">
-            </div>
-            <div class="card-body">
-                <h3 class="card-title text-center mb-3">Registration Confirmation!</h3>
-                <p class="card-text text-center">
-                    Thank you for creating an account with us!<br>
-                    For your account activation you will have to check your email inbox and confirm your registration by clicking the confirmation link we have sent you.<br>
-                    Any attempts of signing in to your account before this activation has occured will result in failure.<br>
-                </p>
-                <div class="text-center mt-4">
-                    <a asp-controller="Home" asp-action="Index" class="btn btn-lg btn-primary">Continue To Home</a>
-                </div>
-            </div>
+<div class="d-flex justify-content-center align-items-center pt-3 pt-md-5">
+
+    <div class="text-center px-4 border p-4 rounded-4 shadow bg-white" style="transform: translateY(-3vh); max-width: 700px;">
+
+        <div class="mb-4">
+            <img src="~/Images/emailSentSuccessfully.png"
+                 alt="Email Successfully Sent"
+                 class="img-fluid rounded-4"
+                 style="max-height: 400px; object-fit: cover;" />
         </div>
+
+        <h1 class="fw-bold mb-3 mt-0 pt-0">Επιβεβαίωση Εγγραφής!</h1>
+
+        <p class="text-muted mb-4">
+            Σας ευχαριστούμε που δημιουργήσατε λογαριασμό μαζί μας!<br>
+            Για την ενεργοποίηση του λογαριασμού σας θα πρέπει να ελέγξετε τα εισερχόμενα του email σας και να επιβεβαιώσετε την εγγραφή σας κάνοντας κλικ στον σύνδεσμο επιβεβαίωσης που σας έχουμε αποστείλει.
+        </p>
+
+        <div class="d-grid gap-2">
+
+            <a asp-controller="Home" asp-action="Index" class="btn fw-semibold text-white" style="background:var(--accent-orange); border:none;">Επιστροφή στην αρχική</a>
+            <a asp-controller="Home" asp-action="ViewItems" class="btn btn-outline-secondary border">Συνέχεια αγορών</a>
+        </div>
+
+        <div class="mt-4 small text-muted">
+            Σημείωση: Προσπάθεια σύνδεσης στον λογαριασμό σας πριν από την ενεργοποίηση θα αποτύχει
+        </div>
+
     </div>
+
 </div>

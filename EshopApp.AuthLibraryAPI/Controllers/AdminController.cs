@@ -1,4 +1,5 @@
 ﻿using EshopApp.AuthLibrary.AuthLogic;
+using EshopApp.AuthLibrary.Models;
 using EshopApp.AuthLibrary.Models.ResponseModels;
 using EshopApp.AuthLibraryAPI.Models.RequestModels.AdminModels;
 using Microsoft.AspNetCore.Authorization;
@@ -128,7 +129,14 @@ public class AdminController : ControllerBase
 
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
             ReturnUserAndCodeResponseModel returnUserAndCodeResponseModel = await _adminProcedures.CreateUserAccountAsync(accessToken, expectedClaims, apiCreateUserRequestModel.Email!, apiCreateUserRequestModel.Password!,
-                apiCreateUserRequestModel.PhoneNumber, apiCreateUserRequestModel.FirstName, apiCreateUserRequestModel.LastName);
+                apiCreateUserRequestModel.PhoneNumber, apiCreateUserRequestModel.FirstName, apiCreateUserRequestModel.LastName,
+                    new Address()
+                    {
+                        Country = apiCreateUserRequestModel.Address?.Country,
+                        City = apiCreateUserRequestModel.Address?.City,
+                        PostalCode = apiCreateUserRequestModel.Address?.PostalCode,
+                        AddressName = apiCreateUserRequestModel.Address?.AddressName
+                    });
 
             if (returnUserAndCodeResponseModel!.LibraryReturnedCodes == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });
@@ -163,8 +171,7 @@ public class AdminController : ControllerBase
             string accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
 
             List<Claim> expectedClaims = new List<Claim>() { new Claim("Permission", "CanManageUsers") };
-            LibraryReturnedCodes returnedCode = await _adminProcedures.UpdateUserAccountAsync(accessToken, expectedClaims, apiUpdateUserRequestModel.AppUser!,
-                apiUpdateUserRequestModel.ActivateEmail, apiUpdateUserRequestModel.Password);
+            LibraryReturnedCodes returnedCode = await _adminProcedures.UpdateUserAccountAsync(accessToken, expectedClaims, apiUpdateUserRequestModel.AppUser!, apiUpdateUserRequestModel.ActivateEmail, apiUpdateUserRequestModel.Password);
 
             if (returnedCode == LibraryReturnedCodes.ValidTokenButUserNotInSystem)
                 return Unauthorized(new { ErrorMessage = "ValidTokenButUserNotInSystem" });

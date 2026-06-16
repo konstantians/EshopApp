@@ -8,6 +8,11 @@
 <link href="~/css/filtersStyles.css" rel="stylesheet" />
 
 <style>
+    li.disabled {
+        pointer-events: none; /* blocks clicks */
+        opacity: 0.2; /* makes it look dimmed */
+    }
+
     .card:hover {
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
         /* cursor: pointer; */
@@ -21,9 +26,31 @@
     .carousel-control-next-icon {
         background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 1.646a.5.5 0 0 1 .708 0L11.5 8l-6.146 6.354a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
     }
+
+    .discountContainer{
+        width: 78%;
+    }
+
+    @@media(min-width: 576px) {
+        .discountContainer {
+            width: 85%;
+        }
+    }
+
+    @@media(min-width: 768px) {
+        .discountContainer {
+            width: 88%;
+        }
+    }
+
+    @@media(min-width: 992px) {
+        .discountContainer {
+            width: 84%;
+        }
+    }
 </style>
 
-<h1 class="text-center h3" style="font-weight:700;">ΑΝΔΡΑΣ</h1>
+<h1 class="text-center h3" style="font-weight:700;">ΠΡΟΪΟΝΤΑ</h1>
 <hr style="color:#484848" class="d-none d-sm-block">
 
 <button id="filterToggleButton" class="btn btn-primary rounded-0 d-xl-none px-3" style="position: fixed; top: 320px; left: 0px; z-index: 1050; transform: rotate(-90deg);
@@ -229,10 +256,8 @@
                         </button>
                         <ul class="dropdown-menu py-0" id="sortingDropdown">
                             <li data-order="defaultOrder"><a class="dropdown-item" href="#">Προεπιλεγμένη Σειρά</a></li>
-                            <li class="d-none" data-order="price" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Φθίνουσα Σειρά</a></li>
-                            <li class="d-none" data-order="price" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Αύξουσα Σειρά</a></li>
-                            <li class="d-none" data-order="unitsInStock" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Φθίνουσα Σειρά</a></li>
-                            <li class="d-none" data-order="unitsInStock" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Απόθεμα Αύξουσα Σειρά</a></li>
+                            <li data-order="price" data-order-direction="descending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Φθίνουσα Σειρά</a></li>
+                            <li data-order="price" data-order-direction="ascending" data-numeric data-hide-on-product-view><a class="dropdown-item" href="#">Τιμή Αύξουσα Σειρά</a></li>
                         </ul>
                     </div>
                     <div class="dropdown option-dropdown">
@@ -249,7 +274,12 @@
                 </div>
             </div>
         </div>
-        <div class="row px-2 px-sm-0 px-md-0" id="itemsContainer">
+
+        @{
+            string shouldItemsBeSeen = Model.Count == 0 ? "d-none" : "";
+            string shouldBeSeen = Model.Count != 0 ? "d-none" : "";
+        }
+        <div class="row px-2 px-sm-0 px-md-0 @shouldItemsBeSeen" id="itemsContainer">
             @foreach (UiProduct product in Model)
             {
                 string activeClass = "active";
@@ -268,20 +298,51 @@
                                     </a>
                                     activeClass = "";
                                 }
+
+                                @if(product.Variants[0].VariantImages.Count == 0)
+                                {
+                                    <a class="carousel-item @activeClass" asp-controller="Home" asp-action="ViewItem" asp-route-id="@product.Id">
+                                        <img src="~/Images/noProductImage.jpg" class="d-block w-100 img-fluid" style="min-height: 380px; max-height: 380px;">
+                                    </a>
+                                }
                             </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
+                            @if(product.Variants[0].VariantImages.Count > 1)
+                            {
+                                <button class="carousel-control-prev" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="color:black"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel-@carouselCount" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true" style="color:black"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            }
                         </div>
                         <div class="card-body py-2">
-                            <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 18px;"> @product.Name </span>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="text-info" style="font-size:24px;">@product.Variants[0].Price &#8364;</span>
+                            <span style="font-weight:600; color:#272727; line-height:1.2; display:block; font-size: 16px;"> @product.Name </span>
+                            <div class="d-flex justify-content-between align-items-center mt-3 position-relative">
+                                @if (product.Variants[0].Discount is not null)
+                                {
+                                    decimal? originalPrice = product.Variants[0].Price;
+                                    decimal? discountedPrice = originalPrice - (originalPrice * product.Variants[0].Discount!.Percentage / 100);
+
+                                    <span style="position:absolute; top:-13px; left:0;" class="d-flex justify-content-between discountContainer">
+                                        <span style="text-decoration: line-through; font-size:14px; color:#999;"> @originalPrice €</span>
+                                         <span style="width:0;height:0;border-top:35px solid var(--accent-orange);border-left:35px solid transparent;position:relative;">
+        
+                                            <span style="position:absolute;top:-32px;left:-24px;color:white;font-size:10px;font-weight:700;transform:rotate(45deg);">
+                                                -@product.Variants[0].Discount!.Percentage%
+                                            </span>
+                                        </span>
+                                    </span>
+
+                                    <span class="text-info" style="font-size:24px;">
+                                        @discountedPrice €
+                                    </span>
+                                }
+                                else{
+                                    <span class="text-info" style="font-size:24px;">@product.Variants[0].Price €</span>
+                                }
                                 <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@product.Id">
                                     <i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>
                                 </a>
@@ -289,7 +350,31 @@
                         </div>
                     </div>
                 </div>
+                carouselCount++;
             }
+        </div>
+        <div class="row px-2 px-sm-0 px-md-0 @shouldBeSeen" id="noItemsContainer">
+            <div id="emptyStateBanner">
+                <div class="card border-1 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fa-solid fa-box-open fa-4x text-secondary mb-3"></i>
+
+                        <h4 id="emptyStateTitle" class="mb-2">
+                            Δεν βρέθηκαν προϊόντα
+                        </h4>
+
+                        <p id="emptyStateDescription" class="text-muted mb-4">
+                            Δεν υπάρχουν προϊόντα που να ταιριάζουν με τα επιλεγμένα φίλτρα.
+                        </p>
+
+                        @*<a class="btn btn-primary"
+                           asp-controller="ProductManagement"
+                           asp-action="CreateProduct">
+                            Δημιουργία Προϊόντος
+                        </a> *@
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -314,7 +399,7 @@
             let variantWithProductInformation = {
                 originalIndex: i,
                 productId: products[i].id,
-                categories: products[i].categories,
+                categories: products[i].categories && products[i].categories.length > 0 ? products[i].categories : [{ name: "Καμία Κατηγορία" }],
                 name: products[i].name,
                 code: products[i].code,
                 variantId: products[i].variants[0].id,
@@ -325,7 +410,8 @@
                 isFilteredBySearch: false,
                 protectedByCategoryLis: [],
                 protectedByPriceLis: [],
-                protectedByUnitsInStockLis: []
+                protectedByUnitsInStockLis: [],
+                discount: products[i].variants[0].discount
             };
 
             variantsWithProductInformation.push(variantWithProductInformation);
@@ -354,6 +440,10 @@
                     blockedBy.push("price");
                 }
 
+                if(isCategoryFilterActive.value !== 0 && variantWithProductInformation.protectedByCategoryLis.length === 0){
+                    blockedBy.push("category");
+                }
+
                 if(blockedBy.length === 0){
                     itemsLeftForCheckBoxCounts.push({item: variantWithProductInformation, blockedBy: "nothing"});
                 }
@@ -368,6 +458,7 @@
                 }
             });
 
+            updateEmptyState(count > 0);
             updateTotalItems(count); //this exists in filtersBehaviour.js
             updateFilterCheckBoxesStylingAndCounts(itemsLeftForCheckBoxCounts);
         }
@@ -383,6 +474,20 @@
             });
 
             isPriceFilterActive.value++;
+        }
+
+        function categoryFilterCheckboxCheckedProcedures(liCategoryName, li) {
+            variantsWithProductInformation.forEach(variantWithProductInformation => {
+                const categories = variantWithProductInformation.categories || [];
+
+                const hasCategory = categories.some(category => (category.name || "").toLowerCase().trim() === liCategoryName.toLowerCase().trim());
+
+                if (hasCategory) {
+                    variantWithProductInformation.protectedByCategoryLis.push(liCategoryName);
+                }
+            });
+
+            isCategoryFilterActive.value++;
         }
 
         function updateFilterCheckBoxesStylingAndCounts(itemsLeftForCheckBoxCounts){
@@ -435,6 +540,24 @@
             return (isCategoryFilterActive.value > 0 && item.protectedByCategoryLis.length === 0) || (isPriceFilterActive.value > 0 && item.protectedByPriceLis.length === 0);
         }
 
+        function updateEmptyState(hasItems) {
+            let cont = document.getElementById('itemsContainer');
+
+            const banner = document.getElementById('noItemsContainer');
+
+            if (hasItems) {
+                cont.classList.remove('d-none');
+                banner.classList.add('d-none');
+            }
+            else {
+                cont.classList.add('d-none');
+                banner.classList.remove('d-none');
+
+                document.getElementById('emptyStateTitle').textContent = "Δεν βρέθηκαν προϊόντα";
+                document.getElementById('emptyStateDescription').textContent = "Δεν υπάρχουν προϊόντα που να ταιριάζουν με τα επιλεγμένα φίλτρα ή την αναζήτηση."
+            }
+        }
+
         function renderProductCards(items) {
             let itemsContainer = document.getElementById('itemsContainer');
             itemsContainer.innerHTML = "";
@@ -483,7 +606,7 @@
             const carouselId = `cardCarousel-${crypto.randomUUID()}`;
             const carouselDiv = document.createElement("div");
             carouselDiv.id = carouselId;
-            carouselDiv.className = "carousel slide mt-2";
+            carouselDiv.className = "carousel slide";
             carouselDiv.setAttribute("data-bs-interval", "false");
 
             // Carousel inner
@@ -498,6 +621,7 @@
                 let carouselOnlyImage = document.createElement("img");
                 carouselOnlyImage.src = noProductImageUrl;
                 carouselOnlyImage.className = "d-block w-100 img-fluid";
+                carouselOnlyImage.style.minHeight = "380px";
                 carouselOnlyImage.style.maxHeight = "380px";
                 carouselOnlyItem.appendChild(carouselOnlyImage);
                 carouselInner.appendChild(carouselOnlyItem);
@@ -513,6 +637,7 @@
                     let carouselItemImage = document.createElement("img");
                     carouselItemImage.src = dynamicImagesUrl + variantImage.image.imagePath;
                     carouselItemImage.className = "d-block w-100 img-fluid";
+                    carouselItemImage.style.minHeight = "380px";
                     carouselItemImage.style.maxHeight = "380px";
                     carouselItem.appendChild(carouselItemImage);
                     carouselInner.appendChild(carouselItem);
@@ -542,29 +667,87 @@
 
             // Assemble carousel
             carouselDiv.appendChild(carouselInner);
-            carouselDiv.appendChild(prevBtn);
-            carouselDiv.appendChild(nextBtn);
+            if(item.variantImages && item.variantImages.length > 1){
+                carouselDiv.appendChild(prevBtn);
+                carouselDiv.appendChild(nextBtn);
+            }
 
             // Card body
             const cardBody = document.createElement("div");
             cardBody.className = "card-body py-2";
             const title = document.createElement("span");
-            title.style.cssText = "font-weight:600; color:#272727; line-height:1.2; display:block; font-size:14px;";
+            title.style.cssText = "font-weight:600; color:#272727; line-height:1.2; display:block; font-size:17px;";
             title.textContent = item.name;
+
             const priceRow = document.createElement("div");
-            priceRow.className = "d-flex justify-content-between align-items-center mt-2 mb-2";
+            priceRow.className = "d-flex justify-content-between align-items-center mt-3 position-relative";
 
-            const price = document.createElement("span");
-            price.className = "text-info";
-            price.style.fontSize = "24px";
-            price.innerHTML = item.price + "&#8364;";
+            // LEFT SIDE (discount if exists + price)
+            const left = document.createElement("div");
 
+            if (item.discount) {
+
+                const originalPrice = item.price;
+                const discountedPrice = originalPrice - (originalPrice * item.discount.percentage / 100);
+
+                const discountContainer = document.createElement("span");
+                discountContainer.style.position = "absolute";
+                discountContainer.style.top = "-13px";
+                discountContainer.style.left = "0";
+                discountContainer.className = "d-flex justify-content-between discountContainer";
+
+                const original = document.createElement("span");
+                original.style.textDecoration = "line-through";
+                original.style.fontSize = "14px";
+                original.style.color = "#999";
+                original.textContent = originalPrice.toFixed(2) + " €";
+
+                const badge = document.createElement("span");
+                badge.style.width = "0";
+                badge.style.height = "0";
+                badge.style.borderTop = "35px solid var(--accent-orange)";
+                badge.style.borderLeft = "35px solid transparent";
+                badge.style.position = "relative";
+
+                const percent = document.createElement("span");
+                percent.style.position = "absolute";
+                percent.style.top = "-32px";
+                percent.style.left = "-24px";
+                percent.style.color = "white";
+                percent.style.fontSize = "10px";
+                percent.style.fontWeight = "700";
+                percent.style.transform = "rotate(45deg)";
+                percent.textContent = "-" + item.discount.percentage + "%";
+
+                badge.appendChild(percent);
+                discountContainer.appendChild(original);
+                discountContainer.appendChild(badge);
+
+                const finalPrice = document.createElement("span");
+                finalPrice.className = "text-info";
+                finalPrice.style.fontSize = "24px";
+                finalPrice.textContent = discountedPrice.toFixed(2) + " €";
+
+                left.appendChild(discountContainer);
+                left.appendChild(finalPrice);
+
+            } else {
+
+                const price = document.createElement("span");
+                price.className = "text-info";
+                price.style.fontSize = "24px";
+                price.textContent = item.price.toFixed(2) + " €";
+
+                left.appendChild(price);
+            }
+
+            // RIGHT SIDE (cart)
             const cartLink = document.createElement("a");
             cartLink.href = `/Home/ViewItem?id=${item.productId}`;
             cartLink.innerHTML = `<i class="fa-solid fa-cart-plus text-info" style="font-size:24px;"></i>`;
 
-            // Assemble price row
-            priceRow.appendChild(price);
+            // assemble row
+            priceRow.appendChild(left);
             priceRow.appendChild(cartLink);
 
             // Assemble card body
@@ -581,6 +764,7 @@
         setUpSearchInputMode(variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination, renderProductCards);
         setUpSearchInput(variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination, renderProductCards);
         setUpCheckBoxFilterUl('priceFiltersUl', priceFilterCheckboxCheckedProcedures, 'protectedByPriceLis', isPriceFilterActive, variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination, renderProductCards);
+        setUpCheckBoxFilterUl('categoryFiltersUl', categoryFilterCheckboxCheckedProcedures, 'protectedByCategoryLis', isCategoryFilterActive, variantsWithProductInformation, countHowManyEntriesAreLeftUnfilteredAndUpdatePagination, renderProductCards);
 
         /* ------------------------------------- */
 

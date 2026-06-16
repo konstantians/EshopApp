@@ -1,6 +1,7 @@
 ﻿using EshopApp.GatewayAPI.AuthMicroService.Models;
 using EshopApp.GatewayAPI.DataMicroService.SharedModels;
 using EshopApp.GatewayAPI.HelperMethods;
+using EshopApp.GatewayAPI.HtmlTemplates;
 using EshopApp.GatewayAPI.TransactionMicroService.CheckOutSession.Models.RequestModels;
 using EshopApp.GatewayAPI.TransactionMicroService.CheckOutSession.Models.ServiceRequestModels;
 using EshopApp.GatewayAPI.TransactionMicroService.CheckOutSession.Models.ServiceResponseModels;
@@ -21,11 +22,13 @@ public class GatewayCheckOutSessionController : ControllerBase
     private readonly HttpClient emailHttpClient;
     private readonly IConfiguration _configuration;
     private readonly IUtilityMethods _utilityMethods;
+    private readonly IHtmlBuilder _htmlBuilder;
 
-    public GatewayCheckOutSessionController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods)
+    public GatewayCheckOutSessionController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IUtilityMethods utilityMethods, IHtmlBuilder htmlBuilder)
     {
         _configuration = configuration;
         _utilityMethods = utilityMethods;
+        _htmlBuilder = htmlBuilder;
         authHttpClient = httpClientFactory.CreateClient("AuthApiClient");
         dataHttpClient = httpClientFactory.CreateClient("DataApiClient");
         transactionHttpClient = httpClientFactory.CreateClient("TransactionApiClient");
@@ -107,7 +110,7 @@ public class GatewayCheckOutSessionController : ControllerBase
             gatewayCreateCheckoutSessionServiceRequestModel.SuccessUrl = gatewayCreateCheckoutSessionRequestModel.SuccessUrl;
             gatewayCreateCheckoutSessionServiceRequestModel.CancelUrl = gatewayCreateCheckoutSessionRequestModel.CancelUrl;
             gatewayCreateCheckoutSessionServiceRequestModel.CustomerEmail = gatewayCreateCheckoutSessionRequestModel.GatewayCreateOrderRequestModel!.Email;
-            gatewayCreateCheckoutSessionServiceRequestModel.CouponPercentage = couponPercentageDiscount;
+            gatewayCreateCheckoutSessionServiceRequestModel.CouponPercentage = couponPercentageDiscount == 0 ? null : couponPercentageDiscount; //this is the needed format from that the checkout controller needs
 
             gatewayCreateCheckoutSessionServiceRequestModel.PaymentOptionName = order!.PaymentDetails!.PaymentOption!.Name;
             gatewayCreateCheckoutSessionServiceRequestModel.PaymentOptionDescription = order.PaymentDetails!.PaymentOption!.Description;
@@ -124,9 +127,7 @@ public class GatewayCheckOutSessionController : ControllerBase
                 gatewayCreateTransactionOrderItemServiceRequestModel.Name = orderItem.Variant!.Product!.Name;
                 gatewayCreateTransactionOrderItemServiceRequestModel.Description = orderItem.Variant!.Product!.Description;
                 gatewayCreateTransactionOrderItemServiceRequestModel.Quantity = orderItem.Quantity;
-                gatewayCreateTransactionOrderItemServiceRequestModel.FinalUnitAmountInEuro = orderItem.UnitPriceAtOrder;
-                if (orderItem.Variant.Discount is not null)
-                    gatewayCreateTransactionOrderItemServiceRequestModel.FinalUnitAmountInEuro -= orderItem.Variant.Price * orderItem.Variant.Discount.Percentage;
+                gatewayCreateTransactionOrderItemServiceRequestModel.FinalUnitAmountInEuro = orderItem.UnitPriceAtOrder; ////the previous endpoint has already made the calculations for the correct discount price
 
                 gatewayCreateTransactionOrderItemServiceRequestModel.ImageUrl = orderItem.ImageId;
 
@@ -201,7 +202,7 @@ public class GatewayCheckOutSessionController : ControllerBase
             {
                 //Get the order
                 response = await _utilityMethods.MakeRequestWithRetriesForServerErrorAsync(() =>
-                    dataHttpClient.GetAsync($"Order/PaymentProcessorSessionId/{gatewayHandleCreateCheckOutSessionRequestModel.PaymentProcessorPaymentIntentId}"));
+                    dataHttpClient.GetAsync($"Order/PaymentProcessorSessionId/{gatewayHandleCreateCheckOutSessionRequestModel.PaymentProcessorSessionId}"));
 
                 string? responseBody = await response.Content.ReadAsStringAsync();
                 GatewayOrder? order = JsonSerializer.Deserialize<GatewayOrder>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -209,12 +210,7 @@ public class GatewayCheckOutSessionController : ControllerBase
                 if ((int)response.StatusCode >= 400)
                     return await _utilityMethods.CommonHandlingForErrorCodesAsync(response);
 
-                var apiSendEmailModel = new Dictionary<string, string>
-                {
-                    { "receiver", order!.OrderAddress!.Email! },
-                    { "title", "Order Placed Successfully" },
-                    { "message", "Here are the details of your order: " } //TODO do this well
-                };
+                var apiSendEmailModel = _htmlBuilder.CreateOrderSummaryEmail(order!);
                 _ = Task.Run(async () =>
                 {
                     _utilityMethods.SetDefaultHeadersForClient(false, emailHttpClient, _configuration["EmailApiKey"]!, _configuration["EmailRateLimitingBypassCode"]!);

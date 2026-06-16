@@ -77,6 +77,7 @@ internal class CategoryControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", "bogusKey");
         TestCreateCategoryRequestModel testCreateCategoryRequestModel = new TestCreateCategoryRequestModel();
         testCreateCategoryRequestModel.Name = "MyCategory";
+        testCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/category/", testCreateCategoryRequestModel);
@@ -110,6 +111,7 @@ internal class CategoryControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         TestCreateCategoryRequestModel testCreateCategoryRequestModel = new TestCreateCategoryRequestModel();
         testCreateCategoryRequestModel.Name = "MyCategory";
+        testCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/category/", testCreateCategoryRequestModel);
@@ -121,6 +123,7 @@ internal class CategoryControllerTests
         testCategory.Should().NotBeNull();
         testCategory!.Id.Should().NotBeNull();
         testCategory!.Name.Should().NotBeNull().And.Be(testCreateCategoryRequestModel.Name);
+        testCategory!.CategoryIconLink.Should().NotBeNull().And.Be(testCreateCategoryRequestModel.CategoryIconLink);
         _chosenCategoryId = testCategory.Id;
     }
 
@@ -132,6 +135,7 @@ internal class CategoryControllerTests
         httpClient.DefaultRequestHeaders.Add("X-API-KEY", _chosenApiKey);
         TestCreateCategoryRequestModel testCreateCategoryRequestModel = new TestCreateCategoryRequestModel();
         testCreateCategoryRequestModel.Name = "MyCategory";
+        testCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/category/", testCreateCategoryRequestModel);
@@ -226,6 +230,7 @@ internal class CategoryControllerTests
         testCategory.Should().NotBeNull();
         testCategory!.Id.Should().NotBeNull().And.Be(categoryId);
         testCategory!.Name.Should().NotBeNull();
+        testCategory!.CategoryIconLink.Should().NotBeNull();
     }
 
     [Test, Order(110)]
@@ -298,6 +303,7 @@ internal class CategoryControllerTests
 
         TestCreateCategoryRequestModel testCreateCategoryRequestModel = new TestCreateCategoryRequestModel();
         testCreateCategoryRequestModel.Name = "AnotherCategory";
+        testCreateCategoryRequestModel.CategoryIconLink = "AnotherCategoryIconLink";
         await httpClient.PostAsJsonAsync("api/category/", testCreateCategoryRequestModel);
 
         //Act
@@ -318,6 +324,7 @@ internal class CategoryControllerTests
         TestUpdateCategoryRequestModel testUpdateCategoryRequestModel = new TestUpdateCategoryRequestModel();
         testUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -329,6 +336,7 @@ internal class CategoryControllerTests
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         testCategory!.Name.Should().NotBeNull().And.Be(testUpdateCategoryRequestModel.Name);
+        testCategory!.CategoryIconLink.Should().NotBeNull().And.Be(testUpdateCategoryRequestModel.CategoryIconLink);
         testCategory.Products.Should().NotBeNull().And.HaveCount(1);
     }
 

@@ -327,8 +327,6 @@ internal class ImageControllerTests
         testImage!.ImagePath.Should().NotBeNull().And.Be("PathUpdated");
     }
 
-    //TODO when there is order do the soft deleted thing here, since now there is no reason to do it...
-
     [Test, Order(210)]
     public async Task DeleteImage_ShouldFailAndReturnUnauthorized_IfAPIKeyIsInvalid()
     {

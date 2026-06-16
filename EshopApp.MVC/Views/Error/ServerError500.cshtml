@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Server Error";
+}
+
+<div class="d-flex justify-content-center align-items-center pt-3 pt-md-5">
+
+    <div class="text-center px-4 border p-4 rounded-4 shadow-sm bg-white" style="transform: translateY(-3vh); max-width: 600px;">
+
+        <div class="mb-4">
+            <img src="~/Images/ErrorImages/503.png"
+                 alt="Server Error"
+                 class="img-fluid rounded-4"
+                 style="max-height: 400px; object-fit: cover;" />
+        </div>
+
+        <h1 class="fw-bold mb-2 mt-0 pt-0">
+            Πρόβλημα Διακομιστή
+        </h1>
+
+        <p class="text-muted mb-4">
+            Μία ή παραπάνω υπηρεσίες δεν λειτουργούν αυτήν την στιγμή.<br />
+            Η τεχνική μας ομάδα δουλεύει για την επίλυση του προβλήματος. 
+            Παρακαλώ δοκιμάστε αργότερα.
+        </p>
+
+        <div class="d-grid gap-2">
+
+            <a asp-controller="Home" asp-action="Index" class="btn fw-semibold text-white" style="background:var(--accent-orange); border:none;">Επιστροφή στην αρχική</a>
+            <a asp-controller="Home" asp-action="ViewItems" class="btn btn-outline-secondary border">Συνέχεια αγορών</a>
+        </div>
+
+        <div class="mt-4 small text-muted">
+            Συμβουλή: Μπορείτε να αναφέρετε το τεχνικό πρόβλημα στο email υποστήριξης μας kinnaskonstantinos0@gmail.com
+        </div>
+
+    </div>
+
+</div>

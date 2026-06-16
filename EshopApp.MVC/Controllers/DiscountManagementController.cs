@@ -24,10 +24,7 @@ public class DiscountManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         HttpResponseMessage response = await httpClient.GetAsync("GatewayAuthentication/GetCurrentUserAndValidateThatTheyHaveGivenClaimsByToken/ClaimType/Permission/ClaimValue/CanManageProducts");
@@ -37,8 +34,9 @@ public class DiscountManagementController : Controller
             return View("Error503");
         else if ((int)response.StatusCode >= 500)
             return View("Error");
-
-        if ((int)response.StatusCode >= 400)
+        else if (response.StatusCode == HttpStatusCode.Forbidden)
+            return RedirectToAction("Forbidden403", "Error");
+        else if ((int)response.StatusCode >= 400)
         {
             Response.Cookies.Delete("EshopAppAuthenticationCookie");
             return RedirectToAction("SignInAndSignUp", "Account");
@@ -53,12 +51,6 @@ public class DiscountManagementController : Controller
             return View("Error503");
         else if ((int)responseDiscount.StatusCode >= 500 || (int)responseProduct.StatusCode >= 500)
             return View("Error");
-
-        if ((int)responseDiscount.StatusCode >= 400 || (int)responseProduct.StatusCode >= 400)
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
 
         var responseBody = await responseDiscount.Content.ReadAsStringAsync();
         List<UiDiscount> discounts = JsonSerializer.Deserialize<List<UiDiscount>>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
@@ -94,10 +86,7 @@ public class DiscountManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         if (!ModelState.IsValid)
             return View("ManageDiscounts");
@@ -119,10 +108,7 @@ public class DiscountManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         createDiscountViewModel.IsDeactivated = !createDiscountViewModel.IsActivated;
 
@@ -149,10 +135,7 @@ public class DiscountManagementController : Controller
     {
         string? accessToken = Request.Cookies["EshopAppAuthenticationCookie"];
         if (!HelperMethods.BasicTokenValidation(Request))
-        {
-            Response.Cookies.Delete("EshopAppAuthenticationCookie");
-            return RedirectToAction("SignInAndSignUp", "Account");
-        }
+            return RedirectToAction("Unauthorized401", "Error");
 
         updateDiscountViewModel.IsDeactivated = !updateDiscountViewModel.IsActivated;
 

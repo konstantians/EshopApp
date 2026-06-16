@@ -1,22 +1,25 @@
-﻿@model UiUser?
+﻿@using EshopApp.MVC.Models.AuthModels
+@model UiUser?
 
 @{
     ViewData["Title"] = "View Cart";
+    string shouldBannerBeShown = Model is null || Model.Cart!.CartItems.Count == 0 ? "" : "d-none";
+    string shouldButtonsBeShown = Model is not null && Model.Cart!.CartItems.Count != 0 ? "" : "d-none";
 }
 
-<link rel="stylesheet" href="~/css/timelineStyles.css"/>
+<link rel="stylesheet" href="~/css/timelineStyles.css" />
 
-<div class="mt-5 pb-2">
+<div class="mt-5">
     <div class="d-flex justify-content-between timeline-step mx-auto px-4">
-        <div class="dot active text-extra-smallest text-sm-smaller"></div>
+        <a asp-controller="Home" asp-action="ViewCart" class="dot step-1 active text-extra-smallest text-sm-smaller"></a>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-2 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-3 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-4 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-5 text-extra-smallest text-sm-smaller"></div>
     </div>
 </div>
 
@@ -24,45 +27,116 @@
     <h3 class="fw-semibold mb-4 text-center text-lg-start">Το Καλάθι Μου</h3>
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-8" id="productContainer">
             @if (Model is not null)
             {
                 @foreach (UiCartItem cartItem in Model.Cart!.CartItems)
                 {
-                    <div class="card mb-3" id="cardId_@cartItem.Id">
-                        <div class="card-body">
+                    var imageFile = cartItem.Variant!.VariantImages.FirstOrDefault()?.Image?.ImagePath;
+                    string imagePath = Url.Content(string.IsNullOrEmpty(imageFile) ? "~/Images/noProductImage.jpg" : $"~/DynamicImages/{imageFile}");
+
+                    <div class="card mb-3 position-relative" id="cardId_@cartItem.Id">
+
+                        <!-- DESKTOP -->
+                        <div class="card-body d-none d-md-block">
                             <div class="row align-items-center">
+
                                 <div class="col-md-2">
-                                    <img src="~/DynamicImages/@cartItem.Variant!.VariantImages[0].Image!.ImagePath"
-                                         class="d-block mx-auto"
-                                         height="90"
-                                         width="90"
-                                    >
+                                    <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@cartItem.Variant!.Product!.Id">
+                                        <img src="@imagePath" class="d-block mx-auto" height="90" width="90">
+                                    </a>
                                 </div>
 
                                 <div class="col-md-4">
-                                    <p class="mb-1 fw-medium">@cartItem.Variant!.Product!.Name</p>
+                                    <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@cartItem.Variant!.Product!.Id" class="fw-medium text-dark text-decoration-none d-block hover-primary">
+                                        @cartItem.Variant!.Product!.Name
+                                    </a>
                                     <small class="text-muted">SKU: @cartItem.Variant!.SKU</small>
                                 </div>
 
                                 <div class="col-md-3 py-2 text-center">
                                     <div class="d-flex align-items-center justify-content-center">
-                                        <i id="quantityMinusButton" class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
-                                        <input id="quantityInput" class="form-control" type="number" style="max-width:100px;" value="1" min="1" step="1">
-                                        <i id="quantityPlusButton" class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
+                                        <i id="quantityMinusButton_@cartItem.Id" class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
+                                        <input id="quantityInput_@cartItem.Id" data-sku="@cartItem.Variant.SKU" class="form-control" type="number" style="max-width:100px;" value="@cartItem.Quantity" min="1" step="1">
+                                        <i id="quantityPlusButton_@cartItem.Id" class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
                                     </div>
                                 </div>
 
-                                <div class="col-md-2 fw-medium">@cartItem.Variant!.Price &#8364;</div>
+                                @if (cartItem.Variant.Discount is null)
+                                {
+                                    <div class="col-md-2 fw-medium text-center">@cartItem.Variant!.Price &#8364;</div>
+                                }
+                                else
+                                {
+                                    decimal? discountedPrice = cartItem.Variant.Price - (cartItem.Variant.Price * cartItem.Variant.Discount.Percentage / 100);
+                                    <div class="col-md-2 fw-medium text-center">@discountedPrice &#8364;</div>
+                                }
+                                <div class="col-md-1 text-center ps-2">
+                                    <a onclick="removeFromCartAndUpdateUI('@cartItem.Id', 'cardId_@cartItem.Id')" style="cursor:pointer;">
+                                        <i class="fa-regular fa-x text-secondary hover-black"></i>
+                                    </a>
+                                </div>
 
-                                <div class="col-md-1 text-center ps-2" style="cursor:pointer;">
-                                    <a onclick="removeFromCartAndUpdateUI('@cartItem.Id', 'cardId_@cartItem.Id')"><i class="fa-regular fa-x text-secondary hover-black"></i></a>
+                            </div>
+                        </div>
+
+                        <!-- MOBILE -->
+                        <div class="card-body d-md-none">
+
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <a onclick="removeFromCartAndUpdateUI('@cartItem.Id', 'cardId_@cartItem.Id')" style="cursor:pointer;">
+                                    <i class="fa-regular fa-x text-secondary hover-black"></i>
+                                </a>
+                            </div>
+
+                            <div class="d-flex">
+
+                                <div class="me-3">
+                                    <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@cartItem.Variant!.Product!.Id">
+                                        <img src="@imagePath" height="90" width="90">
+                                    </a>
+                                </div>
+
+                                <div class="flex-grow-1">
+
+                                    <a asp-controller="Home" asp-action="ViewItem" asp-route-id="@cartItem.Variant!.Product!.Id" class="fw-medium text-dark text-decoration-none d-block hover-primary">
+                                        @cartItem.Variant!.Product!.Name
+                                    </a>
+
+                                    <small class="text-muted d-block mb-3">
+                                        SKU: @cartItem.Variant!.SKU
+                                    </small>
+
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i id="quantityMinusButtonMobile_@cartItem.Id" class="fa-solid fa-minus text-info me-1 me-sm-2" style="font-size:22px; cursor:pointer;"></i>
+                                            <input id="quantityInputMobile_@cartItem.Id" data-sku="@cartItem.Variant.SKU" class="form-control" type="number" style="max-width:90px;" value="@cartItem.Quantity" min="1" step="1">
+                                            <i id="quantityPlusButtonMobile_@cartItem.Id" class="fa-solid fa-plus text-info ms-1 ms-sm-2" style="font-size:22px; cursor:pointer;"></i>
+                                        </div>
+
+                                        @if (cartItem.Variant.Discount is null)
+                                        {
+                                            <div class="fw-medium text-nowrap">@cartItem.Variant!.Price &#8364;</div>
+                                        }
+                                        else
+                                        {
+                                            decimal? discountedPrice = cartItem.Variant.Price - (cartItem.Variant.Price * cartItem.Variant.Discount.Percentage / 100);
+                                            <div class="fw-medium text-nowrap">@discountedPrice &#8364;</div>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 }
             }
+
+            <div class="alert alert-light text-center border p-4 @shouldBannerBeShown" id="noProductsBanner">
+                <h4 class="mb-2">🛒 Το καλάθι σας είναι άδειο</h4>
+                <p class="text-muted mb-3">Προσθέστε προϊόντα για να τα δείτε εδώ</p>
+                <a asp-controller="Home" asp-action="ViewItems" class="btn btn-primary py-2 px-3">Προσθέστε Προϊόντα</a>
+            </div>
         </div>
 
         <div class="col-lg-4">
@@ -83,25 +157,33 @@
                         {
                             <div class="d-flex justify-content-between mb-2" id="summarySection_cardId_@cartItem.Id">
                                 <span data-quantity="@cartItem.Quantity">@cartItem.Quantity x @cartItem.Variant!.Product!.Name</span>
-                                <span data-price="@cartItem.Variant.Price">@cartItem.Variant.Price &#8364;</span>
+                                @if(cartItem.Variant.Discount is null)
+                                {
+                                    <span data-price="@cartItem.Variant.Price">@(cartItem.Quantity* cartItem.Variant.Price) &#8364;</span>
+                                }
+                                else
+                                {
+                                    decimal? discountedPrice = cartItem.Variant.Price - (cartItem.Variant.Price * cartItem.Variant.Discount.Percentage / 100);
+                                    <span data-price="@discountedPrice">@(cartItem.Quantity* discountedPrice) &#8364;</span>
+                                }
                             </div>
 
                             finalPrice += cartItem.Quantity * cartItem.Variant.Price!.Value;
                         }
                     }
 
-                    <hr>
+                    <hr id="finalPriceSeparator">
 
-                    <div class="d-flex justify-content-between fw-semibold mb-3">
+                    <div class="d-flex justify-content-between fw-semibold mb-2">
                         <span>Σύνολο</span>
                         <span id="finalPriceSpan" data-final-Price="@finalPrice">@finalPrice &#8364;</span>
                     </div>
 
-                    <a asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelection" class="btn btn-primary w-100 mb-2">
+                    <a asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelection" class="btn btn-primary w-100 mb-2 mt-2 @shouldButtonsBeShown" id="placeOrderButton">
                         Ολοκλήρωση Παραγγελίας
                     </a>
 
-                    <a asp-controller="Home" asp-action="ViewItems" class="btn btn-secondary w-100">
+                    <a asp-controller="Home" asp-action="ViewItems" class="btn btn-secondary w-100 @shouldButtonsBeShown" id="continuePurchasingItemsButton">
                         Συνέχεια Αγορών
                     </a>
                 </div>
@@ -110,31 +192,312 @@
     </div>
 </div>
 
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <script type="text/javascript" src="~/js/customModals.js"></script>
+
     <script>
+        const productContainer = document.getElementById("productContainer");
+        const noProductsBanner = document.getElementById("noProductsBanner");
+        const placeOrderButton = document.getElementById("placeOrderButton");
+        const continueButton = document.getElementById("continuePurchasingItemsButton");
+
+        let finalPrice = Number(finalPriceSpan?.dataset.finalPrice) || 0;
+
+        function getLocalCart() {
+            try {
+                return JSON.parse(localStorage.getItem("cart")) || null;
+            } catch (e) {
+                console.error("Invalid cart in localStorage", e);
+                return null;
+            }
+        }
+
+        function buildCartFromLocalStorage() {
+            const cart = getLocalCart();
+            if (!cart || !cart.cartItems || cart.cartItems.length === 0) {
+                noProductsBanner.classList.remove("d-none");
+                placeOrderButton.classList.add("d-none");
+                continueButton.classList.add("d-none");
+                return;
+            }
+
+            noProductsBanner.classList.add("d-none");
+            placeOrderButton.classList.remove("d-none");
+            continueButton.classList.remove("d-none");
+
+            cart.cartItems.forEach(item => {
+                const id = item.id;
+                const quantity = Number(item.quantity);
+
+                const variant = item.variant;
+                const product = variant.product;
+                const sku = variant.sku;
+                const price = Number(variant.price);
+                let imagePath = window.appConfig.noProductImageUrl;
+                if(variant.variantImages?.[0]?.image?.imagePath){
+                    imagePath = window.appConfig.dynamicImagesUrl + variant.variantImages?.[0]?.image?.imagePath;
+                }
+
+                finalPrice += quantity * price;
+
+                const cardHtml = `
+                    <div class="card mb-3 position-relative" id="cardId_${id}">
+
+                        <div class="card-body d-none d-md-block">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <a href="/Home/ViewItem/${product.id}">
+                                        <img src="${imagePath}" class="d-block mx-auto" height="90" width="90">
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="/Home/ViewItem/${product.id}" class="fw-medium text-dark text-decoration-none d-block hover-primary">${product.name}</a>
+                                    <small class="text-muted">SKU: ${sku}</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i id="quantityMinusButton_${id}" class="fa-solid fa-minus text-info me-2" style="font-size:22px; cursor:pointer;"></i>
+                                        <input id="quantityInput_${id}" data-sku="${sku}" class="form-control" type="number" style="max-width:100px;" value="${quantity}" min="1" step="1">
+                                        <i id="quantityPlusButton_${id}" class="fa-solid fa-plus text-info ms-2" style="font-size:22px; cursor:pointer;"></i>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 fw-medium text-center">${price.toFixed(2)} €</div>
+                                <div class="col-md-1 text-center ps-2">
+                                    <a onclick="removeFromCartAndUpdateUI('${id}', 'cardId_${id}')" style="cursor:pointer">
+                                        <i class="fa-regular fa-x text-secondary hover-black"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body d-md-none">
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <a onclick="removeFromCartAndUpdateUI('${id}', 'cardId_${id}')" style="cursor:pointer;">
+                                    <i class="fa-regular fa-x text-secondary hover-black"></i>
+                                </a>
+                            </div>
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <a href="/Home/ViewItem/${product.id}">
+                                        <img src="${imagePath}" height="90" width="90">
+                                    </a>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <a href="/Home/ViewItem/${product.id}" class="fw-medium text-dark text-decoration-none d-block hover-primary">${product.name}</a>
+                                    <small class="text-muted d-block mb-3">SKU: ${sku}</small>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i id="quantityMinusButtonMobile_${id}" class="fa-solid fa-minus text-info me-1 me-sm-2" style="font-size:22px; cursor:pointer;"></i>
+                                            <input id="quantityInputMobile_${id}" data-sku="${sku}" class="form-control" type="number" style="max-width:90px;" value="${quantity}" min="1" step="1">
+                                            <i id="quantityPlusButtonMobile_${id}" class="fa-solid fa-plus text-info ms-1 ms-sm-2" style="font-size:22px; cursor:pointer;"></i>
+                                        </div>
+                                        <div class="fw-medium text-nowrap">${price.toFixed(2)} €</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+
+                productContainer.insertAdjacentHTML("beforeend", cardHtml);
+
+                const summaryHtml = `
+                    <div class="d-flex justify-content-between mb-2" id="summarySection_cardId_${id}">
+                        <span data-quantity="${quantity}">${quantity} x ${product.name}</span>
+                        <span data-price="${price}">${price.toFixed(2)} €</span>
+                    </div>
+                `;
+
+                document.getElementById("finalPriceSeparator").insertAdjacentHTML("beforebegin", summaryHtml);
+            });
+
+            finalPriceSpan.dataset.finalPrice = finalPrice;
+            finalPriceSpan.textContent = finalPrice.toFixed(2) + " €";
+
+            placeOrderButton?.classList.remove("d-none");
+            continueButton?.classList.remove("d-none");
+        }
+
+        @if (Model is null)
+        {
+                <text>
+                    document.addEventListener("DOMContentLoaded", buildCartFromLocalStorage);
+                </text>
+        }
+    </script>
+
+    <script>
+        let finalPriceSpan = document.getElementById("finalPriceSpan");
+        finalPrice = Number(finalPriceSpan.dataset.finalPrice) || 0;
+
+        function syncInputs(cartItemId, value) {
+            const desktop = document.getElementById(`quantityInput_${cartItemId}`);
+            const mobile = document.getElementById(`quantityInputMobile_${cartItemId}`);
+            if (desktop) desktop.value = value;
+            if (mobile) mobile.value = value;
+        }
+
+        function getCartItemId(btn) {
+            return btn.id
+                .replace("quantityMinusButtonMobile_", "")
+                .replace("quantityMinusButton_", "")
+                .replace("quantityPlusButtonMobile_", "")
+                .replace("quantityPlusButton_", "");
+        }
+
+        function getCurrentInputValue(cartItemId) {
+            const input = document.getElementById(`quantityInput_${cartItemId}`)
+                       || document.getElementById(`quantityInputMobile_${cartItemId}`);
+            return parseInt(input.value);
+        }
+
         function removeFromCartAndUpdateUI(cartItemId, cartItemContainerId) {
+            const productContainer = document.getElementById("productContainer");
             const cardItemContainer = document.getElementById(cartItemContainerId);
             const summarySection = document.getElementById("summarySection_" + cartItemContainerId);
-            const finalPriceSpan = document.getElementById("finalPriceSpan");
 
-            let finalPrice = Number(finalPriceSpan.dataset.finalPrice) || 0;
+            if (cardItemContainer) cardItemContainer.remove();
 
-            if (cardItemContainer) {
-                cardItemContainer.remove();
+            if (productContainer.children.length == 1) {
+                document.getElementById("noProductsBanner").classList.remove('d-none');
+                document.getElementById("placeOrderButton").classList.add('d-none');
+                document.getElementById("continuePurchasingItemsButton").classList.add('d-none');
             }
 
             if (summarySection) {
                 const quantity = Number(summarySection.querySelector('span[data-quantity]').dataset.quantity);
                 const price = Number(summarySection.querySelector('span[data-price]').dataset.price);
-
                 finalPrice -= quantity * price;
-
+                finalPriceSpan.dataset.finalPrice = finalPrice;
                 finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
-                finalPriceSpan.dataset.finalprice = finalPrice;
                 summarySection.remove();
             }
 
             removeFromCart(cartItemId);
         }
+
+        document.addEventListener("click", async function (e) {
+
+            const minusBtn = e.target.closest("[id^='quantityMinusButton_'], [id^='quantityMinusButtonMobile_']");
+            if (minusBtn) {
+                const cartItemId = getCartItemId(minusBtn);
+                const summarySection = document.getElementById("summarySection_cardId_" + cartItemId);
+                const currentValue = getCurrentInputValue(cartItemId);
+
+                if (currentValue === 1) return;
+
+                syncInputs(cartItemId, currentValue - 1);
+
+                let priceSpan = summarySection.querySelector('span[data-price]');
+                const price = Number(priceSpan.dataset.price);
+                const quantitySpan = summarySection.querySelector('span[data-quantity]');
+                quantitySpan.dataset.quantity = currentValue - 1;
+                const words = quantitySpan.textContent.trim().split(' ');
+                words[0] = currentValue - 1;
+                quantitySpan.textContent = words.join(' ');
+                finalPrice -= price;
+                finalPriceSpan.dataset.finalPrice = finalPrice;
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+                priceSpan.textContent = (price * words[0]).toFixed(2) + ' €';
+
+                updateCartItem(cartItemId, currentValue - 1);
+            }
+
+            const plusBtn = e.target.closest("[id^='quantityPlusButton_'], [id^='quantityPlusButtonMobile_']");
+            if (plusBtn) {
+                const cartItemId = getCartItemId(plusBtn);
+                const summarySection = document.getElementById("summarySection_cardId_" + cartItemId);
+                const currentValue = getCurrentInputValue(cartItemId);
+
+                syncInputs(cartItemId, currentValue + 1);
+
+                let priceSpan = summarySection.querySelector('span[data-price]');
+                const price = Number(priceSpan.dataset.price);
+                const quantitySpan = summarySection.querySelector('span[data-quantity]');
+                quantitySpan.dataset.quantity = currentValue + 1;
+                let words = quantitySpan.textContent.trim().split(' ');
+                words[0] = currentValue + 1;
+                quantitySpan.textContent = words.join(' ');
+                finalPrice += price;
+                finalPriceSpan.dataset.finalPrice = finalPrice;
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+                priceSpan.textContent = (price * words[0]).toFixed(2) + ' €';
+
+                let cartUpdateResult = await updateCartItem(cartItemId, currentValue + 1);
+                if (cartUpdateResult) return;
+
+                // rollback
+                syncInputs(cartItemId, currentValue);
+                quantitySpan.dataset.quantity = currentValue;
+                words = quantitySpan.textContent.trim().split(' ');
+                words[0] = currentValue;
+                quantitySpan.textContent = words.join(' ');
+                finalPrice -= price;
+                finalPriceSpan.dataset.finalPrice = finalPrice;
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+            }
+
+        });
+
+        document.querySelectorAll("input[type='number']").forEach(input => {
+            input.addEventListener("blur", async function () {
+                let value = parseInt(this.value, 10);
+                if (isNaN(value) || value <= 0) this.value = 1;
+                else this.value = value;
+
+                const cartItemId = this.id.replace("quantityInputMobile_", "").replace("quantityInput_", "");
+
+                syncInputs(cartItemId, this.value);
+
+                const summarySection = document.getElementById("summarySection_cardId_" + cartItemId);
+
+                let priceSpan = summarySection.querySelector('span[data-price]');
+                const price = Number(priceSpan.dataset.price);
+                const quantitySpan = summarySection.querySelector('span[data-quantity]');
+                let previousQuantity = Number(quantitySpan.dataset.quantity);
+
+                finalPrice = finalPrice - (price * previousQuantity) + (price * this.value);
+                quantitySpan.dataset.quantity = this.value;
+                const words = quantitySpan.textContent.trim().split(' ');
+                words[0] = this.value;
+                quantitySpan.textContent = words.join(' ');
+                finalPriceSpan.dataset.finalPrice = finalPrice;
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+                priceSpan.textContent = (price * words[0]).toFixed(2) + ' €';
+
+                let cartUpdateResult = await updateCartItem(cartItemId, this.value);
+                if (cartUpdateResult) return;
+
+                // rollback if API fails
+                finalPrice = finalPrice + (price * previousQuantity) - (price * this.value);
+                finalPriceSpan.dataset.finalPrice = finalPrice;
+                finalPriceSpan.textContent = finalPrice.toFixed(2) + ' €';
+                syncInputs(cartItemId, previousQuantity);
+                quantitySpan.dataset.quantity = previousQuantity;
+                words[0] = previousQuantity;
+                quantitySpan.textContent = words.join(' ');
+                priceSpan.textContent = (price * words[0]).toFixed(2) + ' €';
+            });
+        });
     </script>
 }

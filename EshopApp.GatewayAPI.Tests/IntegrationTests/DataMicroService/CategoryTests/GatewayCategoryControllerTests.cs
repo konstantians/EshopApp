@@ -62,6 +62,7 @@ internal class GatewayCategoryControllerTests
         httpClient.DefaultRequestHeaders.Remove("X-API-KEY");
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -79,6 +80,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, "bogusKey", _adminAccessToken);
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -110,6 +112,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, "Bearer bogusToken");
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -125,6 +128,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _userAccessToken); //user does not have claim CanManageProducts
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -140,6 +144,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -161,6 +166,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "MyCategory";
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "AnotherIconlink";
 
         //Act
         HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
@@ -255,6 +261,7 @@ internal class GatewayCategoryControllerTests
         testCategory.Should().NotBeNull();
         testCategory!.Id.Should().NotBeNull().And.Be(categoryId);
         testCategory!.Name.Should().NotBeNull();
+        testCategory!.CategoryIconLink.Should().NotBeNull();
     }
 
     [Test, Order(130)]
@@ -265,6 +272,7 @@ internal class GatewayCategoryControllerTests
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testGatewayUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -283,6 +291,7 @@ internal class GatewayCategoryControllerTests
         TestUtilitiesLibrary.CommonTestProcedures.SetDefaultHttpHeaders(httpClient, _chosenApiKey, _adminAccessToken);
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -300,6 +309,7 @@ internal class GatewayCategoryControllerTests
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testGatewayUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -317,6 +327,7 @@ internal class GatewayCategoryControllerTests
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testGatewayUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -353,14 +364,16 @@ internal class GatewayCategoryControllerTests
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testGatewayUpdateCategoryRequestModel.Name = "AnotherCategory";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "AnotherCategoryIconLink";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         TestGatewayCreateCategoryRequestModel testGatewayCreateCategoryRequestModel = new TestGatewayCreateCategoryRequestModel();
         testGatewayCreateCategoryRequestModel.Name = "AnotherCategory";
-        await httpClient.PostAsJsonAsync("api/gatewayCategory/", testGatewayCreateCategoryRequestModel);
+        testGatewayCreateCategoryRequestModel.CategoryIconLink = "AnotherCategoryIconLink";
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/gatewayCategory", testGatewayCreateCategoryRequestModel);
 
         //Act
-        HttpResponseMessage response = await httpClient.PutAsJsonAsync("api/gatewayCategory", testGatewayUpdateCategoryRequestModel);
+        response = await httpClient.PutAsJsonAsync("api/gatewayCategory", testGatewayUpdateCategoryRequestModel);
         string? errorMessage = await TestUtilitiesLibrary.JsonUtilities.GetSingleStringValueFromBody(response, "errorMessage");
 
         //Assert
@@ -376,6 +389,7 @@ internal class GatewayCategoryControllerTests
         TestGatewayUpdateCategoryRequestModel testGatewayUpdateCategoryRequestModel = new TestGatewayUpdateCategoryRequestModel();
         testGatewayUpdateCategoryRequestModel.Id = _chosenCategoryId;
         testGatewayUpdateCategoryRequestModel.Name = "MyCategoryUpdated";
+        testGatewayUpdateCategoryRequestModel.CategoryIconLink = "MyCategoryIconLinkUpdated";
         testGatewayUpdateCategoryRequestModel.ProductIds = new List<string>() { _chosenProductId! };
 
         //Act
@@ -387,6 +401,7 @@ internal class GatewayCategoryControllerTests
         //Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         testGatewayCategory!.Name.Should().NotBeNull().And.Be(testGatewayUpdateCategoryRequestModel.Name);
+        testGatewayCategory!.CategoryIconLink.Should().NotBeNull().And.Be(testGatewayUpdateCategoryRequestModel.CategoryIconLink);
         testGatewayCategory.Products.Should().NotBeNull().And.HaveCount(1);
     }
 

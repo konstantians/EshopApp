@@ -1,0 +1,115 @@
+﻿@{
+    ViewData["Title"] = "Order Success";
+}
+
+<script>
+    //if no items are in the cart then return back to cart
+    const cart = JSON.parse(localStorage.getItem("cart"));
+    const orderData = JSON.parse(localStorage.getItem("orderData"));
+    const orderAddress = orderData?.orderAddress;
+
+    if (!cart?.cartItems?.length) {
+        window.location.href = "/Home/ViewCart";
+    }
+    else if (!orderData?.orderAddress
+        || !orderAddress.email || !orderAddress.firstName || !orderAddress.lastName
+        || !orderAddress.country || !orderAddress.city || !orderAddress.postalCode || !orderAddress.address) {
+        window.location.href = '@Url.Action("CustomerInformation", "OrderPlacement")';
+    }
+    else if (orderAddress.isShippingAddressDifferent && (
+        !orderAddress.altEmail || !orderAddress.altFirstName || !orderAddress.altLastName
+        || !orderAddress.altCountry || !orderAddress.altCity || !orderAddress.altPostalCode || !orderAddress.altAddress)) {
+        window.location.href = '@Url.Action("CustomerInformation", "OrderPlacement")';
+    }
+    else if(!orderData.canProceedToConfirmation){
+        window.location.href = '@Url.Action("CustomerInformation", "OrderPlacement")';
+    }
+
+    localStorage.removeItem("cart");
+    localStorage.removeItem("orderData");
+</script>
+
+<style>
+    .card-wrapper {
+        max-width: 500px;
+        margin:auto;
+        width: 100%;
+        text-align: center;
+        padding: 0 1.5rem 2.5rem;
+    }
+
+    .illustration img {
+        width: 100%;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .btn-confirm {
+        background: var(--accent-orange);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: .85rem 2rem;
+        border-radius: 12px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .65rem;
+        transition: background .2s, transform .15s;
+    }
+
+    .btn-confirm:hover {
+        background: #e05300;
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    .btn-confirm svg {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+    }
+</style>
+
+<link rel="stylesheet" href="~/css/timelineStyles.css" />
+
+<div class="mt-5">
+    <div class="d-flex justify-content-between timeline-step mx-auto px-4">
+        <div class="dot step-1 active text-extra-smallest text-sm-smaller"></div>
+        <div class="line active"></div>
+        <div class="dot step-2 active text-extra-smallest text-sm-smaller"></div>
+        <div class="line active"></div>
+        <div class="dot step-3 active text-extra-smallest text-sm-smaller"></div>
+        <div class="line active"></div>
+        <div class="dot active step-4 text-extra-smallest text-sm-smaller"></div>
+        <div class="line active"></div>
+        <div class="dot active step-5 text-extra-smallest text-sm-smaller"></div>
+    </div>
+</div>
+
+
+<div class="card-wrapper">
+
+    <div class="illustration">
+        <img src="~/Images/orderSuccess.png" alt="Order confirmed illustration" />
+    </div>
+
+    <h1 style="margin-top:-20px;">Η Παραγγελία Σας Επιβεβαιώθηκε!</h1>
+    <p class="order-sub text-muted" style="line-height:1.6;margin-bottom:35px;">
+        Ευχαριστούμε για την παραγγελία σου. Την λάβαμε<br>
+        και την ετοιμάζουμε για εσένα.
+    </p>
+
+    <a class="btn btn-confirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" />
+            <path d="M3 9l2-5h14l2 5" />
+            <path d="M9 4v5M15 4v5" />
+        </svg>
+        Προβολή Παραγγελίας
+    </a>
+
+</div>
+

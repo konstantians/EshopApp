@@ -1,19 +1,220 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Http.Extensions
+@model SignInAndForgotPasswordViewModel
+
+@{
     ViewData["Title"] = "Choose Account Type";
 }
+
+<script>
+    //if no items are in the cart then return back to cart
+    const cart = JSON.parse(localStorage.getItem("cart"));
+
+    if (!cart?.cartItems?.length) {
+        window.location.href = "/Home/ViewCart";
+    }
+</script>
+
+<style>
+    #externalProvidersContainer {
+        display: flex;
+        justify-content: space-between;
+    }
+
+        #externalProvidersContainer a {
+            width: 48%;
+        }
+
+    @@media (max-width: 1199px) {
+        #externalProvidersContainer {
+            display: block !important;
+        }
+
+            #externalProvidersContainer a {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+    }
+</style>
 
 <link rel="stylesheet" href="~/css/timelineStyles.css" />
 
 <div class="mt-5">
     <div class="d-flex justify-content-between timeline-step mx-auto px-4">
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <a asp-controller="Home" asp-action="ViewCart" class="dot step-1 active text-extra-smallest text-sm-smaller"></a>
+        <div class="line active"></div>
+        <a asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelection" class="dot step-2 active text-extra-smallest text-sm-smaller"></a>
+        <div class="line "></div>
+        <div class="dot step-3 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot active text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-4 text-extra-smallest text-sm-smaller"></div>
         <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
-        <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
-        <div class="line"></div>
-        <div class="dot text-extra-smallest text-sm-smaller"></div>
+        <div class="dot step-5 text-extra-smallest text-sm-smaller"></div>
     </div>
 </div>
+
+<div class="row g-4 mt-4">
+    <div class="col-lg-6 offset-xxl-1 col-xxl-5 offset-xxxl-2 col-xxxl-4 col-12 d-flex">
+        <form class="w-100 border p-4 d-flex flex-column" method="post" asp-controller="OrderPlacement" asp-action="CustomerAccountTypeSelectionSignIn" id="signInForm">
+            <div id="signInErrorAlert" data-testid="signInErrorAlert" data-popUpValue="" class="d-none border border-1 text-center p-4 mb-2" style="transition: opacity 20s ease;">
+                <i class="fa-solid fa-circle-xmark text-info" style="font-size:60px"></i>
+                <h4 class="fw-bold mt-2" id="signInAlertFailureTitle">Αποτυχία Δημιουργίας Λογαριασμού</h4>
+                <p class="text-muted mb-0 text-center" id="signInAlertFailureMessage" data-testid="signInAlertFailureMessage">Υπάρχει ήδη λογαριασμός με το συγκεκριμένο Email.</p>
+                <button class="btn btn-primary w-50 mt-3" type="button" onclick="hideAlert(this)" data-testid="signInAlertCloseButton">OK</button>
+            </div>
+            <h3 class="text-center mb-3 mb-lg-4" data-testid="signInHeader">Ήδη Πελάτης</h3>
+            <div class="d-flex justify-content-between" id="externalProvidersContainer">
+                <a class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da;"
+                   asp-controller="Account" asp-action="ExternalSignIn" asp-route-identityProviderName="Google" asp-route-urlAfterAuthentication="@Context.Request.GetDisplayUrl()">
+                    <i class="fa-brands fa-google me-2"></i>Συνέχεια Με Google
+                </a>
+                <a class="btn py-2 btn-hoverable-box-shadow" style="background-color:transparent;border: 1px solid #ced4da;"
+                   asp-controller="Account" asp-action="ExternalSignIn" asp-route-identityProviderName="Twitter" asp-route-urlAfterAuthentication="@Context.Request.GetDisplayUrl()">
+                    <i class="fa-brands fa-square-x-twitter me-2"></i>Συνέχεια Με Twitter
+                </a>
+            </div>
+            <div class="d-flex justify-content-center align-items-center my-2">
+                <div class="flex-grow-1">
+                    <hr class="my-3">
+                </div>
+                <div class="px-3">
+                    <span>Ή</span>
+                </div>
+                <div class="flex-grow-1">
+                    <hr class="my-3">
+                </div>
+            </div>
+            <div class="mb-4" role="group">
+                <label asp-for="SignInViewModel.Email"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail</label>
+                <input class="form-control" asp-for="SignInViewModel.Email" placeholder="Enter email" data-testid="signInEmailInput">
+                <span asp-validation-for="SignInViewModel.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-2" role="group">
+                <label asp-for="SignInViewModel.Password"><i class="fa-solid fa-lock me-2"></i>Συνθηματικό</label>
+                <input class="form-control" asp-for="SignInViewModel.Password" type="password" placeholder="Enter password" data-testid="signInPasswordInput">
+                <span asp-validation-for="SignInViewModel.Password" class="text-danger"></span>
+            </div>
+            <div class="d-flex justify-content-between mb-4" role="group">
+                <a href="#" class="text-decoration-none text-info" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-testid="forgotPasswordLink">Ξεχάσατε Τον Κωδικό Σας;</a>
+            </div>
+            <input type="hidden" asp-for="SignInViewModel.UserCartJson" />
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary w-50 py-2 border-3" style="border-color:black !important;" id="signInButton" data-testid="signInButton">Είσοδος</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-6 col-xxl-5 col-xxxl-4 col-12 d-flex">
+        <div class="w-100 border p-4 d-flex flex-column justify-content-between h-100">
+            <div>
+                <h3 class="text-center mb-0" data-testid="signInHeader">
+                    Επισκέπτης
+                </h3>
+
+                <p class="text-center mt-4 mx-auto" style="max-width: 400px;">
+                    Προχωρήστε στην ολοκλήρωση της παραγγελίας χωρίς την δημιουργία λογαριασμού. Μπορείτε προαιρετικά να εγγραφείτε στο τέλος.
+                </p>
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <a class="btn btn-primary w-50 py-2 border-3" style="border-color:black !important;" asp-controller="OrderPlacement" asp-action="CustomerInformation">
+                    Αγορά Ως Επισκέπτης
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog left-positioned-modal">
+        <form class="modal-content" method="post" asp-controller="Account" asp-action="ForgotPassword" id="forgotPasswordForm">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">Επιβεβαίωση Διεύθυνσης Ταχυδρομικού Λογαριασμού</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-testid="forgotPasswordCloseModalButton"></button>
+            </div>
+            <div class="modal-body">
+                <label asp-for="ForgotPasswordViewModel.RecoveryEmail"><i class="fa-solid fa-envelope me-2"></i>Διεύθυνση e-mail</label>
+                <input class="form-control" asp-for="ForgotPasswordViewModel.RecoveryEmail" placeholder="Enter email" data-testid="forgotPasswordEmailField">
+                <span asp-validation-for="ForgotPasswordViewModel.RecoveryEmail" class="text-danger"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                <button type="submit" class="btn btn-primary" id="forgotPasswordButton" data-testid="forgotPasswordConfirmButton">Συνέχεια</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade custom-center-modal modal-result" data-bs-backdrop="static" id="resultModal" data-testid="resultModal" data-popUpValue="" tabindex="-1">
+    <div class="modal-dialog modal-confirm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="icon-box">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4 class="modal-title w-100" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-center"></p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-primary w-75" data-bs-dismiss="modal" data-testid="resultModalCloseButton">Εντάξει</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="~/js/customValidation.js"></script>
+<script type="text/javascript" src="~/js/customModals.js"></script>
+
+@section Scripts{
+    <script>
+        document.getElementById("signInForm").addEventListener("submit", () => {
+            const cart = JSON.parse(localStorage.getItem("cart"));
+
+            const bulkCartItems = cart?.cartItems?.map(item => ({
+                variantId: item.variant.id,
+                quantity: item.quantity
+            })) ?? [];
+
+            document.getElementById("SignInViewModel_UserCartJson").value = JSON.stringify(bulkCartItems);
+        });
+
+        setUpValidationListeners();
+        setUpFormSubmissionValidationListener("signInForm");
+        //setUpFormSubmissionValidationListener("forgotPasswordForm");
+
+        const userNotFoundWithGivenEmail = '@TempData["UserNotFoundWithGivenEmail"]' === 'True';
+        const userAccountLocked = '@TempData["UserAccountLocked"]' === 'True';
+        const userAccountNotActivated = '@TempData["UserAccountNotActivated"]' === 'True';
+        const invalidCredentials = '@TempData["InvalidCredentials"]' === 'True';
+        const unknownError = '@TempData["UnknownError"]' === 'True';
+
+        let resultModal = document.getElementById("resultModal");
+
+        if (userNotFoundWithGivenEmail) { //this also applies for the forgotPassword error
+            resultModal.setAttribute("popUpValue", "userNotFoundWithGivenEmail");
+            showPopUpModal('resultModal', "Αποτυχία Σύνδεσης", "Δεν υπάρχει λογαριασμός με το συγκεκριμένο λογαριασμό ταχυδρομείου. Παρακαλώ δοκιμάστε ξανά με διαφορετικό λογαριασμό.",
+                "Αποτυχία Σύνδεσης", "Δεν υπάρχει λογαριασμός με το συγκεκριμένο λογαριασμό ταχυδρομείου");
+        }
+        else if (userAccountLocked) {
+            resultModal.setAttribute("popUpValue", "userAccountLocked");
+            showPopUpModal('resultModal', "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου είναι κλειδομένος. Παρακαλώ δοκιμάστε ξανά αργότερα.",
+                "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου  είναι κλειδομένος. Παρακαλώ δοκιμάστε ξανά αργότερα.");
+        }
+        else if (userAccountNotActivated) {
+            resultModal.setAttribute("popUpValue", "userAccountNotActivated");
+            showPopUpModal('resultModal', "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου δεν έχει ενεργοποιηθεί. Παρακαλώ ενεργοποιήστε τον λογαριαμό σας με το email επιβεβαίωσης που έχει σταλθεί στον λογιαρσμό σας πριν δοκιμάσετε ξανά.",
+                "Αποτυχία Σύνδεσης", "Ο συγκεκριμένος λογαριασμός ταχυδρομείου δεν έχει ενεργοποιηθεί. Παρακαλώ ενεργοποιήστε τον λογαριαμό σας με το email επιβεβαίωσης που έχει σταλθεί στον λογιαρσμό σας πριν δοκιμάσετε ξανά.");
+        }
+        else if (invalidCredentials) {
+            resultModal.setAttribute("popUpValue", "invalidCredentials");
+            showPopUpModal('resultModal', "Αποτυχία Σύνδεσης", "Μη έγκυρα στοιχεία για τον συγκεκριμένο λογαριασμό. Παρακαλώ δοκιμάστε ξανά με διαφορετικό κωδικό.",
+                "Αποτυχία Σύνδεσης", "Μη έγκυρα στοιχεία για τον συγκεκριμένο λογαριασμό.");
+        }
+        else if (unknownError) {
+            resultModal.setAttribute("popUpValue", "unknownError");
+            showPopUpModal('resultModal', "Αποτυχία Σύνδεσης", "Κάποιο πρόβλημα συνέβη με τα δεδομένα που δώσατε. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα ή δοκιμάστε αργότερα.",
+                "Αποτυχία Σύνδεσης", "Απρόβλεπρο πρόβλημα. Παρακαλώ δοκιμάστε ξανά με διαφορετικά δεδομένα.");
+        }
+    </script>
+}
