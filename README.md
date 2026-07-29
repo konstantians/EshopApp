@@ -1,2 +1,2 @@
 # EshopApp
-This is an eshop app for my bachelor's degree. This app will contain most of the knowledge I have assembled in the field of software engineering and in the more general field of computer science.
+ASP.NET Core e-commerce platform built with a microservices architecture (Auth, Data, Email, Transaction services + API Gateway + MVC frontend), featuring OAuth2, automated testing, and ~100K lines of code.
